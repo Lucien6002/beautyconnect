@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Professionnels')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+<div th:replace="~{fragments/alerts :: alerts}"></div>
+
+<main class="flex-grow-1 container my-5">
+    <h1 class="h4 mb-4">Gestion des professionnels</h1>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+                <thead>
+                <tr><th>Activite</th><th>Ville</th><th>Contact</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${professionals}">
+                    <td th:text="${p.businessName}"></td>
+                    <td th:text="${p.city}"></td>
+                    <td>
+                        <div th:text="${p.user.fullName}"></div>
+                        <div class="small text-muted" th:text="${p.user.email}"></div>
+                    </td>
+                    <td>
+                        <span class="badge" th:classappend="${p.validated} ? 'text-bg-success' : 'text-bg-warning'"
+                              th:text="${p.validated} ? 'Valide' : 'En attente'"></span>
+                    </td>
+                    <td>
+                        <span class="badge" th:classappend="${p.user.enabled} ? 'text-bg-light border' : 'text-bg-danger'"
+                              th:text="${p.user.enabled} ? 'Actif' : 'Desactive'"></span>
+                    </td>
+                    <td class="d-flex gap-1 flex-wrap">
+                        <form th:if="${!p.validated}" th:action="@{'/admin/professionnels/' + ${p.id} + '/valider'}" method="post">
+                            <button type="submit" class="btn btn-sm btn-success">Valider</button>
+                        </form>
+                        <form th:if="${p.user.enabled}" th:action="@{'/admin/utilisateurs/' + ${p.user.id} + '/desactiver'}" method="post"
+                              onsubmit="return confirm('Desactiver ce compte ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Desactiver</button>
+                        </form>
+                        <form th:if="${!p.user.enabled}" th:action="@{'/admin/utilisateurs/' + ${p.user.id} + '/activer'}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Reactiver</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(professionals)}">Aucun professionnel inscrit.</p>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

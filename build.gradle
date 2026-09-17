@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.8'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.beautyconnect'
+version = '0.1.0-SNAPSHOT'
+description = 'Plateforme de mise en relation entre clients et prestataires de beaute independants (coiffure, onglerie, soins)'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    // Web MVC + Thymeleaf views
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+    // Rechargement a chaud en dev (redemarrage auto au changement de code)
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Persistence
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Security (auth par session, 3 roles)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // Validation des formulaires
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Envoi de mail de confirmation de rendez-vous
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Lombok : reduit le code repetitif des entites/DTO
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    // Base embarquee utilisee uniquement pour les tests (profil "test")
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+bootJar {
+    archiveFileName = "${project.name}-${project.version}.jar"
+}

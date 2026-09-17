@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title=${professional.businessName})}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+<div th:replace="~{fragments/alerts :: alerts}"></div>
+
+<main class="flex-grow-1 container my-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="h3 mb-1" th:text="${professional.businessName}"></h1>
+                            <p class="text-muted mb-1"><i class="bi bi-geo-alt"></i>
+                                <span th:text="${professional.city}"></span>
+                                <span th:if="${professional.address}" th:text="' - ' + ${professional.address}"></span>
+                            </p>
+                            <span class="badge text-bg-secondary" th:text="${professional.targetGender}"></span>
+                            <span class="text-warning ms-2">
+                                <i class="bi bi-star-fill"></i>
+                                <span th:text="${#numbers.formatDecimal(averageRating, 1, 1)}">0.0</span>/5
+                                (<span th:text="${#lists.size(reviews)}"></span> avis)
+                            </span>
+                        </div>
+                        <div sec:authorize="hasRole('CLIENT')">
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#signalerProfilModal">
+                                <i class="bi bi-flag"></i> Signaler
+                            </button>
+                        </div>
+                    </div>
+                    <p class="mt-3" th:text="${professional.bio ?: 'Aucune presentation renseignee.'}"></p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Prestations proposees</h2></div>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead>
+                        <tr><th>Prestation</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${prestations}">
+                            <td>
+                                <strong th:text="${p.name}"></strong>
+                                <div class="small text-muted" th:text="${p.description}"></div>
+                            </td>
+                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
+                            <td th:text="${p.durationMinutes} + ' min'"></td>
+                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
+                            <td sec:authorize="hasRole('CLIENT')">
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reserverModal"
+                                        th:attr="onclick='document.getElementById(\'prestationId\').value=' + ${p.id} + ';'">
+                                    Reserver
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(prestations)}">
+                        Aucune prestation renseignee pour le moment. Pour toute demande specifique, contactez directement le professionnel.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0">Avis clients</h2>
+                    <button sec:authorize="hasRole('CLIENT')" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#avisModal">
+                        Laisser un avis
+                    </button>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item" th:each="r : ${reviews}">
+                        <div class="d-flex justify-content-between">
+                            <strong th:text="${r.client.firstName}"></strong>
+                            <span class="text-warning"><i class="bi bi-star-fill"></i> <span th:text="${r.rating}"></span>/5</span>
+                        </div>
+                        <p class="mb-1" th:text="${r.comment}"></p>
+                        <button sec:authorize="hasRole('CLIENT')" class="btn btn-link btn-sm text-danger p-0"
+                                data-bs-toggle="modal" th:attr="data-bs-target='#signalerAvisModal' + ${r.id}">
+                            <i class="bi bi-flag"></i> Signaler cet avis
+                        </button>
+
+                        <div class="modal fade" th:id="'signalerAvisModal' + ${r.id}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form th:action="@{'/signalements/avis/' + ${r.id}}" method="post">
+                                        <div class="modal-header"><h5 class="modal-title">Signaler cet avis</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                        <div class="modal-body">
+                                            <label class="form-label">Motif</label>
+                                            <textarea name="reason" class="form-control" required></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-danger">Envoyer le signalement</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="list-group-item text-muted small" th:if="${#lists.isEmpty(reviews)}">Aucun avis pour le moment.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Prochains creneaux</h2></div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item" th:each="slot : ${timeSlots}"
+                        th:text="${#temporals.format(slot.startDateTime, 'dd/MM/yyyy HH:mm')}"></li>
+                    <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(timeSlots)}">
+                        Aucun creneau disponible pour le moment.
+                    </li>
+                </ul>
+            </div>
+            <div class="alert alert-light border mt-3 small" sec:authorize="isAnonymous()">
+                <a href="/connexion">Connectez-vous</a> pour reserver un rendez-vous ou laisser un avis.
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal reservation -->
+<div class="modal fade" id="reserverModal" tabindex="-1" sec:authorize="hasRole('CLIENT')">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{'/rendez-vous/reserver/' + ${professional.id}}" th:object="${appointmentForm}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Prendre rendez-vous</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Prestation</label>
+                        <select class="form-select" th:field="*{prestationId}">
+                            <option th:each="p : ${prestations}" th:value="${p.id}"
+                                    th:text="${p.name} + ' (' + ${p.durationMinutes} + ' min - ' + ${p.price} + ' €)'"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Creneau</label>
+                        <select class="form-select" th:field="*{timeSlotId}">
+                            <option th:each="slot : ${timeSlots}" th:value="${slot.id}"
+                                    th:text="${#temporals.format(slot.startDateTime, 'dd/MM/yyyy HH:mm')}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precisions (optionnel)</label>
+                        <textarea class="form-control" th:field="*{notes}" placeholder="Toute specificite a communiquer au professionnel"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" th:disabled="${#lists.isEmpty(timeSlots) or #lists.isEmpty(prestations)}">
+                        Confirmer la demande
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal avis -->
+<div class="modal fade" id="avisModal" tabindex="-1" sec:authorize="hasRole('CLIENT')">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{'/avis/professionnels/' + ${professional.id}}" th:object="${reviewForm}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Laisser un avis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Note (1 a 5)</label>
+                        <select class="form-select" th:field="*{rating}">
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Tres bien</option>
+                            <option value="3">3 - Correct</option>
+                            <option value="2">2 - Decevant</option>
+                            <option value="1">1 - Mauvais</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Commentaire</label>
+                        <textarea class="form-control" th:field="*{comment}"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Publier l'avis</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal signalement profil -->
+<div class="modal fade" id="signalerProfilModal" tabindex="-1" sec:authorize="hasRole('CLIENT')">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{'/signalements/profils/' + ${professional.id}}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Signaler ce profil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Motif</label>
+                    <textarea name="reason" class="form-control" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Envoyer le signalement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

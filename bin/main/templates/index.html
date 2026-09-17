@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Accueil')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+<div th:replace="~{fragments/alerts :: alerts}"></div>
+<div class="container mt-3" th:if="${param.deconnecte}">
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        Vous avez ete deconnecte.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
+<header class="bg-primary bg-gradient text-white py-5">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">Trouvez votre prestataire beaute pres de chez vous</h1>
+        <p class="lead">Coiffure, onglerie, soins : reservez en toute simplicite aupres de professionnels independants.</p>
+    </div>
+</header>
+
+<main class="flex-grow-1">
+    <section class="container my-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3"><i class="bi bi-search"></i> Rechercher un professionnel</h2>
+                <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Ville / quartier</label>
+                        <input type="text" class="form-control" th:field="*{city}" placeholder="Ex : Lyon 3e"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Type de prestation</label>
+                        <select class="form-select" th:field="*{type}">
+                            <option value="">Toutes les prestations</option>
+                            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Clientele</label>
+                        <select class="form-select" th:field="*{gender}">
+                            <option value="">Indifferent</option>
+                            <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary px-4">Rechercher</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section class="container my-5">
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <i class="bi bi-person-badge display-4 text-primary"></i>
+                <h3 class="h5 mt-3">Prestataires independants</h3>
+                <p class="text-muted">Des professionnelles de la coiffure, de l'onglerie et des soins pres de chez vous.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-calendar-check display-4 text-primary"></i>
+                <h3 class="h5 mt-3">Prise de rendez-vous simple</h3>
+                <p class="text-muted">Consultez les disponibilites et reservez votre creneau en quelques clics.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-star display-4 text-primary"></i>
+                <h3 class="h5 mt-3">Avis verifies</h3>
+                <p class="text-muted">Choisissez en toute confiance grace aux avis d'autres clients.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-light py-5">
+        <div class="container text-center">
+            <h2 class="h4 mb-3">Vous etes prestataire de beaute ?</h2>
+            <p class="text-muted mb-4">Creez votre vitrine gratuitement et developpez votre clientele.</p>
+            <a href="/inscription/professionnel" class="btn btn-outline-primary px-4">Devenir prestataire</a>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

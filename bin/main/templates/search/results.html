@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Recherche')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+
+<main class="flex-grow-1 container my-5">
+    <h1 class="h4 mb-4">Trouver un professionnel</h1>
+
+    <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3 mb-4 bg-light p-3 rounded">
+        <div class="col-md-4">
+            <label class="form-label">Ville / quartier</label>
+            <input type="text" class="form-control" th:field="*{city}"/>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Type de prestation</label>
+            <select class="form-select" th:field="*{type}">
+                <option value="">Toutes</option>
+                <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Clientele</label>
+            <select class="form-select" th:field="*{gender}">
+                <option value="">Indifferent</option>
+                <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+        </div>
+    </form>
+
+    <p class="text-muted" th:text="${#lists.size(results)} + ' professionnel(le)s trouve(e)s'"></p>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4" th:each="pro : ${results}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 card-title" th:text="${pro.businessName}"></h2>
+                    <p class="text-muted small mb-1"><i class="bi bi-geo-alt"></i> <span th:text="${pro.city}"></span></p>
+                    <p class="mb-2">
+                        <span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
+                        <span class="text-warning ms-2">
+                            <i class="bi bi-star-fill"></i>
+                            <span th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)}">0.0</span>/5
+                        </span>
+                    </p>
+                    <p class="card-text small" th:text="${#strings.abbreviate(pro.bio ?: 'Aucune presentation.', 100)}"></p>
+                    <a th:href="@{'/professionnels/' + ${pro.id}}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(results)}" class="alert alert-info mt-4">
+        Aucun professionnel ne correspond a votre recherche pour le moment.
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

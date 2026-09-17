@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-scissors"></i> BeautyConnect
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="/">Accueil</a></li>
+                <li class="nav-item"><a class="nav-link" href="/recherche">Trouver un pro</a></li>
+                <li class="nav-item" sec:authorize="hasRole('CLIENT')">
+                    <a class="nav-link" href="/client/tableau-bord">Mon espace</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
+                    <a class="nav-link" href="/pro/tableau-bord">Mon espace pro</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" href="/admin/tableau-bord">Administration</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item d-flex align-items-center" sec:authorize="isAuthenticated()">
+                    <span class="navbar-text text-light me-3" sec:authentication="name"></span>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <form th:action="@{/deconnexion}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-outline-light btn-sm">Deconnexion</button>
+                    </form>
+                </li>
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="btn btn-outline-light btn-sm me-2" href="/connexion">Connexion</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <div class="btn-group">
+                        <a class="btn btn-primary btn-sm" href="/inscription/client">Inscription</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+</body>
+</html>

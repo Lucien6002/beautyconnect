@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: beautyconnect-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: beautyconnect
+      POSTGRES_USER: beautyconnect
+      POSTGRES_PASSWORD: beautyconnect
+    ports:
+      # Port hote 5433 : le 5432 par defaut est deja pris par une instance
+      # PostgreSQL native sur la machine de dev (service Windows). Le port
+      # 5432 reste utilise a l'interieur du conteneur.
+      - "5433:5432"
+    volumes:
+      - beautyconnect-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U beautyconnect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  beautyconnect-db-data:
