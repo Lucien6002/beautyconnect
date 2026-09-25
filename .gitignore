@@ -31,8 +31,11 @@ build/
 
 ### Environnement ###
 .env
+.env.*
 *.log
 
 ### OS ###
 .DS_Store
 Thumbs.db
+
+

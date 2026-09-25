@@ -33,32 +33,26 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ProfessionalProfileRepository professionalProfileRepository;
-    // PasswordEncoder (bean fourni par SecurityConfig, implementation BCrypt) :
-    // permet de hacher le mot de passe avant de le stocker en base. On ne
-    // stocke JAMAIS un mot de passe en clair.
     private final PasswordEncoder passwordEncoder;
+    private final AuthTokenService authTokenService; // <-- AJOUTE CECI
 
-    // @Transactional : toutes les operations sur la base de donnees faites
-    // dans cette methode sont executees comme un tout indivisible (soit tout
-    // est enregistre, soit rien ne l'est en cas d'erreur au milieu).
     @Transactional
     public User registerClient(ClientRegistrationForm form) {
         checkEmailAvailable(form.getEmail());
 
-        // User.builder()...build() : construction "fluide" de l'objet grace a
-        // l'annotation Lombok @Builder presente sur l'entite User. Plus lisible
-        // qu'un constructeur avec 8 parametres positionnels.
         User user = User.builder()
-                .email(form.getEmail().toLowerCase()) // normalisation : evite que "A@x.com" et "a@x.com" soient traites comme deux comptes différents
-                .password(passwordEncoder.encode(form.getPassword())) // hachage du mot de passe
+                .email(form.getEmail().toLowerCase())
+                .password(passwordEncoder.encode(form.getPassword()))
                 .firstName(form.getFirstName())
                 .lastName(form.getLastName())
                 .phone(form.getPhone())
                 .role(Role.CLIENT)
-                .enabled(true)
+                .enabled(false) // <-- PASSE A FALSE
                 .build();
 
-        return userRepository.save(user);
+        user = userRepository.save(user);
+        authTokenService.generateAndSendActivationLink(user); // <-- ENVOIE LE MAIL
+        return user;
     }
 
     @Transactional
@@ -72,12 +66,10 @@ public class UserService {
                 .lastName(form.getLastName())
                 .phone(form.getPhone())
                 .role(Role.PROFESSIONAL)
-                .enabled(true)
+                .enabled(false) // <-- PASSE A FALSE
                 .build();
         user = userRepository.save(user);
 
-        // Le profil doit etre valide par l'administrateur avant d'apparaitre
-        // dans les resultats de recherche publics.
         ProfessionalProfile profile = ProfessionalProfile.builder()
                 .user(user)
                 .businessName(form.getBusinessName())
@@ -89,6 +81,7 @@ public class UserService {
                 .build();
         professionalProfileRepository.save(profile);
 
+        authTokenService.generateAndSendActivationLink(user); // <-- ENVOIE LE MAIL
         return user;
     }
 

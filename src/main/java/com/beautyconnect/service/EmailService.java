@@ -1,6 +1,7 @@
 package com.beautyconnect.service;
 
 import com.beautyconnect.model.Appointment;
+import com.beautyconnect.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -9,16 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 
-/**
- * Envoi du mail de confirmation de rendez-vous.
- * En environnement de developpement (sans serveur SMTP disponible), l'echec
- * d'envoi est journalise plutot que de faire planter la demande metier
- * (voir app.mail.fail-silently).
- *
- * @Slf4j (Lombok) : genere automatiquement un champ "log" (un Logger) pretant
- * a etre utilise directement, sans avoir a ecrire
- * "private static final Logger log = LoggerFactory.getLogger(EmailService.class);" a la main.
- */
 @Service
 @Slf4j
 public class EmailService {
@@ -29,24 +20,32 @@ public class EmailService {
     private final String from;
     private final boolean failSilently;
 
-    // Constructeur explicite (au lieu de @RequiredArgsConstructor) car on a
-    // besoin d'annotations @Value sur les parametres pour injecter des
-    // valeurs issues de application.properties (app.mail.from, app.mail.fail-silently),
-    // ce que Lombok ne sait pas generer automatiquement.
     public EmailService(JavaMailSender mailSender,
-                         @Value("${app.mail.from}") String from,
-                         @Value("${app.mail.fail-silently:true}") boolean failSilently) {
+                        @Value("${app.mail.from}") String from,
+                        @Value("${app.mail.fail-silently:true}") boolean failSilently) {
         this.mailSender = mailSender;
         this.from = from;
         this.failSilently = failSilently;
     }
 
+    public void sendWelcomeEmail(User user) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(from);
+        message.setTo(user.getEmail());
+        message.setSubject("Bienvenue sur BeautyConnect !");
+        message.setText("Bonjour " + user.getFirstName() + ",\n\n"
+                + "Votre compte a bien été créé. Vous pouvez dès maintenant vous connecter et profiter de nos services.\n\n"
+                + "L'équipe BeautyConnect");
+        try {
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.warn("Echec envoi mail bienvenue : {}", e.getMessage());
+        }
+    }
+
     public void sendAppointmentConfirmation(Appointment appointment) {
         String to = appointment.getClient().getEmail();
         String subject = "Confirmation de votre rendez-vous BeautyConnect";
-        // Text block Java (""" ... """) : permet d'ecrire un texte multi-lignes
-        // sans concatener des chaines avec des "+" ni des "\n" partout.
-        // .formatted(...) remplace ensuite les %s dans l'ordre.
         String body = """
                 Bonjour %s,
 
@@ -76,16 +75,10 @@ public class EmailService {
             mailSender.send(message);
             log.info("Mail de confirmation envoye a {}", to);
         } catch (Exception ex) {
-            // Si failSilently est false (configuration explicite), on laisse
-            // l'exception remonter normalement. Sinon (comportement par
-            // defaut en dev), on logue juste un avertissement : la
-            // confirmation du rendez-vous en base a deja reussi, ce n'est
-            // pas parce que l'email echoue (pas de serveur SMTP local) que
-            // toute l'operation doit etre annulee pour l'utilisateur.
             if (!failSilently) {
                 throw ex;
             }
-            log.warn("Echec de l'envoi du mail de confirmation a {} (SMTP non configure ?) : {}", to, ex.getMessage());
+            log.warn("Echec de l'envoi du mail de confirmation a {} : {}", to, ex.getMessage());
         }
     }
 }
