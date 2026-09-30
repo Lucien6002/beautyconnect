@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -34,26 +35,38 @@ public class AppointmentService {
     public Appointment book(User client, ProfessionalProfile professional, AppointmentForm form) {
         TimeSlot slot = timeSlotRepository.findById(form.getTimeSlotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Creneau introuvable"));
-        // Empeche de reserver un creneau appartenant a un AUTRE professionnel
-        // que celui affiche sur la page (protection contre un ID trafique dans le formulaire).
+
         if (!slot.getProfessional().getId().equals(professional.getId())) {
             throw new IllegalOperationException("Ce creneau n'appartient pas a ce professionnel");
         }
-        // Empeche le double-booking : un creneau deja pris par quelqu'un
-        // d'autre ne peut pas etre repris.
         if (!slot.isAvailable()) {
             throw new IllegalOperationException("Ce creneau n'est plus disponible");
         }
 
+
+        // Vérifier que le créneau n'est pas dans le passé
+        if (!slot.getStartDateTime().isAfter(LocalDateTime.now())) {
+            throw new IllegalOperationException("Ce créneau est dans le passé et ne peut plus être réservé.");
+        }
+
+        // Vérifier que le pro est validé par l'admin ET que son compte est actif
+        if (!professional.isValidated() || !professional.getUser().isEnabled()) {
+            throw new IllegalOperationException("Ce professionnel n'est pas disponible pour le moment.");
+        }
+
         Prestation prestation = prestationRepository.findById(form.getPrestationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable"));
+
         if (!prestation.getProfessional().getId().equals(professional.getId())) {
             throw new IllegalOperationException("Cette prestation n'appartient pas a ce professionnel");
         }
 
-        // Marque immediatement le creneau comme indisponible, avant meme que
-        // le rendez-vous ne soit confirme par le professionnel : cela evite
-        // qu'un deuxieme client ne reserve le meme creneau entre-temps.
+        // Vérifier que la prestation n'a pas été désactivée par le pro
+        if (!prestation.isActive()) {
+            throw new IllegalOperationException("Cette prestation n'est plus proposée par le professionnel.");
+        }
+
+        // Marque immediatement le creneau comme indisponible
         slot.setAvailable(false);
         timeSlotRepository.save(slot);
 
@@ -62,10 +75,14 @@ public class AppointmentService {
                 .professional(professional)
                 .prestation(prestation)
                 .timeSlot(slot)
-                .status(AppointmentStatus.EN_ATTENTE) // Le rendez-vous doit encore etre accepte par le professionnel.
+                .status(AppointmentStatus.EN_ATTENTE)
                 .notes(form.getNotes())
                 .build();
 
+        // Note sur la concurrence : Si deux clients arrivent EXACTEMENT à la même milliseconde
+        // et passent les 'if' ci-dessus, la base de données PostgreSQL va rejeter le deuxième
+        // car la colonne 'time_slot_id' de la table 'appointments' est UNIQUE (voir entité Appointment).
+        // Cela garantit "un seul gagnant concurrent".
         return appointmentRepository.save(appointment);
     }
 
@@ -82,6 +99,7 @@ public class AppointmentService {
     @Transactional
     public Appointment confirm(ProfessionalProfile professional, Long appointmentId) {
         Appointment appointment = getOwnedByProfessional(professional, appointmentId);
+        validateTransition(appointment.getStatus(), AppointmentStatus.CONFIRME);
         appointment.setStatus(AppointmentStatus.CONFIRME);
         appointment = appointmentRepository.save(appointment);
         emailService.sendAppointmentConfirmation(appointment);
@@ -91,6 +109,7 @@ public class AppointmentService {
     @Transactional
     public Appointment refuse(ProfessionalProfile professional, Long appointmentId) {
         Appointment appointment = getOwnedByProfessional(professional, appointmentId);
+        validateTransition(appointment.getStatus(), AppointmentStatus.REFUSE);
         appointment.setStatus(AppointmentStatus.REFUSE);
         // Le creneau redevient disponible pour un autre client puisque ce
         // rendez-vous n'aura finalement pas lieu.
@@ -105,6 +124,7 @@ public class AppointmentService {
         if (!appointment.getClient().getId().equals(client.getId())) {
             throw new IllegalOperationException("Ce rendez-vous n'appartient pas a ce client");
         }
+        validateTransition(appointment.getStatus(), AppointmentStatus.ANNULE);
         appointment.setStatus(AppointmentStatus.ANNULE);
         releaseSlot(appointment);
         return appointmentRepository.save(appointment);
@@ -115,6 +135,7 @@ public class AppointmentService {
     @Transactional
     public Appointment markCompleted(ProfessionalProfile professional, Long appointmentId) {
         Appointment appointment = getOwnedByProfessional(professional, appointmentId);
+        validateTransition(appointment.getStatus(), AppointmentStatus.TERMINE);
         appointment.setStatus(AppointmentStatus.TERMINE);
         return appointmentRepository.save(appointment);
     }
@@ -136,4 +157,22 @@ public class AppointmentService {
         }
         return appointment;
     }
+
+    private void validateTransition(AppointmentStatus currentStatus, AppointmentStatus targetStatus) {
+        boolean isValid = switch (currentStatus) {
+            case EN_ATTENTE -> targetStatus == AppointmentStatus.CONFIRME
+                    || targetStatus == AppointmentStatus.REFUSE
+                    || targetStatus == AppointmentStatus.ANNULE;
+            case CONFIRME   -> targetStatus == AppointmentStatus.TERMINE
+                    || targetStatus == AppointmentStatus.ANNULE;
+            case REFUSE, ANNULE, TERMINE -> false; // États finaux, on ne bouge plus !
+        };
+
+        if (!isValid) {
+            throw new IllegalOperationException("Impossible de passer le rendez-vous de l'état "
+                    + currentStatus + " à " + targetStatus);
+        }
+    }
+
+
 }
