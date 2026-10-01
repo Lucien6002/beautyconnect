@@ -41,15 +41,13 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0">Professionnels en attente de validation</h2>
-                    <a href="/admin/professionnels" class="btn btn-sm btn-outline-primary">Gerer</a>
+                    <a href="/admin/professionnels?statut=en-attente" class="btn btn-sm btn-outline-primary">Gerer</a>
                 </div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between align-items-center"
                         th:each="p : ${pendingProfessionals}">
-                        <span th:text="${p.businessName} + ' - ' + ${p.city}"></span>
-                        <form th:action="@{'/admin/professionnels/' + ${p.id} + '/valider'}" method="post">
-                            <button type="submit" class="btn btn-sm btn-success">Valider</button>
-                        </form>
+                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" th:text="${p.businessName} + ' - ' + ${p.city}"></a>
+                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" class="btn btn-sm btn-outline-primary">Examiner</a>
                     </li>
                     <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(pendingProfessionals)}">
                         Aucun profil en attente.
