@@ -4,7 +4,6 @@ import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Role;
 import com.beautyconnect.model.TargetGender;
 import com.beautyconnect.model.User;
-import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.UserRepository;
 import com.beautyconnect.security.CustomUserDetails;
@@ -53,8 +52,6 @@ class AdminProfessionalValidationTests {
     @Autowired
     private ProfessionalProfileRepository profileRepository;
     @Autowired
-    private PrestationRepository prestationRepository;
-    @Autowired
     private SessionRegistry sessionRegistry;
 
     // Remplace le vrai service : aucun envoi SMTP pendant les tests, et on
@@ -69,13 +66,17 @@ class AdminProfessionalValidationTests {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
+    // Supprime uniquement les comptes crees par ces tests (emails en
+    // @test.local) : les donnees de demonstration du DataInitializer
+    // (profil avec creneaux et prestations) doivent rester intactes.
     @AfterEach
     void cleanUp() {
-        prestationRepository.deleteAll();
-        profileRepository.deleteAll();
         userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.PROFESSIONAL)
-                .forEach(userRepository::delete);
+                .filter(u -> u.getEmail().endsWith("@test.local"))
+                .forEach(u -> {
+                    profileRepository.findByUserId(u.getId()).ifPresent(profileRepository::delete);
+                    userRepository.delete(u);
+                });
     }
 
     @Test

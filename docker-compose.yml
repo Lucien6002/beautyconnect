@@ -8,9 +8,6 @@ services:
       POSTGRES_USER: beautyconnect
       POSTGRES_PASSWORD: beautyconnect
     ports:
-      # Port hote 5433 : le 5432 par defaut est deja pris par une instance
-      # PostgreSQL native sur la machine de dev (service Windows). Le port
-      # 5432 reste utilise a l'interieur du conteneur.
       - "5433:5432"
     volumes:
       - beautyconnect-db-data:/var/lib/postgresql/data
@@ -19,6 +16,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Faux serveur mail pour intercepter les emails en local
+  mailpit:
+    image: axllent/mailpit
+    container_name: beautyconnect-mail
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # Port utilisé par Spring Boot pour envoyer le mail
+      - "8025:8025" # Port pour voir la boîte de réception dans ton navigateur
 
 volumes:
   beautyconnect-db-data:
