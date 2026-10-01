@@ -38,6 +38,13 @@ public class ProfessionalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Profil professionnel introuvable : " + id));
     }
 
+    // Variante pour les pages publiques et la reservation : un professionnel
+    // dont le compte a ete desactive par l'admin est traite comme introuvable.
+    public ProfessionalProfile getPublicProfileOrThrow(Long id) {
+        return professionalProfileRepository.findPublicById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil professionnel introuvable : " + id));
+    }
+
     public ProfessionalProfile getProfileByUserId(Long userId) {
         return professionalProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Aucun profil professionnel pour cet utilisateur"));

@@ -8,7 +8,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 /**
@@ -49,6 +52,22 @@ public class SecurityConfig {
     // le role de l'utilisateur connecte (tableau de bord adapte a chaque profil).
     // La lambda ci-dessous implemente l'interface fonctionnelle
     // AuthenticationSuccessHandler (une methode a 3 parametres : request, response, authentication).
+    // Registre des sessions ouvertes, par utilisateur connecte. Permet a
+    // l'admin de deconnecter immediatement un compte qu'il desactive (voir
+    // AdminService.setUserEnabled) : sans lui, un utilisateur deja connecte
+    // garderait l'acces jusqu'a l'expiration naturelle de sa session.
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    // Previent le SessionRegistry quand une session HTTP est detruite
+    // (deconnexion, expiration), pour qu'il ne garde pas d'entrees obsoletes.
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
     @Bean
     public AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
@@ -72,8 +91,8 @@ public class SecurityConfig {
     // Coeur de la configuration : definit, URL par URL, qui a le droit
     // d'acceder a quoi. C'est LE bean central de Spring Security.
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationSuccessHandler successHandler,
+                                                   SessionRegistry sessionRegistry) throws Exception {
         http
                 // authorizeHttpRequests : les regles sont evaluees DANS L'ORDRE
                 // et la PREMIERE regle qui correspond a l'URL demandee est
@@ -114,7 +133,15 @@ public class SecurityConfig {
                 // Page affichee quand un utilisateur CONNECTE tente d'acceder a
                 // une zone reservee a un autre role (ex: un client qui essaie
                 // d'ouvrir /admin/tableau-bord) : diese "403 Forbidden".
-                .exceptionHandling(ex -> ex.accessDeniedPage("/erreur/403"));
+                .exceptionHandling(ex -> ex.accessDeniedPage("/erreur/403"))
+                // maximumSessions(-1) : pas de limite du nombre de sessions par
+                // utilisateur ; on active ce mecanisme uniquement pour
+                // enregistrer les sessions dans le SessionRegistry. Une session
+                // expiree par l'admin redirige vers la page de connexion.
+                .sessionManagement(session -> session
+                        .maximumSessions(-1)
+                        .sessionRegistry(sessionRegistry)
+                        .expiredUrl("/connexion?desactive"));
                 // CSRF reste actif (comportement par defaut) ; les formulaires Thymeleaf
                 // incluent automatiquement le jeton car ils utilisent th:action.
 

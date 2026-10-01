@@ -9,20 +9,41 @@
 <main class="flex-grow-1 container my-5">
     <h1 class="h4 mb-4">Gestion des professionnels</h1>
 
+    <ul class="nav nav-pills mb-3 gap-1">
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${statut == 'tous'} ? 'active'" th:href="@{/admin/professionnels}">
+                Tous <span class="badge text-bg-light" th:text="${metrics.validatedProfessionals + metrics.pendingProfessionals}"></span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${statut == 'en-attente'} ? 'active'" th:href="@{/admin/professionnels(statut='en-attente')}">
+                En attente <span class="badge text-bg-warning" th:text="${metrics.pendingProfessionals}"></span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${statut == 'valides'} ? 'active'" th:href="@{/admin/professionnels(statut='valides')}">
+                Valides <span class="badge text-bg-success" th:text="${metrics.validatedProfessionals}"></span>
+            </a>
+        </li>
+    </ul>
+
     <div class="card shadow-sm">
         <div class="table-responsive">
             <table class="table mb-0 align-middle">
                 <thead>
-                <tr><th>Activite</th><th>Ville</th><th>Contact</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
+                <tr><th>Activite</th><th>Ville</th><th>Contact</th><th>Inscrit le</th><th>Statut</th><th>Compte</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                 <tr th:each="p : ${professionals}">
-                    <td th:text="${p.businessName}"></td>
+                    <td>
+                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" th:text="${p.businessName}"></a>
+                    </td>
                     <td th:text="${p.city}"></td>
                     <td>
                         <div th:text="${p.user.fullName}"></div>
                         <div class="small text-muted" th:text="${p.user.email}"></div>
                     </td>
+                    <td class="small text-muted" th:text="${#temporals.format(p.createdAt, 'dd/MM/yyyy')}"></td>
                     <td>
                         <span class="badge" th:classappend="${p.validated} ? 'text-bg-success' : 'text-bg-warning'"
                               th:text="${p.validated} ? 'Valide' : 'En attente'"></span>
@@ -32,12 +53,15 @@
                               th:text="${p.user.enabled} ? 'Actif' : 'Desactive'"></span>
                     </td>
                     <td class="d-flex gap-1 flex-wrap">
-                        <form th:if="${!p.validated}" th:action="@{'/admin/professionnels/' + ${p.id} + '/valider'}" method="post">
+                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" class="btn btn-sm btn-outline-primary"
+                           th:text="${p.validated} ? 'Voir' : 'Examiner'"></a>
+                        <form th:if="${!p.validated and p.user.enabled}" th:action="@{'/admin/professionnels/' + ${p.id} + '/valider'}" method="post">
                             <button type="submit" class="btn btn-sm btn-success">Valider</button>
                         </form>
                         <form th:if="${p.user.enabled}" th:action="@{'/admin/utilisateurs/' + ${p.user.id} + '/desactiver'}" method="post"
-                              onsubmit="return confirm('Desactiver ce compte ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Desactiver</button>
+                              onsubmit="return confirm('Desactiver ce compte ? Le professionnel sera deconnecte et son profil masque au public.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    title="Bloque la connexion et masque le profil (recherche, page publique, reservations)">Desactiver</button>
                         </form>
                         <form th:if="${!p.user.enabled}" th:action="@{'/admin/utilisateurs/' + ${p.user.id} + '/activer'}" method="post">
                             <button type="submit" class="btn btn-sm btn-outline-success">Reactiver</button>
@@ -46,7 +70,7 @@
                 </tr>
                 </tbody>
             </table>
-            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(professionals)}">Aucun professionnel inscrit.</p>
+            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(professionals)}">Aucun professionnel dans cette categorie.</p>
         </div>
     </div>
 </main>

@@ -1,7 +1,10 @@
 package com.beautyconnect.controller;
 
+import com.beautyconnect.exception.IllegalOperationException;
+import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Report;
 import com.beautyconnect.model.ReportStatus;
+import com.beautyconnect.model.User;
 import com.beautyconnect.service.AdminService;
 import com.beautyconnect.service.ReportService;
 import com.beautyconnect.service.ReviewService;
@@ -39,30 +42,73 @@ public class AdminController {
 
     // ---- Professionnels ----
 
+    // ?statut=en-attente | valides (absent = tous, demandes en attente en premier).
     @GetMapping("/professionnels")
-    public String professionals(Model model) {
-        model.addAttribute("professionals", adminService.getAllProfessionals());
+    public String professionals(@RequestParam(required = false) String statut, Model model) {
+        Boolean validated = switch (statut == null ? "" : statut) {
+            case "en-attente" -> false;
+            case "valides" -> true;
+            default -> null;
+        };
+        model.addAttribute("professionals", adminService.getProfessionals(validated));
+        model.addAttribute("statut", validated == null ? "tous" : statut);
+        model.addAttribute("metrics", adminService.getMetrics());
         return "admin/professionals";
     }
 
+    // Fiche detaillee d'un professionnel : l'admin examine le profil
+    // (coordonnees, bio, prestations) avant de le valider.
+    @GetMapping("/professionnels/{id}")
+    public String professionalDetail(@PathVariable Long id, Model model) {
+        ProfessionalProfile professional = adminService.getProfessionalForReview(id);
+        model.addAttribute("professional", professional);
+        model.addAttribute("prestations", adminService.getPrestationsForReview(professional));
+        return "admin/professional-detail";
+    }
+
+    // Les regles metier (deja valide, compte desactive...) sont verifiees dans
+    // AdminService : on les transforme ici en message flash plutot qu'en page
+    // d'erreur 400, l'admin reste sur la page d'ou il vient.
     @PostMapping("/professionnels/{id}/valider")
     public String validateProfessional(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        adminService.validateProfessional(id);
-        redirectAttributes.addFlashAttribute("success", "Profil professionnel valide.");
-        return "redirect:/admin/professionnels";
+        try {
+            ProfessionalProfile profile = adminService.validateProfessional(id);
+            redirectAttributes.addFlashAttribute("success",
+                    "Profil \"" + profile.getBusinessName() + "\" valide : il est desormais visible publiquement.");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/admin/professionnels/" + id;
+    }
+
+    @PostMapping("/professionnels/{id}/retirer-validation")
+    public String revokeValidation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            ProfessionalProfile profile = adminService.revokeValidation(id);
+            redirectAttributes.addFlashAttribute("success",
+                    "Validation retiree : \"" + profile.getBusinessName() + "\" n'apparait plus dans la recherche.");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/admin/professionnels/" + id;
     }
 
     @PostMapping("/utilisateurs/{id}/desactiver")
     public String disableUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        adminService.setUserEnabled(id, false);
-        redirectAttributes.addFlashAttribute("success", "Compte desactive.");
+        try {
+            User user = adminService.setUserEnabled(id, false);
+            redirectAttributes.addFlashAttribute("success", "Compte de " + user.getFullName()
+                    + " desactive : il est deconnecte et son profil n'est plus visible publiquement.");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/admin/professionnels";
     }
 
     @PostMapping("/utilisateurs/{id}/activer")
     public String enableUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        adminService.setUserEnabled(id, true);
-        redirectAttributes.addFlashAttribute("success", "Compte reactive.");
+        User user = adminService.setUserEnabled(id, true);
+        redirectAttributes.addFlashAttribute("success", "Compte de " + user.getFullName() + " reactive.");
         return "redirect:/admin/professionnels";
     }
 
