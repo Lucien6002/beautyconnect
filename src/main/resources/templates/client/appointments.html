@@ -22,7 +22,26 @@
                     </td>
                     <td th:text="${a.prestation.name}"></td>
                     <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
-                    <td><span class="badge text-bg-secondary" th:text="${a.status}"></span></td>
+                    <td>
+                        <!-- Badge coloré selon le statut -->
+                        <span th:switch="${a.status.name()}">
+                            <span th:case="'EN_ATTENTE'" class="badge bg-warning text-dark">
+                                <i class="bi bi-hourglass-split"></i> En attente
+                            </span>
+                            <span th:case="'CONFIRME'" class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Confirmé
+                            </span>
+                            <span th:case="'REFUSE'" class="badge bg-danger">
+                                <i class="bi bi-x-circle"></i> Refusé
+                            </span>
+                            <span th:case="'ANNULE'" class="badge bg-secondary">
+                                <i class="bi bi-slash-circle"></i> Annulé
+                            </span>
+                            <span th:case="'TERMINE'" class="badge bg-primary">
+                                <i class="bi bi-award"></i> Terminé
+                            </span>
+                        </span>
+                    </td>
                     <td>
                         <form th:if="${a.status.name() == 'EN_ATTENTE' or a.status.name() == 'CONFIRME'}"
                               th:action="@{'/rendez-vous/' + ${a.id} + '/annuler'}" method="post"
@@ -33,9 +52,14 @@
                 </tr>
                 </tbody>
             </table>
-            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(appointments)}">
-                Vous n'avez pas encore de rendez-vous.
-            </p>
+            <div class="p-5 text-center" th:if="${#lists.isEmpty(appointments)}">
+                <i class="bi bi-calendar2-heart display-4 text-muted mb-3 d-block"></i>
+                <h3 class="h5 text-secondary">Vous n'avez aucun rendez-vous pour le moment</h3>
+                <p class="text-muted small mb-4">Envie d'une nouvelle coiffure, d'un soin ou d'une manucure ?</p>
+                <a href="/recherche" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Trouver un professionnel
+                </a>
+            </div>
         </div>
     </div>
 </main>

@@ -26,6 +26,10 @@
                 <h2 class="h4 mb-3"><i class="bi bi-search"></i> Rechercher un professionnel</h2>
                 <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3">
                     <div class="col-md-4">
+                        <label class="form-label">Nom du salon</label>
+                        <input type="text" class="form-control" th:field="*{name}" placeholder="Ex : Sarah Coiffure"/>
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label">Ville / quartier</label>
                         <input type="text" class="form-control" th:field="*{city}" placeholder="Ex : Lyon 3e"/>
                     </div>

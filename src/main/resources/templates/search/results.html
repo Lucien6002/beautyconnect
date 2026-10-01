@@ -9,9 +9,13 @@
     <h1 class="h4 mb-4">Trouver un professionnel</h1>
 
     <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3 mb-4 bg-light p-3 rounded">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label">Ville / quartier</label>
             <input type="text" class="form-control" th:field="*{city}"/>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Nom</label>
+            <input type="text" class="form-control" th:field="*{name}"/>
         </div>
         <div class="col-md-3">
             <label class="form-label">Type de prestation</label>
@@ -20,6 +24,7 @@
                 <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
             </select>
         </div>
+
         <div class="col-md-3">
             <label class="form-label">Clientele</label>
             <select class="form-select" th:field="*{gender}">
@@ -27,12 +32,21 @@
                 <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
             </select>
         </div>
-        <div class="col-md-2 d-flex align-items-end">
+        <div class="col-md-2 d-flex align-items-end gap-2">
             <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+            <button type="button" id="btn-autour-de-moi" class="btn btn-outline-secondary w-100" title="Autour de moi">
+                <i class="bi bi-geo-alt"></i> GPS
+            </button>
         </div>
+        <!-- Champs cachés pour envoyer les coordonnées au serveur Java -->
+        <input type="hidden" id="clientLatitude" th:field="*{clientLatitude}" />
+        <input type="hidden" id="clientLongitude" th:field="*{clientLongitude}" />
     </form>
 
     <p class="text-muted" th:text="${#lists.size(results)} + ' professionnel(le)s trouve(e)s'"></p>
+
+    <!-- NOTRE CARTE -->
+    <div id="map" style="height: 400px; width: 100%; border-radius: 10px; margin-bottom: 20px; z-index: 1;"></div>
 
     <div class="row g-4">
         <div class="col-md-6 col-lg-4" th:each="pro : ${results}">
@@ -42,12 +56,21 @@
                     <p class="text-muted small mb-1"><i class="bi bi-geo-alt"></i> <span th:text="${pro.city}"></span></p>
                     <p class="mb-2">
                         <span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
-                        <span class="text-warning ms-2">
+
+                        <!-- NOUVEAU : Affiche la distance si le GPS a été utilisé -->
+                        <span th:if="${distances != null and distances.containsKey(pro.id)}" class="badge bg-info text-dark ms-1">
+                            <i class="bi bi-geo-alt-fill"></i> à <span th:text="${#numbers.formatDecimal(distances.get(pro.id), 1, 1)}">0.0</span> km
+                        </span>
+
+                                            <span class="text-warning ms-2">
                             <i class="bi bi-star-fill"></i>
                             <span th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)}">0.0</span>/5
                         </span>
                     </p>
-                    <p class="card-text small" th:text="${#strings.abbreviate(pro.bio ?: 'Aucune presentation.', 100)}"></p>
+
+                    <!-- CORRECTION DE L'ERREUR THYMELEAF ICI -->
+                    <p class="card-text small" th:text="${pro.bio != null ? #strings.abbreviate(pro.bio, 100) : 'Aucune presentation.'}"></p>
+
                     <a th:href="@{'/professionnels/' + ${pro.id}}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
                 </div>
             </div>
@@ -60,6 +83,75 @@
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<!-- 1. On charge Leaflet ICI (c'est plus propre) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 2. Le script pour la Carte -->
+<script th:inline="javascript">
+    var clientLat = /*[[${searchCriteria.clientLatitude}]]*/ null;
+    var clientLon = /*[[${searchCriteria.clientLongitude}]]*/ null;
+
+    // 1. Si le client a donné sa position, on centre sur LUI, sinon sur la France
+    var centerLat = (clientLat != null) ? clientLat : 46.603354;
+    var centerLon = (clientLon != null) ? clientLon : 1.888334;
+    var zoomLevel = (clientLat != null) ? 12 : 5; // Zoom plus proche si on a la position
+
+    var map = L.map('map').setView([centerLat, centerLon], zoomLevel);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 2. Si le client est localisé, on met un rond bleu "Vous êtes ici" !
+    if (clientLat != null && clientLon != null) {
+        var userMarker = L.circleMarker([clientLat, clientLon], {
+            radius: 9,
+            fillColor: "#0d6efd",
+            color: "#ffffff",
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.9
+        }).addTo(map);
+        userMarker.bindPopup("<b>📍 Vous êtes ici</b>").openPopup();
+    }
+
+    // 3. Les marqueurs des professionnels
+    /*[# th:each="pro : ${results}"]*/
+    /*[# th:if="${pro.latitude != null and pro.longitude != null}"]*/
+    var lat = /*[[${pro.latitude}]]*/ 0;
+    var lon = /*[[${pro.longitude}]]*/ 0;
+    var nom = /*[[${pro.businessName}]]*/ 'Nom';
+    var id = /*[[${pro.id}]]*/ 0;
+
+    var marker = L.marker([lat, lon]).addTo(map);
+    marker.bindPopup("<b>" + nom + "</b><br><a href='/professionnels/" + id + "'>Voir le profil</a>");
+    /*[/]*/
+    /*[/]*/
+</script>
+
+<!-- 3. Le script pour le bouton GPS -->
+<script>
+    document.getElementById('btn-autour-de-moi').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Calcul...';
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('clientLatitude').value = position.coords.latitude;
+                    document.getElementById('clientLongitude').value = position.coords.longitude;
+                    document.getElementById('clientLatitude').closest('form').submit();
+                },
+                function(error) {
+                    alert("Impossible d'obtenir votre position. Vérifiez vos autorisations.");
+                    document.getElementById('btn-autour-de-moi').innerHTML = '<i class="bi bi-geo-alt"></i> GPS';
+                }
+            );
+        } else {
+            alert("La géolocalisation n'est pas supportée par votre navigateur.");
+        }
+    });
+</script>
 </body>
 </html>

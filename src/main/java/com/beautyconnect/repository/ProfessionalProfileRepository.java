@@ -57,10 +57,12 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
             WHERE p.validated = true
               AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', CAST(:city AS string), '%')))
               AND (:gender IS NULL OR p.targetGender = :gender OR p.targetGender = com.beautyconnect.model.TargetGender.MIXTE)
+              And (:name Is NULL OR lower(p.businessName) LiKE LOWER (CONCAT('%', CAST(:name AS string), '%')))
               AND (:type IS NULL OR pr.type = :type)
             """)
     List<ProfessionalProfile> search(
             @Param("city") String city,
             @Param("gender") TargetGender gender,
+            @Param("name") String name,
             @Param("type") com.beautyconnect.model.ServiceType type);
 }

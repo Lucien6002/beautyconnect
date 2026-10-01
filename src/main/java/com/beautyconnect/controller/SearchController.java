@@ -41,19 +41,28 @@ public class SearchController {
     public String search(@ModelAttribute SearchCriteria searchCriteria, Model model) {
         List<ProfessionalProfile> results = professionalService.search(searchCriteria);
 
-        // Precalcule la note moyenne de chaque professionnel trouve, pour
-        // eviter de refaire la requete depuis le template Thymeleaf (les
-        // templates ne devraient jamais contenir de logique d'acces aux donnees).
-        // LinkedHashMap conserve l'ordre d'insertion, donc l'ordre des
-        // resultats de recherche est preserve a l'affichage.
         Map<Long, Double> averageRatings = new LinkedHashMap<>();
+        Map<Long, Double> distances = new LinkedHashMap<>(); // <-- NOUVEAU : Contiendra les distances
+
         for (ProfessionalProfile pro : results) {
             averageRatings.put(pro.getId(), reviewService.getAverageRating(pro));
+
+            // Si le client a envoyé sa position et que le pro a des coordonnées GPS
+            if (searchCriteria.getClientLatitude() != null && searchCriteria.getClientLongitude() != null
+                    && pro.getLatitude() != null && pro.getLongitude() != null) {
+
+                double dist = com.beautyconnect.utils.LocationUtils.calculateDistance(
+                        searchCriteria.getClientLatitude(), searchCriteria.getClientLongitude(),
+                        pro.getLatitude(), pro.getLongitude()
+                );
+                distances.put(pro.getId(), dist);
+            }
         }
 
-        model.addAttribute("searchCriteria", searchCriteria); // pour reafficher les filtres choisis dans le formulaire
+        model.addAttribute("searchCriteria", searchCriteria);
         model.addAttribute("results", results);
         model.addAttribute("averageRatings", averageRatings);
+        model.addAttribute("distances", distances); // <-- ON L'ENVOIE À LA VUE !
         model.addAttribute("genders", TargetGender.values());
         model.addAttribute("types", ServiceType.values());
         return "search/results";

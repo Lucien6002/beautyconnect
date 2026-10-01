@@ -15,7 +15,13 @@ public class SearchCriteria {
 
     private String city;
 
+    private String name;
+
     private TargetGender gender;
 
     private ServiceType type;
+
+    private Double clientLatitude;
+
+    private Double clientLongitude;
 }

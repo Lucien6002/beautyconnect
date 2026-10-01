@@ -10,6 +10,7 @@ import com.beautyconnect.model.TimeSlot;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
+import com.beautyconnect.utils.LocationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,8 +50,36 @@ public class ProfessionalService {
         // "aucun filtre" (null) plutot que comme "chercher les professionnels
         // dont la ville est une chaine vide", ce qui n'aurait aucun sens.
         String city = (criteria.getCity() == null || criteria.getCity().isBlank()) ? null : criteria.getCity().trim();
-        return professionalProfileRepository.search(city, criteria.getGender(), criteria.getType());
+        List<ProfessionalProfile> results = professionalProfileRepository.search(city, criteria.getGender(), criteria.getName(), criteria.getType());
+
+        // 1. On vérifie si le client nous a bien envoyé ses coordonnées GPS
+        if (criteria.getClientLatitude() != null && criteria.getClientLongitude() != null) {
+
+            double clientLat = criteria.getClientLatitude();
+            double clientLon = criteria.getClientLongitude();
+
+            // 2. On trie la liste
+            results.sort((pro1, pro2) -> {
+
+                // On calcule la distance pour le Pro 1.
+                // S'il n'a pas de coordonnées en base, on dit qu'il est à une distance infinie (Double.MAX_VALUE) pour le mettre à la fin.
+                double dist1 = (pro1.getLatitude() != null && pro1.getLongitude() != null)
+                        ? LocationUtils.calculateDistance(clientLat, clientLon, pro1.getLatitude(), pro1.getLongitude())
+                        : Double.MAX_VALUE;
+
+                // On fait pareil pour le Pro 2
+                double dist2 = (pro2.getLatitude() != null && pro2.getLongitude() != null)
+                        ? LocationUtils.calculateDistance(clientLat, clientLon, pro2.getLatitude(), pro2.getLongitude())
+                        : Double.MAX_VALUE;
+
+                // On compare les deux (celui qui a la plus petite distance passera devant)
+                return Double.compare(dist1, dist2);
+            });
+        }
+
+        return results;
     }
+
 
     @Transactional
     public ProfessionalProfile updateProfile(ProfessionalProfile profile, String businessName, String bio,

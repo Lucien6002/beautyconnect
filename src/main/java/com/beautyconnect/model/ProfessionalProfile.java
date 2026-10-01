@@ -53,6 +53,9 @@ public class ProfessionalProfile {
 
     private String address;
 
+    private Double latitude;
+    private Double longitude;
+
     @Column(name = "profile_photo_url")
     private String profilePhotoUrl;
 
