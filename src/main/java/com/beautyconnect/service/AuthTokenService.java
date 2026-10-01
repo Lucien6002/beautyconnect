@@ -6,6 +6,7 @@ import com.beautyconnect.model.VerificationToken;
 import com.beautyconnect.repository.UserRepository;
 import com.beautyconnect.repository.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthTokenService {
 
     private final VerificationTokenRepository tokenRepository;
@@ -25,6 +27,13 @@ public class AuthTokenService {
 
     @Value("${app.mail.from:contact@beautyconnect.fr}")
     private String from;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
+    @Value("${app.security.token-expiration-minutes:15}")
+    private int tokenExpirationMinutes;
+
 
     @Transactional
     public void generateAndSendActivationLink(User user) {
@@ -37,12 +46,12 @@ public class AuthTokenService {
         VerificationToken vt = VerificationToken.builder()
                 .user(user)
                 .token(token)
-                .expiryDate(LocalDateTime.now().plusHours(24)) // Valable 24 heures
+                .expiryDate(LocalDateTime.now().plusMinutes(tokenExpirationMinutes))
                 .build();
         tokenRepository.save(vt);
 
         // Crée le lien cliquable
-        String activationLink = "http://localhost:8080/activer-compte?token=" + token;
+        String activationLink = appBaseUrl + "/activer-compte?token=" + token;
 
         // Prépare l'e-mail
         SimpleMailMessage message = new SimpleMailMessage();
@@ -53,10 +62,13 @@ public class AuthTokenService {
                 + "Merci de vous être inscrit(e) sur BeautyConnect !\n"
                 + "Pour activer votre compte et vérifier votre adresse e-mail, veuillez cliquer sur le lien ci-dessous :\n\n"
                 + activationLink + "\n\n"
-                + "Ce lien est valable 24 heures.\n\n"
                 + "L'équipe BeautyConnect");
+        try{
+            mailSender.send(message);
+        }catch (Exception e){
+            log.warn("Erreur d'envoie d'email: "+ e.getMessage());
+        }
 
-        mailSender.send(message);
     }
 
     @Transactional
