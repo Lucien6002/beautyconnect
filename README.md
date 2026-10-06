@@ -62,6 +62,8 @@ n'en existe aucun :
 
 - Email : `admin@beautyconnect.local`
 - Mot de passe : `Admin123!`
+- Client : Email :`lea@beautyconnect.local `/ Mdp : `Client123!`
+- Pro : Email : `sarah@beautyconnect.local` / Mdp : `Pro12345!`
 
 Personnalisable via les variables d'environnement `ADMIN_EMAIL` et
 `ADMIN_PASSWORD` avant le premier demarrage.
