@@ -21,4 +21,11 @@ public interface PrestationRepository extends JpaRepository<Prestation, Long> {
     // Utilise dans l'espace pro (le professionnel doit voir aussi ses prestations
     // desactivees pour pouvoir les reactiver).
     List<Prestation> findByProfessional(ProfessionalProfile professional);
+
+    // SELECT * FROM prestations WHERE professional_id = ? AND active = false
+    // Prestations retirees par le pro : affichees sur la page "Prestations
+    // supprimees" d'ou il peut les restaurer.
+    List<Prestation> findByProfessionalAndActiveFalse(ProfessionalProfile professional);
+
+    long countByProfessionalAndActiveFalse(ProfessionalProfile professional);
 }
