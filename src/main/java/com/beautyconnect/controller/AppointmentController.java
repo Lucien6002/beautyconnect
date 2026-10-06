@@ -38,7 +38,7 @@ public class AppointmentController {
             return "redirect:/professionnels/" + professionalId;
         }
         try {
-            ProfessionalProfile professional = professionalService.getProfileOrThrow(professionalId);
+            ProfessionalProfile professional = professionalService.getPublicProfileOrThrow(professionalId);
             appointmentService.book(principal.getUser(), professional, appointmentForm);
             redirectAttributes.addFlashAttribute("success",
                     "Votre demande de rendez-vous a ete envoyee. Vous recevrez un mail des sa confirmation.");

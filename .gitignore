@@ -28,11 +28,18 @@ build/
 
 ### VS Code ###
 .vscode/
+# Sortie de compilation de l'extension Java de VS Code (Spring Boot Dashboard)
+bin/
+# Espace de travail Eclipse/STS
+.metadata/
 
 ### Environnement ###
 .env
+.env.*
 *.log
 
 ### OS ###
 .DS_Store
 Thumbs.db
+
+

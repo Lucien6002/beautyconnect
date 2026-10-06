@@ -25,7 +25,7 @@ public class ProfessionalPublicController {
     // (ex: /professionnels/42 -> id = 42) et le convertit automatiquement en Long.
     @GetMapping("/professionnels/{id}")
     public String viewProfile(@PathVariable Long id, Model model) {
-        ProfessionalProfile professional = professionalService.getProfileOrThrow(id);
+        ProfessionalProfile professional = professionalService.getPublicProfileOrThrow(id);
 
         model.addAttribute("professional", professional);
         model.addAttribute("prestations", professionalService.getActivePrestations(professional));
