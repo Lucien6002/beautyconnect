@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Configurer Gradle (avec cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Rendre le wrapper exécutable
+        run: chmod +x gradlew
+
+      - name: Lancer les tests
+        run: ./gradlew test --no-daemon
+
+      - name: Publier le rapport en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-tests
+          path: build/reports/tests/test/
