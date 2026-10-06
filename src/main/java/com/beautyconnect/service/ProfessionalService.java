@@ -3,6 +3,7 @@ package com.beautyconnect.service;
 import com.beautyconnect.dto.PrestationForm;
 import com.beautyconnect.dto.SearchCriteria;
 import com.beautyconnect.dto.TimeSlotForm;
+import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.exception.ResourceNotFoundException;
 import com.beautyconnect.model.Prestation;
 import com.beautyconnect.model.ProfessionalProfile;
@@ -14,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -83,6 +87,14 @@ public class ProfessionalService {
         return prestationRepository.findByProfessionalAndActiveTrue(professional);
     }
 
+    public List<Prestation> getRemovedPrestations(ProfessionalProfile professional) {
+        return prestationRepository.findByProfessionalAndActiveFalse(professional);
+    }
+
+    public long countRemovedPrestations(ProfessionalProfile professional) {
+        return prestationRepository.countByProfessionalAndActiveFalse(professional);
+    }
+
     @Transactional
     public Prestation addPrestation(ProfessionalProfile professional, PrestationForm form) {
         Prestation prestation = Prestation.builder()
@@ -112,6 +124,21 @@ public class ProfessionalService {
         prestationRepository.save(prestation);
     }
 
+    // Inverse de removePrestation : la prestation retiree redevient visible
+    // sur la vitrine publique et reservable. Possible car le retrait est une
+    // suppression douce (la ligne est conservee en base).
+    @Transactional
+    public Prestation restorePrestation(ProfessionalProfile professional, Long prestationId) {
+        Prestation prestation = prestationRepository.findById(prestationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
+        assertOwnership(professional, prestation.getProfessional());
+        if (prestation.isActive()) {
+            throw new IllegalOperationException("La prestation \"" + prestation.getName() + "\" est deja active.");
+        }
+        prestation.setActive(true);
+        return prestationRepository.save(prestation);
+    }
+
     public List<TimeSlot> getAvailableTimeSlots(ProfessionalProfile professional) {
         return timeSlotRepository.findByProfessionalAndAvailableTrueOrderByStartDateTimeAsc(professional);
     }
@@ -120,11 +147,19 @@ public class ProfessionalService {
         return timeSlotRepository.findByProfessionalOrderByStartDateTimeAsc(professional);
     }
 
+    // Refuse un creneau qui existe deja pour ce professionnel (meme jour et
+    // meme heure, qu'il soit disponible ou deja reserve). Les secondes sont
+    // ignorees : le formulaire saisit l'heure a la minute pres.
     @Transactional
     public TimeSlot addTimeSlot(ProfessionalProfile professional, TimeSlotForm form) {
+        LocalDateTime start = form.getStartDateTime().truncatedTo(ChronoUnit.MINUTES);
+        if (timeSlotRepository.existsByProfessionalAndStartDateTime(professional, start)) {
+            throw new IllegalOperationException("Vous avez deja un creneau le "
+                    + start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'a' HH:mm")) + ".");
+        }
         TimeSlot slot = TimeSlot.builder()
                 .professional(professional)
-                .startDateTime(form.getStartDateTime())
+                .startDateTime(start)
                 .available(true)
                 .build();
         return timeSlotRepository.save(slot);

@@ -2,6 +2,8 @@ package com.beautyconnect.controller;
 
 import com.beautyconnect.dto.PrestationForm;
 import com.beautyconnect.dto.TimeSlotForm;
+import com.beautyconnect.exception.IllegalOperationException;
+import com.beautyconnect.model.Prestation;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.ServiceType;
 import com.beautyconnect.model.TargetGender;
@@ -85,9 +87,8 @@ public class ProfessionalDashboardController {
     @GetMapping("/prestations")
     public String prestations(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        model.addAttribute("prestations", professionalService.getPrestations(profile));
         model.addAttribute("prestationForm", new PrestationForm());
-        model.addAttribute("types", ServiceType.values());
+        addPrestationsPageAttributes(profile, model);
         return "professional/prestations";
     }
 
@@ -107,8 +108,7 @@ public class ProfessionalDashboardController {
             // (pas de redirect) pour que Thymeleaf puisse montrer les messages
             // d'erreur a cote des champs invalides ; il faut donc repeupler
             // manuellement les autres attributs necessaires a la vue.
-            model.addAttribute("prestations", professionalService.getPrestations(profile));
-            model.addAttribute("types", ServiceType.values());
+            addPrestationsPageAttributes(profile, model);
             return "professional/prestations";
         }
         professionalService.addPrestation(profile, prestationForm);
@@ -121,8 +121,40 @@ public class ProfessionalDashboardController {
                                     RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         professionalService.removePrestation(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Prestation supprimee.");
+        redirectAttributes.addFlashAttribute("success",
+                "Prestation retiree. Vous pouvez la restaurer depuis \"Prestations supprimees\".");
         return "redirect:/pro/prestations";
+    }
+
+    // Prestations retirees par le pro, avec un bouton pour les restaurer.
+    @GetMapping("/prestations/supprimees")
+    public String removedPrestations(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
+        model.addAttribute("prestations", professionalService.getRemovedPrestations(profile));
+        return "professional/prestations-removed";
+    }
+
+    @PostMapping("/prestations/{id}/restaurer")
+    public String restorePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+                                     RedirectAttributes redirectAttributes) {
+        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
+        try {
+            Prestation prestation = professionalService.restorePrestation(profile, id);
+            redirectAttributes.addFlashAttribute("success",
+                    "Prestation \"" + prestation.getName() + "\" restauree : elle est de nouveau proposee aux clients.");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/pro/prestations/supprimees";
+    }
+
+    // Attributs communs a l'affichage de la page prestations (premier
+    // affichage et reaffichage apres une erreur de validation) : seules les
+    // prestations actives sont listees, les retirees sont sur une page a part.
+    private void addPrestationsPageAttributes(ProfessionalProfile profile, Model model) {
+        model.addAttribute("prestations", professionalService.getActivePrestations(profile));
+        model.addAttribute("removedCount", professionalService.countRemovedPrestations(profile));
+        model.addAttribute("types", ServiceType.values());
     }
 
     // ---- Creneaux ----
@@ -141,13 +173,20 @@ public class ProfessionalDashboardController {
                                BindingResult bindingResult, Model model,
                                RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("timeSlots", professionalService.getAllTimeSlots(profile));
-            return "professional/slots";
+        if (!bindingResult.hasErrors()) {
+            try {
+                professionalService.addTimeSlot(profile, timeSlotForm);
+                redirectAttributes.addFlashAttribute("success", "Creneau ajoute.");
+                return "redirect:/pro/creneaux";
+            } catch (IllegalOperationException ex) {
+                // Doublon detecte par le service : on l'attache au champ du
+                // formulaire pour l'afficher sous la date, comme une erreur
+                // de validation classique (la date saisie reste remplie).
+                bindingResult.rejectValue("startDateTime", "duplicate", ex.getMessage());
+            }
         }
-        professionalService.addTimeSlot(profile, timeSlotForm);
-        redirectAttributes.addFlashAttribute("success", "Creneau ajoute.");
-        return "redirect:/pro/creneaux";
+        model.addAttribute("timeSlots", professionalService.getAllTimeSlots(profile));
+        return "professional/slots";
     }
 
     @PostMapping("/creneaux/{id}/supprimer")

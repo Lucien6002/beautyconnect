@@ -4,6 +4,7 @@ import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -20,4 +21,8 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
     // Meme chose mais sans filtrer sur "available" : utilise cote pro pour voir
     // TOUS ses creneaux, y compris ceux deja reserves.
     List<TimeSlot> findByProfessionalOrderByStartDateTimeAsc(ProfessionalProfile professional);
+
+    // Detection des doublons : ce professionnel a-t-il deja un creneau qui
+    // commence exactement a cette date et heure ?
+    boolean existsByProfessionalAndStartDateTime(ProfessionalProfile professional, LocalDateTime startDateTime);
 }

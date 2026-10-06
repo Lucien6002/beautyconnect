@@ -7,7 +7,12 @@
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
 <main class="flex-grow-1 container my-5">
-    <h1 class="h4 mb-4">Mes prestations</h1>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h1 class="h4 mb-0">Mes prestations</h1>
+        <a th:href="@{/pro/prestations/supprimees}" class="btn btn-sm btn-outline-secondary">
+            Prestations supprimees <span class="badge text-bg-secondary" th:text="${removedCount}"></span>
+        </a>
+    </div>
 
     <div class="row g-4">
         <div class="col-lg-7">
@@ -16,14 +21,14 @@
                     <table class="table mb-0 align-middle">
                         <thead><tr><th>Nom</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr></thead>
                         <tbody>
-                        <tr th:each="p : ${prestations}" th:classappend="${!p.active} ? 'text-muted text-decoration-line-through'">
+                        <tr th:each="p : ${prestations}">
                             <td th:text="${p.name}"></td>
                             <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
                             <td th:text="${p.durationMinutes} + ' min'"></td>
                             <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
                             <td>
-                                <form th:if="${p.active}" th:action="@{'/pro/prestations/' + ${p.id} + '/supprimer'}" method="post"
-                                      onsubmit="return confirm('Retirer cette prestation ?');">
+                                <form th:action="@{'/pro/prestations/' + ${p.id} + '/supprimer'}" method="post"
+                                      onsubmit="return confirm('Retirer cette prestation ? Vous pourrez la restaurer depuis Prestations supprimees.');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
                                 </form>
                             </td>
