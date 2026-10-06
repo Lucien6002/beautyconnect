@@ -1,53 +1,382 @@
-/* BeautyConnect - surcouche legere a Bootstrap */
+/* ==========================================================================
+   BeautyConnect — Design System & Tokens (J1 / J2)
+   Contrat d'équipe : carnet de quartier, accessible et responsive
+   ========================================================================== */
+
+:root {
+  /* --- 1. Palette imposée --- */
+  --bc-ink: #281F35;
+  /* Titres, navigation, texte fort */
+  --bc-text: #3E354A;
+  /* Corps de texte */
+  --bc-muted: #665D70;
+  /* Aide, métadonnées, sous-titres */
+  --bc-primary: #6244C5;
+  /* Action principale et focus accessible */
+  --bc-primary-soft: #EEE9FC;
+  /* Filtres actifs, surfaces d'accent doux */
+  --bc-coral: #D85F69;
+  /* Accent rare (erreurs, alertes) */
+  --bc-mint: #D9F2E9;
+  /* Confirmation, disponibilité créneau */
+  --bc-canvas: #FAF9FC;
+  /* Fond général de l'application */
+  --bc-surface: #FFFFFF;
+  /* Cartes et formulaires */
+
+  /* --- 2. Typographies imposées --- */
+  --bc-font-titles: 'Fraunces', Georgia, serif;
+  --bc-font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  /* --- 3. Échelle typographique imposée --- */
+  --bc-font-hero: clamp(2.25rem, 5vw, 4rem);
+  --bc-font-h1: 2rem;
+  --bc-font-h2: 1.25rem;
+  --bc-font-base: 1rem;
+  --bc-font-meta: 0.875rem;
+
+  /* --- 4. Rayons de courbure (12–16 px) & espacements --- */
+  --bc-radius-sm: 8px;
+  --bc-radius-md: 12px;
+  --bc-radius-lg: 16px;
+
+  /* --- 5. Ombres discrètes --- */
+  --bc-shadow-card: 0 2px 8px rgba(40, 31, 53, 0.05);
+  --bc-shadow-focus: 0 4px 16px rgba(98, 68, 197, 0.12);
+}
+
+/* ==========================================================================
+   Base globale & Typographie
+   ========================================================================== */
 
 body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background-color: #faf8fb;
+  font-family: var(--bc-font-body);
+  background-color: var(--bc-canvas);
+  color: var(--bc-text);
+  font-size: var(--bc-font-base);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
+main {
+  flex: 1 0 auto;
+}
+
+/* Titres sous la police Fraunces */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.bc-font-title {
+  font-family: var(--bc-font-titles);
+  color: var(--bc-ink);
+  font-weight: 700;
+}
+
+/* Échelle typographique */
+.bc-hero-title {
+  font-size: var(--bc-font-hero);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: var(--bc-font-h1);
+}
+
+h2 {
+  font-size: var(--bc-font-h2);
+}
+
+/* Métadonnées et textes secondaires */
+small,
+.text-muted,
+.bc-meta {
+  font-size: var(--bc-font-meta);
+  color: var(--bc-muted) !important;
+}
+
+/* Navigation brand */
 .navbar-brand {
-    letter-spacing: 0.5px;
+  font-family: var(--bc-font-titles);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--bc-ink) !important;
+  letter-spacing: 0.5px;
 }
 
-.card {
-    border: none;
-    border-radius: 0.75rem;
+/* Liens */
+a {
+  color: var(--bc-primary);
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
 }
+
+a:hover {
+  color: #4B32A0;
+}
+
+/* ==========================================================================
+   Accessibilité obligatoire (Focus clavier visible & contraste)
+   ========================================================================== */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--bc-primary) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Cartes & Conteneurs (Rayon 16 px, ombre discrète)
+   ========================================================================== */
+
+.card,
+.bc-card {
+  background-color: var(--bc-surface);
+  border: 1px solid rgba(40, 31, 53, 0.06);
+  border-radius: var(--bc-radius-lg);
+  box-shadow: var(--bc-shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* ==========================================================================
+   Boutons (Rayon 12 px, hauteur min 44 px mobile)
+   ========================================================================== */
 
 .btn {
-    border-radius: 0.5rem;
+  font-family: var(--bc-font-body);
+  font-weight: 600;
+  border-radius: var(--bc-radius-md);
+  min-height: 44px;
+  /* Zone tactile minimale recommandée */
+  padding: 0.5rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-footer a {
-    color: #f3c1d3;
-}
-
-/* Palette douce evoquant l'univers beaute, tout en restant sur Bootstrap standard */
-.bg-primary {
-    background-color: #b76e9b !important;
-}
-
-.btn-primary {
-    background-color: #b76e9b;
-    border-color: #b76e9b;
+/* Surcharge Bootstrap .btn-primary */
+.btn-primary,
+.btn-bc-primary {
+  background-color: var(--bc-primary);
+  border-color: var(--bc-primary);
+  color: #FFFFFF !important;
 }
 
 .btn-primary:hover,
-.btn-primary:focus {
-    background-color: #a15c86;
-    border-color: #a15c86;
+.btn-primary:focus,
+.btn-bc-primary:hover {
+  background-color: #5136A8;
+  border-color: #5136A8;
+  color: #FFFFFF !important;
 }
 
-.btn-outline-primary {
-    color: #b76e9b;
-    border-color: #b76e9b;
+/* Surcharge Bootstrap .btn-outline-primary */
+.btn-outline-primary,
+.btn-bc-outline {
+  color: var(--bc-primary);
+  border-color: var(--bc-primary);
+  background-color: transparent;
 }
 
-.btn-outline-primary:hover {
-    background-color: #b76e9b;
-    border-color: #b76e9b;
+.btn-outline-primary:hover,
+.btn-bc-outline:hover {
+  background-color: var(--bc-primary-soft);
+  border-color: var(--bc-primary);
+  color: var(--bc-primary);
+}
+
+/* ==========================================================================
+   Utilitaires Bootstrap surchargés avec les tokens
+   ========================================================================== */
+
+.bg-primary {
+  background-color: var(--bc-primary) !important;
 }
 
 .text-primary {
-    color: #b76e9b !important;
+  color: var(--bc-primary) !important;
+}
+
+/* Surfaces et badges de filtre actif */
+.bg-primary-soft {
+  background-color: var(--bc-primary-soft) !important;
+  color: var(--bc-primary) !important;
+}
+
+/* ==========================================================================
+   Alertes & Retours d'état (Mint & Coral)
+   ========================================================================== */
+
+/* Confirmation / Disponibilité créneau */
+.alert-success,
+.bc-alert-success {
+  background-color: var(--bc-mint);
+  color: #174E37;
+  border: 1px solid #B8E4D3;
+  border-radius: var(--bc-radius-md);
+}
+
+/* Badge créneau disponible / validation */
+.badge-mint,
+.badge-success {
+  background-color: var(--bc-mint);
+  color: #174E37;
+  font-weight: 600;
+  border-radius: var(--bc-radius-sm);
+  padding: 0.35rem 0.65rem;
+}
+
+/* Erreurs : jamais la couleur seule */
+.alert-danger,
+.bc-alert-danger {
+  background-color: #FDEDEE;
+  color: #8C1C24;
+  border: 1px solid var(--bc-coral);
+  border-radius: var(--bc-radius-md);
+}
+
+/* Erreurs de formulaire associées aux champs (th:errors) */
+.invalid-feedback,
+.text-danger {
+  color: var(--bc-coral) !important;
+  font-size: var(--bc-font-meta);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Pied de page (Footer)
+   ========================================================================== */
+
+footer,
+.bc-footer {
+  background-color: var(--bc-surface);
+  border-top: 1px solid rgba(40, 31, 53, 0.08);
+  color: var(--bc-muted);
+  font-size: var(--bc-font-meta);
+  padding: 1.5rem 0;
+  margin-top: 3rem;
+}
+
+footer a {
+  color: var(--bc-primary);
+}
+
+footer a:hover {
+  color: #4B32A0;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Accessibilité mouvements réduits (prefers-reduced-motion)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+
+/* ==========================================================================
+   Bandeau Héros & Barre de recherche capsule façon Planity
+   ========================================================================== */
+/* ==========================================================================
+   Bandeau Héros Plein Écran (100% de la hauteur de l'écran)
+   ========================================================================== */
+.bc-hero {
+  position: relative;
+  background: linear-gradient(135deg,
+      rgba(40, 31, 53, 0.72) 0%,
+      rgba(98, 68, 197, 0.55) 100%), url('../images/acceuil1.png') center center / cover no-repeat;
+  color: #FFFFFF;
+
+  /* Plein écran : 100% de la hauteur moins la navbar */
+  min-height: calc(100vh - 72px);
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+.bc-hero h1 {
+  color: #FFFFFF !important;
+  font-family: var(--bc-font-titles);
+  font-size: clamp(2.3rem, 5vw, 3.8rem);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.bc-hero p.lead {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  max-width: 700px;
+  margin: 0 auto 3rem;
+}
+
+/* La capsule de recherche Planity */
+.bc-search-capsule {
+  background: var(--bc-surface);
+  border-radius: 50px;
+  padding: 0.6rem 0.8rem 0.6rem 1.5rem;
+  box-shadow: 0 16px 36px rgba(40, 31, 53, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+/* Séparateurs verticaux entre les champs */
+.bc-search-capsule .form-control,
+.bc-search-capsule .form-select {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.5rem 0.75rem;
+  color: var(--bc-ink);
+  font-weight: 500;
+}
+
+.bc-search-capsule .form-control:focus,
+.bc-search-capsule .form-select:focus {
+  outline: none;
+  box-shadow: none;
+  background: rgba(98, 68, 197, 0.04);
+  border-radius: var(--bc-radius-sm);
+}
+
+.bc-search-divider {
+  border-right: 1px solid rgba(40, 31, 53, 0.12);
+}
+
+@media (max-width: 991px) {
+  .bc-search-capsule {
+    border-radius: var(--bc-radius-md);
+    padding: 1.25rem;
+  }
+
+  .bc-search-divider {
+    border-right: none;
+    border-bottom: 1px solid rgba(40, 31, 53, 0.12);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
 }
