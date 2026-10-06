@@ -83,4 +83,18 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return user.isEnabled();
     }
+
+    // equals/hashCode bases sur l'email : le SessionRegistry (voir
+    // SecurityConfig) range les sessions par principal dans une Map. Sans
+    // cela, deux connexions du meme utilisateur seraient vues comme deux
+    // principals differents et l'admin ne pourrait pas les retrouver.
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof CustomUserDetails other && getUsername().equals(other.getUsername());
+    }
+
+    @Override
+    public int hashCode() {
+        return getUsername().hashCode();
+    }
 }

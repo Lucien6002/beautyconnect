@@ -26,12 +26,45 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
     // Profils en attente de validation : file d'attente de l'espace admin.
     List<ProfessionalProfile> findByValidatedFalse();
 
+    // Compteurs pour les metriques admin : COUNT(*) en SQL plutot que de
+    // charger toute la liste en memoire pour appeler .size().
+    long countByValidated(boolean validated);
+
+    /*
+     * Requetes de l'espace admin. "JOIN FETCH p.user" charge le User dans la
+     * MEME requete SQL que le profil : indispensable car ProfessionalProfile.user
+     * est LAZY et spring.jpa.open-in-view=false, donc la session Hibernate est
+     * deja fermee quand la vue Thymeleaf lit p.user.email
+     * (sinon LazyInitializationException).
+     */
+    @Query("""
+            SELECT p FROM ProfessionalProfile p JOIN FETCH p.user
+            ORDER BY p.validated ASC, p.createdAt ASC
+            """)
+    List<ProfessionalProfile> findAllWithUser();
+
+    @Query("""
+            SELECT p FROM ProfessionalProfile p JOIN FETCH p.user
+            WHERE p.validated = :validated
+            ORDER BY p.createdAt ASC
+            """)
+    List<ProfessionalProfile> findByValidatedWithUser(@Param("validated") boolean validated);
+
+    @Query("SELECT p FROM ProfessionalProfile p JOIN FETCH p.user WHERE p.id = :id")
+    Optional<ProfessionalProfile> findByIdWithUser(@Param("id") Long id);
+
+    // Profil consultable/reservable par le public : un compte desactive par
+    // l'admin ne doit plus etre accessible, meme par URL directe.
+    @Query("SELECT p FROM ProfessionalProfile p WHERE p.id = :id AND p.user.enabled = true")
+    Optional<ProfessionalProfile> findPublicById(@Param("id") Long id);
+
     /**
      * Recherche multicritere utilisee par le moteur de recherche public :
      * - ville (correspondance partielle, insensible a la casse)
      * - sexe de la clientele visee (optionnel)
      * - type de prestation propose (optionnel)
-     * Seuls les profils valides par l'administrateur sont retournes.
+     * Seuls les profils valides par l'administrateur ET dont le compte n'a
+     * pas ete desactive (User.enabled) sont retournes.
      *
      * Cette methode utilise @Query avec du JPQL (Java Persistence Query
      * Language) ecrit a la main, contrairement aux autres methodes de ce
@@ -55,6 +88,7 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
             SELECT DISTINCT p FROM ProfessionalProfile p
             LEFT JOIN Prestation pr ON pr.professional = p AND pr.active = true
             WHERE p.validated = true
+              AND p.user.enabled = true
               AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', CAST(:city AS string), '%')))
               AND (:gender IS NULL OR p.targetGender = :gender OR p.targetGender = com.beautyconnect.model.TargetGender.MIXTE)
               And (:name Is NULL OR lower(p.businessName) LiKE LOWER (CONCAT('%', CAST(:name AS string), '%')))

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Examen du profil')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+<div th:replace="~{fragments/alerts :: alerts}"></div>
+
+<main class="flex-grow-1 container my-5">
+    <a href="/admin/professionnels" class="small text-decoration-none">&larr; Retour a la liste</a>
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mt-2 mb-4">
+        <div>
+            <h1 class="h4 mb-1" th:text="${professional.businessName}"></h1>
+            <div class="text-muted small" th:text="'Inscrit le ' + ${#temporals.format(professional.createdAt, 'dd/MM/yyyy HH:mm')}"></div>
+        </div>
+        <div class="d-flex gap-1">
+            <span class="badge" th:classappend="${professional.validated} ? 'text-bg-success' : 'text-bg-warning'"
+                  th:text="${professional.validated} ? 'Valide' : 'En attente'"></span>
+            <span class="badge" th:classappend="${professional.user.enabled} ? 'text-bg-light border' : 'text-bg-danger'"
+                  th:text="${professional.user.enabled} ? 'Compte actif' : 'Compte desactive'"></span>
+        </div>
+    </div>
+
+    <div class="alert alert-danger" th:if="${!professional.user.enabled}">
+        Ce compte est desactive : reactivez-le depuis la liste avant de valider le profil.
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Vitrine</h2></div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Ville</dt>
+                        <dd class="col-sm-8" th:text="${professional.city}"></dd>
+                        <dt class="col-sm-4">Adresse</dt>
+                        <dd class="col-sm-8" th:text="${professional.address} ?: 'Non renseignee'"
+                            th:classappend="${professional.address == null} ? 'text-muted'"></dd>
+                        <dt class="col-sm-4">Clientele visee</dt>
+                        <dd class="col-sm-8" th:text="${professional.targetGender}"></dd>
+                        <dt class="col-sm-4">Presentation</dt>
+                        <dd class="col-sm-8" style="white-space: pre-line"
+                            th:text="${#strings.isEmpty(professional.bio)} ? 'Aucune presentation' : ${professional.bio}"
+                            th:classappend="${#strings.isEmpty(professional.bio)} ? 'text-muted'"></dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Prestations declarees</h2></div>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead><tr><th>Nom</th><th>Type</th><th>Duree</th><th>Tarif</th><th>Statut</th></tr></thead>
+                        <tbody>
+                        <tr th:each="pr : ${prestations}">
+                            <td th:text="${pr.name}"></td>
+                            <td th:text="${pr.type}"></td>
+                            <td th:text="${pr.durationMinutes} + ' min'"></td>
+                            <td th:text="${#numbers.formatDecimal(pr.price, 1, 2, 'COMMA')} + ' EUR'"></td>
+                            <td>
+                                <span class="badge" th:classappend="${pr.active} ? 'text-bg-light border' : 'text-bg-secondary'"
+                                      th:text="${pr.active} ? 'Active' : 'Retiree'"></span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(prestations)}">
+                        Aucune prestation declaree pour le moment.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Contact</h2></div>
+                <div class="card-body small">
+                    <div class="fw-semibold" th:text="${professional.user.fullName}"></div>
+                    <div th:text="${professional.user.email}"></div>
+                    <div th:text="${professional.user.phone} ?: 'Telephone non renseigne'"
+                         th:classappend="${professional.user.phone == null} ? 'text-muted'"></div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white"><h2 class="h6 mb-0">Decision</h2></div>
+                <div class="card-body">
+                    <th:block th:unless="${professional.validated}">
+                        <p class="small text-muted">
+                            Une fois valide, le profil apparait dans la recherche publique et le professionnel
+                            est prevenu par mail.
+                        </p>
+                        <form th:action="@{'/admin/professionnels/' + ${professional.id} + '/valider'}" method="post">
+                            <button type="submit" class="btn btn-success w-100" th:disabled="${!professional.user.enabled}">
+                                Valider le profil
+                            </button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${professional.validated}">
+                        <p class="small text-muted">
+                            Retirer la validation masque le profil de la recherche publique ; le compte reste actif.
+                        </p>
+                        <form th:action="@{'/admin/professionnels/' + ${professional.id} + '/retirer-validation'}" method="post"
+                              onsubmit="return confirm('Retirer la validation de ce profil ?');">
+                            <button type="submit" class="btn btn-outline-danger w-100">Retirer la validation</button>
+                        </form>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

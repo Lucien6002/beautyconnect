@@ -1,6 +1,7 @@
 package com.beautyconnect.service;
 
 import com.beautyconnect.model.Appointment;
+import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,17 @@ import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Envoi des mails transactionnels : confirmation de rendez-vous (client)
+ * et notification de validation du profil (professionnel).
+ * En environnement de developpement (sans serveur SMTP disponible), l'echec
+ * d'envoi est journalise plutot que de faire planter la demande metier
+ * (voir app.mail.fail-silently).
+ *
+ * @Slf4j (Lombok) : genere automatiquement un champ "log" (un Logger) pretant
+ * a etre utilise directement, sans avoir a ecrire
+ * "private static final Logger log = LoggerFactory.getLogger(EmailService.class);" a la main.
+ */
 @Service
 @Slf4j
 public class EmailService {
@@ -65,6 +77,31 @@ public class EmailService {
                 appointment.getProfessional().getCity()
         );
 
+        send(to, subject, body);
+    }
+
+    // Prevenir le professionnel que son profil est desormais visible
+    // publiquement (appele par AdminService.validateProfessional). Le User
+    // doit etre deja charge (profil obtenu via findByIdWithUser).
+    public void sendProfessionalValidated(ProfessionalProfile profile) {
+        String to = profile.getUser().getEmail();
+        String subject = "Votre profil BeautyConnect a ete valide";
+        String body = """
+                Bonjour %s,
+
+                Bonne nouvelle : votre profil professionnel "%s" a ete valide par
+                notre equipe. Il apparait desormais dans les resultats de recherche
+                et les clients peuvent reserver vos creneaux.
+
+                Pensez a garder vos prestations et disponibilites a jour.
+
+                A bientot sur BeautyConnect !
+                """.formatted(profile.getUser().getFirstName(), profile.getBusinessName());
+
+        send(to, subject, body);
+    }
+
+    private void send(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(to);
@@ -73,12 +110,12 @@ public class EmailService {
 
         try {
             mailSender.send(message);
-            log.info("Mail de confirmation envoye a {}", to);
+            log.info("Mail \"{}\" envoye a {}", subject, to);
         } catch (Exception ex) {
             if (!failSilently) {
                 throw ex;
             }
-            log.warn("Echec de l'envoi du mail de confirmation a {} : {}", to, ex.getMessage());
+            log.warn("Echec de l'envoi du mail a {} (SMTP non configure ?) : {}", to, ex.getMessage());
         }
     }
 }

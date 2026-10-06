@@ -24,6 +24,9 @@
                 <div th:if="${param.erreur}" class="alert alert-danger">
                     Email ou mot de passe incorrect.
                 </div>
+                <div th:if="${param.desactive}" class="alert alert-warning">
+                    Votre compte a ete desactive par un administrateur.
+                </div>
                 <div th:if="${param.deconnecte}" class="alert alert-info">
                     Vous avez ete deconnecte.
                 </div>
