@@ -1,6 +1,7 @@
 package com.beautyconnect.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,5 +19,6 @@ public class AppointmentForm {
     @NotNull(message = "Veuillez choisir un creneau")
     private Long timeSlotId;
 
-    private String notes; // message optionnel du client au professionnel
+    @Size(max = 1000, message = "Le message ne doit pas dépasser 1 000 caractères")
+    private String notes;
 }

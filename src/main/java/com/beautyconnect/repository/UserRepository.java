@@ -21,6 +21,10 @@ import java.util.Optional;
  */
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u WHERE u.email = :email")
+    Optional<User> findByEmailForUpdate(@org.springframework.data.repository.query.Param("email") String email);
+
     // Equivaut a : SELECT * FROM users WHERE email = ?
     // Optional<User> : peut ne rien retourner (aucun utilisateur avec cet email)
     // sans avoir a manipuler une valeur "null" dangereuse a la main.

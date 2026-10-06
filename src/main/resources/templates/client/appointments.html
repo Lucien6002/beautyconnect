@@ -43,6 +43,7 @@
                         </span>
                     </td>
                     <td>
+                        <a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${a.professional.coordinatesPublic and a.professional.latitude != null and a.professional.longitude != null ? a.professional.latitude + ',' + a.professional.longitude : a.professional.city},travelmode='walking')}" class="btn btn-sm btn-outline-primary mb-2" target="_blank" rel="noopener noreferrer">Itinéraire à pied</a>
                         <form th:if="${a.status.name() == 'EN_ATTENTE' or a.status.name() == 'CONFIRME'}"
                               th:action="@{'/rendez-vous/' + ${a.id} + '/annuler'}" method="post"
                               onsubmit="return confirm('Annuler ce rendez-vous ?');">

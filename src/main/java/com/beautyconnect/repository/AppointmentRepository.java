@@ -8,12 +8,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 /**
  * Acces aux donnees pour l'entite {@link Appointment}.
  * Voir {@link UserRepository} pour l'explication generale des requetes derivees.
  */
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Appointment a WHERE a.id = :id")
+    Optional<Appointment> findByIdForUpdate(@Param("id") Long id);
+
+    boolean existsByTimeSlotId(Long id);
 
     // Historique des rendez-vous d'un client, du plus recent au plus ancien.
     @Query("""
@@ -27,7 +36,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByClientOrderByCreatedAtDesc(@Param("client") User client);
 
     // Historique des rendez-vous recus par un professionnel.
-    List<Appointment> findByProfessionalOrderByCreatedAtDesc(ProfessionalProfile professional);
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.client JOIN FETCH a.prestation JOIN FETCH a.timeSlot WHERE a.professional = :professional ORDER BY a.createdAt DESC")
+    List<Appointment> findByProfessionalOrderByCreatedAtDesc(@Param("professional") ProfessionalProfile professional);
 
     // Combine 3 conditions (client + professionnel + statut) reliees par des
     // "AND" implicites (traduits du nom de la methode). Utilise par

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@org.springframework.context.annotation.Profile("dev & !prod")
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -45,6 +46,7 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName("Admin")
                     .role(Role.ADMIN)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(admin);
             log.info("Admin créé : {}", adminEmail);
@@ -60,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
                     .phone("0601020304")
                     .role(Role.PROFESSIONAL)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(proUser);
 
@@ -70,6 +73,7 @@ public class DataInitializer implements CommandLineRunner {
                     .city("Paris")
                     .address("12 rue des Fleurs")
                     .targetGender(TargetGender.FEMME)
+                    .coordinatesPublic(true)
                     .latitude(48.8566)
                     .longitude(2.3522)
                     .validated(true)
@@ -118,6 +122,7 @@ public class DataInitializer implements CommandLineRunner {
                     if (p.getLatitude() == null) {
                         p.setLatitude(48.8566);
                         p.setLongitude(2.3522);
+                        p.setCoordinatesPublic(true);
                         professionalProfileRepository.save(p);
                         log.info("Coordonnées GPS de Sarah mises à jour avec succès !");
                     }
@@ -135,6 +140,7 @@ public class DataInitializer implements CommandLineRunner {
                     .phone("0602030405")
                     .role(Role.PROFESSIONAL)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(chloeUser);
 
@@ -145,6 +151,7 @@ public class DataInitializer implements CommandLineRunner {
                     .city("Lyon")
                     .address("5 rue de la République")
                     .targetGender(TargetGender.MIXTE)
+                    .coordinatesPublic(true)
                     .latitude(45.7640)
                     .longitude(4.8357)
                     .validated(true)
@@ -164,6 +171,7 @@ public class DataInitializer implements CommandLineRunner {
                     .phone("0611223344")
                     .role(Role.CLIENT)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(client);
             log.info("Cliente Léa créée !");

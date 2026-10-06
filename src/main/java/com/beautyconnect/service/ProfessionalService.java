@@ -34,6 +34,7 @@ public class ProfessionalService {
     private final ProfessionalProfileRepository professionalProfileRepository;
     private final PrestationRepository prestationRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
 
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
     // une exception metier personnalisee plutot que de retourner null (ce qui
@@ -57,40 +58,19 @@ public class ProfessionalService {
 
     // Point d'entree du moteur de recherche public (voir SearchController).
     public List<ProfessionalProfile> search(SearchCriteria criteria) {
-        // Un champ ville vide/blanc dans le formulaire est traite comme
-        // "aucun filtre" (null) plutot que comme "chercher les professionnels
-        // dont la ville est une chaine vide", ce qui n'aurait aucun sens.
-        String city = (criteria.getCity() == null || criteria.getCity().isBlank()) ? null : criteria.getCity().trim();
-        List<ProfessionalProfile> results = professionalProfileRepository.search(city, criteria.getGender(), criteria.getName(), criteria.getType());
-
-        // 1. On vérifie si le client nous a bien envoyé ses coordonnées GPS
-        if (criteria.getClientLatitude() != null && criteria.getClientLongitude() != null) {
-
-            double clientLat = criteria.getClientLatitude();
-            double clientLon = criteria.getClientLongitude();
-
-            // 2. On trie la liste
-            results.sort((pro1, pro2) -> {
-
-                // On calcule la distance pour le Pro 1.
-                // S'il n'a pas de coordonnées en base, on dit qu'il est à une distance infinie (Double.MAX_VALUE) pour le mettre à la fin.
-                double dist1 = (pro1.getLatitude() != null && pro1.getLongitude() != null)
-                        ? LocationUtils.calculateDistance(clientLat, clientLon, pro1.getLatitude(), pro1.getLongitude())
-                        : Double.MAX_VALUE;
-
-                // On fait pareil pour le Pro 2
-                double dist2 = (pro2.getLatitude() != null && pro2.getLongitude() != null)
-                        ? LocationUtils.calculateDistance(clientLat, clientLon, pro2.getLatitude(), pro2.getLongitude())
-                        : Double.MAX_VALUE;
-
-                // On compare les deux (celui qui a la plus petite distance passera devant)
-                return Double.compare(dist1, dist2);
-            });
-        }
-
-        return results;
+        return professionalProfileRepository.search(clean(criteria.getCity()), criteria.getGender(),
+                clean(criteria.getName()), criteria.getType());
     }
 
+    public org.springframework.data.domain.Page<ProfessionalProfile> searchPage(SearchCriteria criteria) {
+        return professionalProfileRepository.searchPage(clean(criteria.getCity()), criteria.getGender(),
+                clean(criteria.getName()), criteria.getType(),
+                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 12));
+    }
+
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 
     @Transactional
     public ProfessionalProfile updateProfile(ProfessionalProfile profile, String businessName, String bio,
@@ -169,7 +149,7 @@ public class ProfessionalService {
     }
 
     public List<TimeSlot> getAvailableTimeSlots(ProfessionalProfile professional) {
-        return timeSlotRepository.findByProfessionalAndAvailableTrueOrderByStartDateTimeAsc(professional);
+        return timeSlotRepository.findByProfessionalAndAvailableTrueAndStartDateTimeAfterOrderByStartDateTimeAsc(professional, LocalDateTime.now());
     }
 
     public List<TimeSlot> getAllTimeSlots(ProfessionalProfile professional) {
@@ -196,12 +176,15 @@ public class ProfessionalService {
 
     @Transactional
     public void removeTimeSlot(ProfessionalProfile professional, Long timeSlotId) {
-        TimeSlot slot = timeSlotRepository.findById(timeSlotId)
+        TimeSlot slot = timeSlotRepository.findByIdForUpdate(timeSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Creneau introuvable : " + timeSlotId));
         assertOwnership(professional, slot.getProfessional());
         // Ici on supprime vraiment (contrairement a removePrestation) : un
         // creneau non reserve n'est reference par aucun rendez-vous, sa
         // suppression est donc sans danger pour l'integrite des donnees.
+        if (appointmentRepository.existsByTimeSlotId(timeSlotId)) {
+            throw new IllegalOperationException("Ce créneau appartient à l'historique des rendez-vous et ne peut pas être supprimé.");
+        }
         timeSlotRepository.delete(slot);
     }
 

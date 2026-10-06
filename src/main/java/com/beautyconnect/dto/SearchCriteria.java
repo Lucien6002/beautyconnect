@@ -13,8 +13,10 @@ import lombok.Setter;
 @Setter
 public class SearchCriteria {
 
+    @jakarta.validation.constraints.Size(max = 100)
     private String city;
 
+    @jakarta.validation.constraints.Size(max = 100)
     private String name;
 
     private TargetGender gender;
@@ -24,4 +26,13 @@ public class SearchCriteria {
     private Double clientLatitude;
 
     private Double clientLongitude;
+    @jakarta.validation.constraints.Min(0)
+    @jakarta.validation.constraints.Max(10000)
+    private int page;
+
+    @jakarta.validation.constraints.AssertTrue(message = "Veuillez fournir une latitude et une longitude valides ensemble")
+    public boolean isPositionValid() {
+        return clientLatitude == null && clientLongitude == null
+                || com.beautyconnect.utils.LocationUtils.isValidPosition(clientLatitude, clientLongitude);
+    }
 }
