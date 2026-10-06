@@ -27,19 +27,19 @@ Les corrections locales du lot Ulrich sont conservées. Les changements déjà r
 
 ## Intégration du travail distant
 
-Les références distantes ont été récupérées. `origin/main` comprend déjà les deux PR d’Emmanuelle pour la CI et la configuration mail. La simulation avec les modifications locales a trouvé trois conflits :
+Les références distantes ont été récupérées. `origin/main` comprend les deux PR d’Emmanuelle pour la CI et la configuration mail, ainsi que la PR de Teddy corrigeant le chargement des avis et signalements de modération. La simulation avec les modifications locales a trouvé trois conflits :
 
 - `.github/workflows/ci.yml` : garder sa CI et l’étendre aux migrations PostgreSQL et à la construction du JAR.
 - `src/main/resources/application.properties` : conserver les variables SMTP, ajouter les variables du lot client et les profils/migrations ; retirer les valeurs personnelles du fichier versionné.
 - `src/test/resources/application-test.properties` : conserver son SMTP local fermé sur le port 3025 et ajouter l’isolation de Flyway/ORS pour H2.
 
-Ces conflits sont résolus dans la copie isolée de vérification. La branche active et `main` n’ont pas été fusionnés ou poussés. Les autres fichiers se fusionnent automatiquement dans cette simulation ; les futurs changements des autres branches devront être comparés à nouveau.
+Ces conflits ont été examinés dans une copie isolée, puis résolus lors de l’intégration locale de `origin/main` dans la branche Ulrich. Les requêtes et tests de modération de Teddy sont conservés. Aucun push ni fusion vers `main` n’a été effectué ; les futurs changements des autres branches devront être comparés à nouveau.
 
 ## Vérifications locales
 
-La dernière suite compte **48 tests réussis, aucun échec et aucun test ignoré**. Elle couvre notamment la concurrence, la nouvelle réservation après annulation/refus, les transitions, les propriétaires, les mails simulés, l’activation, les pages MVC sans session Hibernate ouverte, la recherche, le routage simulé et la connexion réelle des trois rôles.
+La dernière suite compte **50 tests réussis, aucun échec et aucun test ignoré**. Elle couvre notamment la concurrence, la nouvelle réservation après annulation/refus, les transitions, les propriétaires, les mails simulés, l’activation, les pages MVC sans session Hibernate ouverte, la recherche, le routage simulé et la connexion réelle des trois rôles.
 
-Le test PostgreSQL migre une base neuve et une base héritée avec historique, puis contrôle l’occupation unique. La copie d’intégration avec `main` a également passé sa suite avant l’ajout des trois tests de connexion.
+Le test PostgreSQL migre une base neuve et une base héritée avec historique, puis contrôle l’occupation unique. L’intégration locale du dernier `origin/main` a passé la suite complète, y compris les nouveaux tests de modération de Teddy, puis la construction du JAR.
 
 Le Dockerfile construit une image. Le dernier JAR a démarré dans cette image sur une base PostgreSQL de recette distincte : accueil HTTP 200, un seul compte administrateur et aucun compte de démonstration. La carte, le GPS, les liens transports, le repli sans ORS et le tracé d’une réponse simulée ont été contrôlés dans Chrome ; la recette navigateur finale a également validé l’affichage mobile, la connexion, la réservation et l’annulation, sans erreur JavaScript. Le tracé a été testé avec une réponse simulée ; le fournisseur ORS réel reste à valider avec une clé.
 
