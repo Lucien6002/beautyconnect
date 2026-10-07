@@ -61,8 +61,12 @@ public class AppointmentController {
     @PostMapping("/rendez-vous/{id}/annuler")
     public String cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
                           RedirectAttributes redirectAttributes) {
-        appointmentService.cancelByClient(principal.getUser(), id);
-        redirectAttributes.addFlashAttribute("success", "Le rendez-vous a ete annule.");
+        try {
+            appointmentService.cancelByClient(principal.getUser(), id);
+            redirectAttributes.addFlashAttribute("success", "Le rendez-vous a ete annule.");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/client/rendez-vous";
     }
 }

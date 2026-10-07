@@ -53,6 +53,13 @@ public class ProfessionalProfile {
 
     private String address;
 
+    private Double latitude;
+    private Double longitude;
+
+    @Column(name = "coordinates_public", nullable = false)
+    @Builder.Default
+    private boolean coordinatesPublic = false;
+
     @Column(name = "profile_photo_url")
     private String profilePhotoUrl;
 

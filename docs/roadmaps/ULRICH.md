@@ -1,9 +1,15 @@
 # Ulrich — client, rendez-vous, recherche facile et carte
 
+## État du lot au 6 octobre 2026
+
+Le code local comprend les transitions RDV, le verrouillage des réservations, l’occupation distincte de l’historique, l’activation configurable avec renvoi, la recherche paginée, les coordonnées publiables sur accord du professionnel, Leaflet, la validation GPS, ORS Matrix/Directions avec repli et les liens Google Maps. Docker, les profils dev/prod, les migrations Flyway et le workflow CI sont préparés. Voir [déploiement et recette](../DEPLOIEMENT-ULRICH.md) et [passation aux autres lots](ULRICH-PASSATION.md).
+
+Les étapes U1–U12 ci-dessous décrivent les exigences du lot ; leur présence dans le code ne remplace pas la recette. U13 reste externe : accès Render, choix du plan par l’équipe, clés et SMTP, fusion des autres lots, sauvegarde/restauration et recette publique. Le système visuel final attend les tokens livrés par Joyce ; les pages utilisent les composants communs existants.
+
 > Parcours recommandé : lire [l’audit](../AUDIT-TECHNIQUE.md), puis [le guide commun Git/design/Render](../ROADMAP-EQUIPE.md), puis suivre les étapes ci-dessous. Les fonctions nouvelles sont proposées ; vérifier le code avant de les implémenter.
 
 
-**Objectif :** un client trouve les pros les plus proches, obtient un chemin à pied calculé et réserve un vrai créneau ; tu prends aussi en charge le déploiement Render. **Branche :** `feature/ulrich-client-carte`. **Charge :** 14 à 16 jours, difficulté 5/5. Lire [`AUDIT-TECHNIQUE.md`](../AUDIT-TECHNIQUE.md), surtout sections 3–6 et 9, puis [le guide commun](../ROADMAP-EQUIPE.md). Ton récapitulatif antérieur (activation, Mailpit, données démo) correspond en partie aux fichiers présents ; **les tests de cycle que tu cites ne sont pas dans `src/test/` actuellement**.
+**Objectif :** un client trouve les pros les plus proches, obtient un chemin à pied calculé et réserve un vrai créneau ; tu prends aussi en charge le déploiement Render. **Branche :** `feature/ulrich-client-carte`. **Charge :** 14 à 16 jours, difficulté 5/5. Lire [`AUDIT-TECHNIQUE.md`](../AUDIT-TECHNIQUE.md), surtout sections 3–6 et 9, puis [le guide commun](../ROADMAP-EQUIPE.md). Ton récapitulatif antérieur (activation, Mailpit, données démo) correspond en partie aux fichiers présents ; **les tests du parcours client sont maintenant dans `ClientJourneyTests`, avec le routage dans `RoutingClientTests` et les migrations dans `PostgresMigrationTests`.**
 
 ## Parcours du code à maîtriser
 
@@ -31,16 +37,16 @@
 | U12 | 1–1,5 j | Préparer `Dockerfile` Java 21 multi-étape et `render.yaml` si Blueprint choisi ; brancher `PORT`, `APP_BASE_URL`, URL JDBC PostgreSQL et variables préparées par Emmanuelle. Tester le conteneur localement avec PostgreSQL, sans secret dans Git. |
 | U13 | 1 j | Après fusion des lots et accès Render : connecter le dépôt à un service Web Docker et une base PostgreSQL, configurer les variables, déployer `main`, puis smoke tester accueil, recherche/carte, activation, RDV, admin et images avec Emmanuelle. Documenter rollback/redéploiement. Le plan et tout coût doivent être validés par l'équipe. |
 
-**Dans le code aujourd'hui :** `AppointmentService` ne vérifie pas les transitions ; `SearchController.search` fait N requêtes d’avis ; `ProfessionalProfile` n’a pas de latitude/longitude. Carte, classement par trajet, chemin et bus sont absents. [Openrouteservice](https://openrouteservice.org/dev/) fournit Directions/Matrix avec clé et quotas à vérifier ; [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started) fournit le trajet transports hors site. Ne pas confondre distance à vol d’oiseau, distance sur le réseau, durée à pied et trajet bus.
+**Dans le code local :** les transitions sont contrôlées ; les avis de recherche sont agrégés en une requête ; latitude/longitude et accord de publication sont présents ; les appels Matrix et Directions restent côté serveur. Le classement piéton porte sur les candidats mesurés de la page. Sans clé ORS ou si le fournisseur échoue, la liste reste utilisable avec des distances à vol d’oiseau et un repli Google Maps.
 
-**Contrat de la recherche géographique à implémenter (proposé, aucune route n'existe encore) :**
+**Contrat de la recherche géographique à implémenter (implémenté localement) :**
 
 | Entrée ou sortie | Comportement attendu |
 |---|---|
 | `GET /recherche` | Conserver les filtres actuels (`SearchCriteria.city`, `type`, `gender`) ; ajouter nom et option « autour de moi ». L'origine GPS n'est utilisée qu'après accord explicite du navigateur et doit être validée (`latitude` −90..90, `longitude` −180..180). |
 | Candidats | `ProfessionalProfileRepository` retourne les pros validés, actifs et compatibles, avec coordonnées publiables. Présélectionner un nombre borné par distance Haversine ; garder les résultats sans coordonnées dans la liste, avec « distance indisponible ». |
 | Calcul réel | `NearestProfessionalService` appelle `RoutingClient.matrixWalking` côté serveur sur les candidats bornés ; trier par durée piétonne si l'étiquette dit « plus rapide à pied », ou par distance du chemin si elle dit « plus proche à pied ». Montrer km et minutes, estimation seulement ; traiter les routes impossibles et les quotas. |
-| `GET /itineraire/professionnels/{id}` (proposé) | Réponse JSON minimale de géométrie/distance/durée depuis une origine validée ; pro public seulement. `RoutingClient.directionsWalking` appelle le fournisseur côté serveur. Ne jamais renvoyer la clé API. Limiter la fréquence et la taille de la réponse. |
+| `GET /itineraire/professionnels/{id}` | Réponse JSON minimale de géométrie/distance/durée depuis une origine validée ; pro public seulement. `RoutingClient.directionsWalking` appelle le fournisseur côté serveur. Ne jamais renvoyer la clé API. Limiter la fréquence et la taille de la réponse. |
 | Interface | Liste et carte restent synchronisées ; un clic sur une carte affiche la fiche, le trajet piéton sur la carte, un bouton « Bus / transports » externe et un lien de secours si le calcul échoue. L'origine GPS n'est pas conservée en base. |
 
 **Exemple à tester :** pro A à 800 m à vol d'oiseau mais à 2,4 km à pied (rivière), pro B à 1,2 km à vol d'oiseau mais à 1,5 km à pied. Le service doit placer B avant A après la matrice. Si A n'entre pas dans la présélection, l'interface doit dire que le classement porte sur les candidats mesurés ; ne pas prétendre à un classement global parfait. Le bus reste un lien Google Maps : intégrer lignes et horaires dans BeautyConnect demanderait une API de transport dédiée et un autre lot.

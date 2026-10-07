@@ -3,6 +3,11 @@ package com.beautyconnect.repository;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.TimeSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,6 +17,13 @@ import java.util.List;
  * Voir {@link UserRepository} pour l'explication generale des requetes derivees.
  */
 public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM TimeSlot t WHERE t.id = :id")
+    Optional<TimeSlot> findByIdForUpdate(@Param("id") Long id);
+
+    List<TimeSlot> findByProfessionalAndAvailableTrueAndStartDateTimeAfterOrderByStartDateTimeAsc(
+            ProfessionalProfile professional, LocalDateTime now);
 
     // SELECT * FROM time_slots WHERE professional_id = ? AND available = true ORDER BY start_date_time ASC
     // "OrderByStartDateTimeAsc" trie directement le resultat du plus proche au

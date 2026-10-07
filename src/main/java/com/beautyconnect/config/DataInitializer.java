@@ -5,6 +5,7 @@ import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
 import com.beautyconnect.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@org.springframework.context.annotation.Profile("dev & !prod")
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -33,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
     private String adminPassword;
 
     @Override
+    @Transactional
     public void run(String... args) {
         // 1. Compte Administrateur (Thomas)
         if (userRepository.countByRole(Role.ADMIN) == 0) {
@@ -43,6 +46,7 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName("Admin")
                     .role(Role.ADMIN)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(admin);
             log.info("Admin créé : {}", adminEmail);
@@ -58,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
                     .phone("0601020304")
                     .role(Role.PROFESSIONAL)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(proUser);
 
@@ -68,11 +73,13 @@ public class DataInitializer implements CommandLineRunner {
                     .city("Paris")
                     .address("12 rue des Fleurs")
                     .targetGender(TargetGender.FEMME)
-                    .validated(true) // Déjà validé pour apparaître en recherche
+                    .coordinatesPublic(true)
+                    .latitude(48.8566)
+                    .longitude(2.3522)
+                    .validated(true)
                     .build();
             professionalProfileRepository.save(profile);
 
-            // Prestations de Sarah
             prestationRepository.save(Prestation.builder()
                     .professional(profile)
                     .name("Coupe & Brushing")
@@ -93,7 +100,6 @@ public class DataInitializer implements CommandLineRunner {
                     .active(true)
                     .build());
 
-            // Créneaux horaires disponibles pour Sarah
             LocalDateTime demain = LocalDateTime.now().plusDays(1).withHour(10).withMinute(0);
             timeSlotRepository.save(TimeSlot.builder()
                     .professional(profile)
@@ -103,14 +109,59 @@ public class DataInitializer implements CommandLineRunner {
 
             timeSlotRepository.save(TimeSlot.builder()
                     .professional(profile)
-                    .startDateTime(demain.plusHours(4)) // 14h00
+                    .startDateTime(demain.plusHours(4))
                     .available(true)
                     .build());
 
-            log.info("Professionnel Sarah créé avec prestations et créneaux !");
+            log.info("Professionnel Sarah créé !");
+        } else {
+            // CORRECTION SANS PIÈGE LAZY :
+            // On cherche Sarah directement par son email, puis son profil par son ID
+            userRepository.findByEmail("sarah@beautyconnect.local").ifPresent(sarahUser -> {
+                professionalProfileRepository.findByUserId(sarahUser.getId()).ifPresent(p -> {
+                    if (p.getLatitude() == null) {
+                        p.setLatitude(48.8566);
+                        p.setLongitude(2.3522);
+                        p.setCoordinatesPublic(true);
+                        professionalProfileRepository.save(p);
+                        log.info("Coordonnées GPS de Sarah mises à jour avec succès !");
+                    }
+                });
+            });
         }
 
-        // 3. Compte Cliente (Léa)
+        // 3. Compte Professionnel 2 (Chloé) à Lyon
+        if (!userRepository.existsByEmail("chloe@beautyconnect.local")) {
+            User chloeUser = User.builder()
+                    .email("chloe@beautyconnect.local")
+                    .password(passwordEncoder.encode("Pro12345!"))
+                    .firstName("Chloé")
+                    .lastName("Styliste")
+                    .phone("0602030405")
+                    .role(Role.PROFESSIONAL)
+                    .enabled(true)
+                    .emailVerified(true)
+                    .build();
+            userRepository.save(chloeUser);
+
+            ProfessionalProfile chloeProfile = ProfessionalProfile.builder()
+                    .user(chloeUser)
+                    .businessName("Chloé Coiffure Lyon")
+                    .bio("Spécialiste soins capillaires et coloration.")
+                    .city("Lyon")
+                    .address("5 rue de la République")
+                    .targetGender(TargetGender.MIXTE)
+                    .coordinatesPublic(true)
+                    .latitude(45.7640)
+                    .longitude(4.8357)
+                    .validated(true)
+                    .build();
+            professionalProfileRepository.save(chloeProfile);
+
+            log.info("Professionnel Chloé créé à Lyon !");
+        }
+
+        // 4. Compte Cliente (Léa)
         if (!userRepository.existsByEmail("lea@beautyconnect.local")) {
             User client = User.builder()
                     .email("lea@beautyconnect.local")
@@ -120,6 +171,7 @@ public class DataInitializer implements CommandLineRunner {
                     .phone("0611223344")
                     .role(Role.CLIENT)
                     .enabled(true)
+                    .emailVerified(true)
                     .build();
             userRepository.save(client);
             log.info("Cliente Léa créée !");

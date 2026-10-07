@@ -67,8 +67,7 @@ class AdminProfessionalValidationTests {
     }
 
     // Supprime uniquement les comptes crees par ces tests (emails en
-    // @test.local) : les donnees de demonstration du DataInitializer
-    // (profil avec creneaux et prestations) doivent rester intactes.
+    // @test.local). Le profil test ne crée aucun compte de démonstration.
     @AfterEach
     void cleanUp() {
         userRepository.findAll().stream()
@@ -208,7 +207,8 @@ class AdminProfessionalValidationTests {
     @Test
     @WithMockUser(roles = "ADMIN")
     void adminAccount_cannotBeDisabled() throws Exception {
-        User admin = userRepository.findAll().stream().filter(u -> u.getRole() == Role.ADMIN).findFirst().orElseThrow();
+        User admin = userRepository.save(User.builder().email("admin@test.local").password("hash")
+                .firstName("Admin").lastName("Test").role(Role.ADMIN).enabled(true).build());
 
         mockMvc.perform(post("/admin/utilisateurs/{id}/desactiver", admin.getId()).with(csrf()))
                 .andExpect(status().is3xxRedirection())

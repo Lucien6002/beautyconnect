@@ -28,7 +28,13 @@ public class VerificationToken {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() { createdAt = LocalDateTime.now(); }
+
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(this.expiryDate);
+        return !LocalDateTime.now().isBefore(this.expiryDate);
     }
 }

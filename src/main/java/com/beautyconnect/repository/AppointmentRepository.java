@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 /**
  * Acces aux donnees pour l'entite {@link Appointment}.
@@ -15,18 +18,25 @@ import java.util.List;
  */
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Appointment a WHERE a.id = :id")
+    Optional<Appointment> findByIdForUpdate(@Param("id") Long id);
+
+    boolean existsByTimeSlotId(Long id);
+
     // Historique des rendez-vous d'un client, du plus recent au plus ancien.
-    // JOIN FETCH : les templates affichent pro, client, prestation et creneau ;
-    // sans chargement immediat, open-in-view=false provoque une LazyInitializationException.
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.professional JOIN FETCH a.client "
-            + "JOIN FETCH a.prestation JOIN FETCH a.timeSlot "
-            + "WHERE a.client = :client ORDER BY a.createdAt DESC")
+    @Query("""
+            SELECT a FROM Appointment a
+            JOIN FETCH a.professional
+            JOIN FETCH a.prestation
+            JOIN FETCH a.timeSlot
+            WHERE a.client = :client
+            ORDER BY a.createdAt DESC
+            """)
     List<Appointment> findByClientOrderByCreatedAtDesc(@Param("client") User client);
 
     // Historique des rendez-vous recus par un professionnel.
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.professional JOIN FETCH a.client "
-            + "JOIN FETCH a.prestation JOIN FETCH a.timeSlot "
-            + "WHERE a.professional = :professional ORDER BY a.createdAt DESC")
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.client JOIN FETCH a.prestation JOIN FETCH a.timeSlot WHERE a.professional = :professional ORDER BY a.createdAt DESC")
     List<Appointment> findByProfessionalOrderByCreatedAtDesc(@Param("professional") ProfessionalProfile professional);
 
     // Combine 3 conditions (client + professionnel + statut) reliees par des
@@ -34,5 +44,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // AppointmentService pour verifier qu'un client a bien deja eu un
     // rendez-vous TERMINE avec ce professionnel avant de le laisser poster un avis.
     boolean existsByClientAndProfessionalAndStatus(User client, ProfessionalProfile professional,
+
                                                      com.beautyconnect.model.AppointmentStatus status);
 }

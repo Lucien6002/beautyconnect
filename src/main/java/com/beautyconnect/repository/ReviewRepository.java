@@ -3,6 +3,7 @@ package com.beautyconnect.repository;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -12,10 +13,19 @@ import java.util.List;
  */
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
+    interface RatingSummary { Long getProfessionalId(); Double getAverage(); }
+
+    @org.springframework.data.jpa.repository.Query("SELECT r.professional.id AS professionalId, AVG(r.rating) AS average FROM Review r WHERE r.hidden = false AND r.professional.id IN :ids GROUP BY r.professional.id")
+    List<RatingSummary> averageRatings(@org.springframework.data.repository.query.Param("ids") List<Long> ids);
+
     // Avis publics d'un professionnel : on exclut ceux masques par un admin
     // suite a un signalement (hidden = true), voir AdminService.
     List<Review> findByProfessionalAndHiddenFalseOrderByCreatedAtDesc(ProfessionalProfile professional);
 
     // Tous les avis, y compris masques : utilise dans l'espace de moderation admin.
+    // JOIN FETCH charge le client et le professionnel dans la meme requete :
+    // ces relations sont LAZY et open-in-view=false, la page admin/reviews.html
+    // ne pourrait pas les lire apres la fermeture de la session Hibernate.
+    @Query("SELECT r FROM Review r JOIN FETCH r.client JOIN FETCH r.professional ORDER BY r.createdAt DESC")
     List<Review> findAllByOrderByCreatedAtDesc();
 }

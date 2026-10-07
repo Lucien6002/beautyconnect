@@ -47,15 +47,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationSuccessHandler roleBasedSuccessHandler() {
         return (request, response, authentication) -> {
-            String redirect = "/";
-            for (var authority : authentication.getAuthorities()) {
-                switch (authority.getAuthority()) {
-                    case "ROLE_CLIENT" -> redirect = "/client/tableau-bord";
-                    case "ROLE_PROFESSIONAL" -> redirect = "/pro/tableau-bord";
-                    case "ROLE_ADMIN" -> redirect = "/admin/tableau-bord";
-                    default -> redirect = "/";
-                }
-            }
+            // Une autorité supplémentaire (par exemple FACTOR_PASSWORD) ne
+            // doit jamais écraser la destination choisie pour le rôle.
+            var authorities = authentication.getAuthorities().stream()
+                    .map(org.springframework.security.core.GrantedAuthority::getAuthority).toList();
+            String redirect = authorities.contains("ROLE_ADMIN") ? "/admin/tableau-bord"
+                    : authorities.contains("ROLE_PROFESSIONAL") ? "/pro/tableau-bord"
+                    : authorities.contains("ROLE_CLIENT") ? "/client/tableau-bord" : "/";
             response.sendRedirect(redirect);
         };
     }
@@ -66,7 +64,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/accueil", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                        .requestMatchers("/recherche", "/recherche/**").permitAll()
+                        .requestMatchers("/recherche", "/recherche/**", "/itineraire/**").permitAll()
                         .requestMatchers("/professionnels/**").permitAll()
                         // On autorise /activer-compte pour que le lien de l'email fonctionne sans être connecté
                         .requestMatchers("/inscription/**", "/connexion", "/activer-compte", "/erreur/**", "/error").permitAll()

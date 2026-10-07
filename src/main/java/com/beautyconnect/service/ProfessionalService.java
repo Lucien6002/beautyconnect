@@ -11,6 +11,7 @@ import com.beautyconnect.model.TimeSlot;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
+import com.beautyconnect.utils.LocationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class ProfessionalService {
     private final ProfessionalProfileRepository professionalProfileRepository;
     private final PrestationRepository prestationRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
 
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
     // une exception metier personnalisee plutot que de retourner null (ce qui
@@ -56,11 +58,18 @@ public class ProfessionalService {
 
     // Point d'entree du moteur de recherche public (voir SearchController).
     public List<ProfessionalProfile> search(SearchCriteria criteria) {
-        // Un champ ville vide/blanc dans le formulaire est traite comme
-        // "aucun filtre" (null) plutot que comme "chercher les professionnels
-        // dont la ville est une chaine vide", ce qui n'aurait aucun sens.
-        String city = (criteria.getCity() == null || criteria.getCity().isBlank()) ? null : criteria.getCity().trim();
-        return professionalProfileRepository.search(city, criteria.getGender(), criteria.getType());
+        return professionalProfileRepository.search(clean(criteria.getCity()), criteria.getGender(),
+                clean(criteria.getName()), criteria.getType());
+    }
+
+    public org.springframework.data.domain.Page<ProfessionalProfile> searchPage(SearchCriteria criteria) {
+        return professionalProfileRepository.searchPage(clean(criteria.getCity()), criteria.getGender(),
+                clean(criteria.getName()), criteria.getType(),
+                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 12));
+    }
+
+    private String clean(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @Transactional
@@ -140,7 +149,7 @@ public class ProfessionalService {
     }
 
     public List<TimeSlot> getAvailableTimeSlots(ProfessionalProfile professional) {
-        return timeSlotRepository.findByProfessionalAndAvailableTrueOrderByStartDateTimeAsc(professional);
+        return timeSlotRepository.findByProfessionalAndAvailableTrueAndStartDateTimeAfterOrderByStartDateTimeAsc(professional, LocalDateTime.now());
     }
 
     public List<TimeSlot> getAllTimeSlots(ProfessionalProfile professional) {
@@ -167,7 +176,7 @@ public class ProfessionalService {
 
     @Transactional
     public void removeTimeSlot(ProfessionalProfile professional, Long timeSlotId) {
-        TimeSlot slot = timeSlotRepository.findById(timeSlotId)
+        TimeSlot slot = timeSlotRepository.findByIdForUpdate(timeSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Creneau introuvable : " + timeSlotId));
         assertOwnership(professional, slot.getProfessional());
         // Un creneau reserve ne peut pas etre supprime par le pro : seul le
@@ -178,6 +187,9 @@ public class ProfessionalService {
         // Ici on supprime vraiment (contrairement a removePrestation) : un
         // creneau non reserve n'est reference par aucun rendez-vous, sa
         // suppression est donc sans danger pour l'integrite des donnees.
+        if (appointmentRepository.existsByTimeSlotId(timeSlotId)) {
+            throw new IllegalOperationException("Ce créneau appartient à l'historique des rendez-vous et ne peut pas être supprimé.");
+        }
         timeSlotRepository.delete(slot);
     }
 

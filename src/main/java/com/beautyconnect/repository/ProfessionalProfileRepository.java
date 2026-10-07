@@ -55,9 +55,7 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
 
     // Profil consultable/reservable par le public : un compte desactive par
     // l'admin ne doit plus etre accessible, meme par URL directe.
-    // JOIN FETCH : le User est charge avec le profil, sinon son acces hors
-    // transaction (open-in-view=false) leve une LazyInitializationException.
-    @Query("SELECT p FROM ProfessionalProfile p JOIN FETCH p.user u WHERE p.id = :id AND u.enabled = true")
+    @Query("SELECT p FROM ProfessionalProfile p JOIN FETCH p.user WHERE p.id = :id AND p.user.enabled = true AND p.validated = true")
     Optional<ProfessionalProfile> findPublicById(@Param("id") Long id);
 
     /**
@@ -93,10 +91,34 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
               AND p.user.enabled = true
               AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', CAST(:city AS string), '%')))
               AND (:gender IS NULL OR p.targetGender = :gender OR p.targetGender = com.beautyconnect.model.TargetGender.MIXTE)
+              AND (:name IS NULL OR LOWER(p.businessName) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%')))
               AND (:type IS NULL OR pr.type = :type)
+            ORDER BY p.businessName, p.id
             """)
     List<ProfessionalProfile> search(
             @Param("city") String city,
             @Param("gender") TargetGender gender,
+            @Param("name") String name,
             @Param("type") com.beautyconnect.model.ServiceType type);
+    // Compatibilité avec les autres lots qui n'utilisent pas encore le filtre nom.
+    default List<ProfessionalProfile> search(String city, TargetGender gender,
+                                            com.beautyconnect.model.ServiceType type) {
+        return search(city, gender, null, type);
+    }
+
+    @Query("""
+            SELECT DISTINCT p FROM ProfessionalProfile p
+            LEFT JOIN Prestation pr ON pr.professional = p AND pr.active = true
+            WHERE p.validated = true
+              AND p.user.enabled = true
+              AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', CAST(:city AS string), '%')))
+              AND (:gender IS NULL OR p.targetGender = :gender OR p.targetGender = com.beautyconnect.model.TargetGender.MIXTE)
+              AND (:name IS NULL OR LOWER(p.businessName) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%')))
+              AND (:type IS NULL OR pr.type = :type)
+            ORDER BY p.businessName, p.id
+            """)
+    org.springframework.data.domain.Page<ProfessionalProfile> searchPage(
+            @Param("city") String city, @Param("gender") TargetGender gender,
+            @Param("name") String name, @Param("type") com.beautyconnect.model.ServiceType type,
+            org.springframework.data.domain.Pageable pageable);
 }

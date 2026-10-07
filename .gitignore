@@ -43,3 +43,6 @@ bin/
 Thumbs.db
 
 
+
+.env*
+!.env.example
