@@ -170,6 +170,11 @@ public class ProfessionalService {
         TimeSlot slot = timeSlotRepository.findById(timeSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Creneau introuvable : " + timeSlotId));
         assertOwnership(professional, slot.getProfessional());
+        // Un creneau reserve ne peut pas etre supprime par le pro : seul le
+        // client peut annuler son rendez-vous (ce qui libere le creneau).
+        if (!slot.isAvailable()) {
+            throw new IllegalOperationException("Ce creneau est reserve : seul le client peut annuler son rendez-vous.");
+        }
         // Ici on supprime vraiment (contrairement a removePrestation) : un
         // creneau non reserve n'est reference par aucun rendez-vous, sa
         // suppression est donc sans danger pour l'integrite des donnees.

@@ -211,24 +211,6 @@ public class ProfessionalDashboardController {
     // profil du pro connecte, appeler le service (qui verifie en interne que
     // le rendez-vous appartient bien a ce professionnel), puis rediriger avec
     // un message flash de confirmation.
-    @PostMapping("/rendez-vous/{id}/confirmer")
-    public String confirmAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
-                                      RedirectAttributes redirectAttributes) {
-        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        appointmentService.confirm(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Rendez-vous confirme. Un mail a ete envoye au client.");
-        return "redirect:/pro/rendez-vous";
-    }
-
-    @PostMapping("/rendez-vous/{id}/refuser")
-    public String refuseAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
-                                     RedirectAttributes redirectAttributes) {
-        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        appointmentService.refuse(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Rendez-vous refuse.");
-        return "redirect:/pro/rendez-vous";
-    }
-
     @PostMapping("/rendez-vous/{id}/terminer")
     public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
                                        RedirectAttributes redirectAttributes) {

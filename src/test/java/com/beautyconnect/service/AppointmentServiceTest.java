@@ -37,13 +37,13 @@ class AppointmentServiceTest {
     private AppointmentService appointmentService;
 
     @Test
-    void confirm_ShouldThrowException_WhenAppointmentIsAlreadyCancelled() {
+    void cancelByClient_ShouldThrowException_WhenAppointmentIsAlreadyCancelled() {
         // 1. Préparation des fausses données (Arrange)
-        ProfessionalProfile pro = ProfessionalProfile.builder().id(1L).build();
+        User client = User.builder().id(2L).build();
 
         Appointment cancelledAppointment = Appointment.builder()
                 .id(100L)
-                .professional(pro)
+                .client(client)
                 .status(AppointmentStatus.ANNULE) // Le RDV est déjà annulé !
                 .build();
 
@@ -51,9 +51,28 @@ class AppointmentServiceTest {
         when(appointmentRepository.findById(100L)).thenReturn(Optional.of(cancelledAppointment));
 
         // 2 & 3. Exécution et Vérification (Act & Assert)
-        // On vérifie qu'une IllegalOperationException est bien levée si le pro essaie de confirmer
+        // On vérifie qu'une IllegalOperationException est bien levée si le client réannule
         assertThrows(IllegalOperationException.class, () -> {
-            appointmentService.confirm(pro, 100L);
+            appointmentService.cancelByClient(client, 100L);
+        });
+    }
+
+    @Test
+    void cancelByClient_ShouldThrowException_WhenAppointmentBelongsToAnotherClient() {
+        User owner = User.builder().id(2L).build();
+        User other = User.builder().id(3L).build();
+
+        Appointment appointment = Appointment.builder()
+                .id(100L)
+                .client(owner)
+                .status(AppointmentStatus.CONFIRME)
+                .build();
+
+        when(appointmentRepository.findById(100L)).thenReturn(Optional.of(appointment));
+
+        // Seul le client propriétaire peut annuler
+        assertThrows(IllegalOperationException.class, () -> {
+            appointmentService.cancelByClient(other, 100L);
         });
     }
 

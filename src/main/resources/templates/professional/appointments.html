@@ -26,14 +26,6 @@
                     <td class="small" th:text="${a.notes}"></td>
                     <td><span class="badge text-bg-secondary" th:text="${a.status}"></span></td>
                     <td>
-                        <div class="d-flex gap-1 flex-wrap" th:if="${a.status.name() == 'EN_ATTENTE'}">
-                            <form th:action="@{'/pro/rendez-vous/' + ${a.id} + '/confirmer'}" method="post">
-                                <button type="submit" class="btn btn-sm btn-success">Confirmer</button>
-                            </form>
-                            <form th:action="@{'/pro/rendez-vous/' + ${a.id} + '/refuser'}" method="post">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Refuser</button>
-                            </form>
-                        </div>
                         <form th:if="${a.status.name() == 'CONFIRME'}" th:action="@{'/pro/rendez-vous/' + ${a.id} + '/terminer'}" method="post">
                             <button type="submit" class="btn btn-sm btn-outline-primary">Marquer termine</button>
                         </form>

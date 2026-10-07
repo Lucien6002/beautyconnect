@@ -8,6 +8,7 @@ import com.beautyconnect.repository.AppointmentRepository;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +16,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Prise de rendez-vous, confirmation (avec envoi du mail), refus et annulation.
+ * Prise de rendez-vous (confirmee immediatement, avec envoi du mail) et annulation par le client.
  * Voir {@link UserService} pour l'explication de @Service / @RequiredArgsConstructor.
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
@@ -75,7 +77,7 @@ public class AppointmentService {
                 .professional(professional)
                 .prestation(prestation)
                 .timeSlot(slot)
-                .status(AppointmentStatus.EN_ATTENTE)
+                .status(AppointmentStatus.CONFIRME)
                 .notes(form.getNotes())
                 .build();
 
@@ -83,7 +85,16 @@ public class AppointmentService {
         // et passent les 'if' ci-dessus, la base de données PostgreSQL va rejeter le deuxième
         // car la colonne 'time_slot_id' de la table 'appointments' est UNIQUE (voir entité Appointment).
         // Cela garantit "un seul gagnant concurrent".
-        return appointmentRepository.save(appointment);
+        appointment = appointmentRepository.save(appointment);
+        // Le rendez-vous est confirme des la reservation (le creneau ouvert par le
+        // pro equivaut a "salon ouvert") : mail de confirmation immediat. Un echec
+        // d'envoi ne doit pas annuler la reservation deja enregistree.
+        try {
+            emailService.sendAppointmentConfirmation(appointment);
+        } catch (Exception ex) {
+            log.warn("Mail de confirmation non envoye pour le rendez-vous {} : {}", appointment.getId(), ex.getMessage());
+        }
+        return appointment;
     }
 
     public List<Appointment> getAppointmentsForClient(User client) {
@@ -92,29 +103,6 @@ public class AppointmentService {
 
     public List<Appointment> getAppointmentsForProfessional(ProfessionalProfile professional) {
         return appointmentRepository.findByProfessionalOrderByCreatedAtDesc(professional);
-    }
-
-    // Le professionnel accepte le rendez-vous : on change le statut ET on
-    // declenche l'envoi du mail de confirmation au client (cf. specifications).
-    @Transactional
-    public Appointment confirm(ProfessionalProfile professional, Long appointmentId) {
-        Appointment appointment = getOwnedByProfessional(professional, appointmentId);
-        validateTransition(appointment.getStatus(), AppointmentStatus.CONFIRME);
-        appointment.setStatus(AppointmentStatus.CONFIRME);
-        appointment = appointmentRepository.save(appointment);
-        emailService.sendAppointmentConfirmation(appointment);
-        return appointment;
-    }
-
-    @Transactional
-    public Appointment refuse(ProfessionalProfile professional, Long appointmentId) {
-        Appointment appointment = getOwnedByProfessional(professional, appointmentId);
-        validateTransition(appointment.getStatus(), AppointmentStatus.REFUSE);
-        appointment.setStatus(AppointmentStatus.REFUSE);
-        // Le creneau redevient disponible pour un autre client puisque ce
-        // rendez-vous n'aura finalement pas lieu.
-        releaseSlot(appointment);
-        return appointmentRepository.save(appointment);
     }
 
     @Transactional
@@ -146,7 +134,7 @@ public class AppointmentService {
         timeSlotRepository.save(slot);
     }
 
-    // Utilitaire commun a confirm/refuse/markCompleted : va chercher le
+    // Utilitaire commun a markCompleted : va chercher le
     // rendez-vous et verifie au passage qu'il appartient bien au
     // professionnel connecte (meme logique de securite que dans ProfessionalService).
     private Appointment getOwnedByProfessional(ProfessionalProfile professional, Long appointmentId) {

@@ -55,7 +55,9 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
 
     // Profil consultable/reservable par le public : un compte desactive par
     // l'admin ne doit plus etre accessible, meme par URL directe.
-    @Query("SELECT p FROM ProfessionalProfile p WHERE p.id = :id AND p.user.enabled = true")
+    // JOIN FETCH : le User est charge avec le profil, sinon son acces hors
+    // transaction (open-in-view=false) leve une LazyInitializationException.
+    @Query("SELECT p FROM ProfessionalProfile p JOIN FETCH p.user u WHERE p.id = :id AND u.enabled = true")
     Optional<ProfessionalProfile> findPublicById(@Param("id") Long id);
 
     /**
