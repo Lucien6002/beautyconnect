@@ -19,6 +19,9 @@
                 <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
                     <a class="nav-link" href="/pro/tableau-bord">Mon espace pro</a>
                 </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('CLIENT','PROFESSIONAL')">
+                    <a class="nav-link" href="/compte">Mon compte</a>
+                </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link" href="/admin/tableau-bord">Administration</a>
                 </li>
