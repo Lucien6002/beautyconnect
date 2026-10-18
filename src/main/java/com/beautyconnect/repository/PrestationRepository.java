@@ -13,6 +13,17 @@ import java.util.List;
  */
 public interface PrestationRepository extends JpaRepository<Prestation, Long> {
 
+    // Accueil public : ne jamais exposer le catalogue d'un compte suspendu
+    // ou d'un profil non valide. Charger le profil pour le rendu sans OSIV.
+    @org.springframework.data.jpa.repository.Query("""
+            select p from Prestation p
+            join fetch p.professional pro
+            join pro.user u
+            where p.active = true and pro.validated = true and u.enabled = true
+            order by pro.businessName, p.name, p.id
+            """)
+    List<Prestation> findPublicPreviews(org.springframework.data.domain.Pageable pageable);
+
     // SELECT * FROM prestations WHERE professional_id = ? AND active = true
     // Utilise pour la vitrine publique : on ne montre que les prestations actives.
     List<Prestation> findByProfessionalAndActiveTrue(ProfessionalProfile professional);

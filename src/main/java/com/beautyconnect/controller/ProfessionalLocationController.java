@@ -18,6 +18,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ProfessionalLocationController {
     private final ProfessionalService professionals;
     private final ProfessionalLocationService locations;
+    @org.springframework.beans.factory.annotation.Value("${app.map.tile-url:https://tile.openstreetmap.org/{z}/{x}/{y}.png}")
+    private String mapTileUrl;
+
+    @ModelAttribute("mapTileUrl")
+    public String mapTileUrl() {
+        return mapTileUrl;
+    }
     @GetMapping
     public String form(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
         var profile = professionals.getProfileByUserId(principal.getId());

@@ -1,24 +1,142 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head(title='Localisation publique')}"></head>
-<body class="d-flex flex-column min-vh-100">
-<nav th:replace="~{fragments/navbar :: navbar}"></nav>
-<div th:replace="~{fragments/alerts :: alerts}"></div>
-<main class="container my-5 flex-grow-1" style="max-width: 640px;">
-    <h1 class="h4">Mon point public sur la carte</h1>
-    <p>Choisissez un point où vous accueillez les clients, ou un point approximatif de votre quartier. Ne publiez votre adresse privée que si vous le souhaitez. Les trajets mènent au point choisi.</p>
-    <form th:action="@{/pro/localisation}" th:object="${professionalLocationForm}" method="post">
-        <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert"><p th:each="error : ${#fields.allErrors()}" th:text="${error}"></p></div>
-        <label for="latitude" class="form-label">Latitude (−90 à 90)</label>
-        <input type="number" step="any" min="-90" max="90" class="form-control mb-3" th:field="*{latitude}"/>
-        <label for="longitude" class="form-label">Longitude (−180 à 180)</label>
-        <input type="number" step="any" min="-180" max="180" class="form-control mb-3" th:field="*{longitude}"/>
-        <div class="form-check mb-3"><input type="checkbox" class="form-check-input" th:field="*{coordinatesPublic}"/>
-            <label for="coordinatesPublic" class="form-check-label">J’autorise la publication de ce point et de l’adresse de mon profil.</label></div>
-        <button class="btn btn-primary" type="submit">Enregistrer</button>
-        <a th:href="@{/pro/profil}" class="btn btn-outline-secondary">Mon profil</a>
-    </form>
-</main>
-<footer th:replace="~{fragments/footer :: footer}"></footer>
-</body>
+    <head
+        th:replace="~{fragments/head :: head(title='Localisation publique')}"
+    ></head>
+    <body class="d-flex flex-column min-vh-100">
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="container bc-workspace" data-role="professional">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='professional', active='location')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <span class="bc-eyebrow">Votre vitrine dans le quartier</span>
+                <h1 class="h4">Mon point public sur la carte</h1>
+                <p>
+                    Choisissez un point où vous accueillez les clients, ou un
+                    point approximatif de votre quartier. Ne publiez votre
+                    adresse privée que si vous le souhaitez. Les trajets mènent
+                    au point choisi.
+                </p>
+                <section
+                    class="card bc-location-picker mb-4"
+                    aria-label="Choisir votre emplacement"
+                >
+                    <div class="bc-map-heading">
+                        <div>
+                            <h2>Où vous retrouver ?</h2>
+                            <p>
+                                Cliquez sur la carte, puis déplacez le repère si
+                                nécessaire.
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        id="location-map"
+                        role="region"
+                        aria-label="Carte de sélection de votre point public"
+                        th:attr="data-tile-url=${mapTileUrl}"
+                    ></div>
+                    <div class="bc-location-tools">
+                        <button
+                            id="location-gps"
+                            type="button"
+                            class="btn btn-outline-primary btn-sm"
+                        >
+                            <i class="bi bi-crosshair" aria-hidden="true"></i>
+                            Utiliser ma position</button
+                        ><button
+                            id="location-clear"
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                        >
+                            Retirer le point
+                        </button>
+                    </div>
+                    <p
+                        class="bc-location-status"
+                        id="location-status"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        Vous pouvez aussi saisir les coordonnées ci-dessous.
+                        Aucun changement n’est enregistré avant validation.
+                    </p>
+                    <noscript
+                        ><p class="p-3">
+                            La saisie des coordonnées reste disponible sans
+                            JavaScript.
+                        </p></noscript
+                    >
+                </section>
+                <form
+                    class="card p-4"
+                    th:action="@{/pro/localisation}"
+                    th:object="${professionalLocationForm}"
+                    method="post"
+                >
+                    <div
+                        th:if="${#fields.hasAnyErrors()}"
+                        class="alert alert-danger"
+                        role="alert"
+                    >
+                        <p
+                            th:each="error : ${#fields.allErrors()}"
+                            th:text="${error}"
+                        ></p>
+                    </div>
+                    <label for="latitude" class="form-label"
+                        >Latitude (−90 à 90)</label
+                    >
+                    <input
+                        type="number"
+                        step="any"
+                        min="-90"
+                        max="90"
+                        class="form-control mb-3"
+                        th:field="*{latitude}"
+                    />
+                    <label for="longitude" class="form-label"
+                        >Longitude (−180 à 180)</label
+                    >
+                    <input
+                        type="number"
+                        step="any"
+                        min="-180"
+                        max="180"
+                        class="form-control mb-3"
+                        th:field="*{longitude}"
+                    />
+                    <div class="form-check mb-3">
+                        <input
+                            id="coordinatesPublic"
+                            type="checkbox"
+                            class="form-check-input"
+                            th:field="*{coordinatesPublic}"
+                        />
+                        <label for="coordinatesPublic" class="form-check-label"
+                            >J’autorise la publication de ce point et de
+                            l’adresse de mon profil.</label
+                        >
+                    </div>
+                    <button class="btn btn-primary" type="submit">
+                        Enregistrer
+                    </button>
+                    <a
+                        th:href="@{/pro/profil}"
+                        class="btn btn-outline-secondary"
+                        >Mon profil</a
+                    >
+                </form>
+            </main>
+        </div>
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script th:src="@{/js/location-map.js}"></script>
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
 </html>

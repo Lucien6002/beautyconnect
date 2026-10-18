@@ -1,55 +1,153 @@
-<!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/head :: head(title='Mon espace')}"></head>
-<body class="d-flex flex-column min-vh-100">
-
-<nav th:replace="~{fragments/navbar :: navbar}"></nav>
-<div th:replace="~{fragments/alerts :: alerts}"></div>
-
-<main class="flex-grow-1 container my-5">
-    <h1 class="h4 mb-4">Bonjour <span sec:authentication="name"></span> 👋</h1>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center p-3">
-                <div class="display-6" th:text="${totalAppointments}"></div>
-                <div class="text-muted">Rendez-vous au total</div>
-            </div>
+<!doctype html>
+<html
+    lang="fr"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <head
+        th:replace="~{fragments/head :: head(title='Mon espace client')}"
+    ></head>
+    <body>
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="container bc-workspace" data-role="client">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='client', active='dashboard')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <header class="bc-dashboard-heading">
+                    <div>
+                        <span class="bc-eyebrow">Votre espace client</span>
+                        <h1>
+                            Bonjour,
+                            <span
+                                th:text="${#authentication.principal instanceof T(com.beautyconnect.security.CustomUserDetails) ? #authentication.principal.fullName : #authentication.name}"
+                            ></span
+                            >.
+                        </h1>
+                        <p>
+                            Vos rendez-vous et vos bonnes adresses, au même
+                            endroit.
+                        </p>
+                    </div>
+                    <a class="btn btn-primary" href="/recherche"
+                        ><i class="bi bi-plus" aria-hidden="true"></i> Réserver
+                        une prestation</a
+                    >
+                </header>
+                <div class="bc-client-overview">
+                    <section class="bc-welcome-card">
+                        <span class="bc-eyebrow">Du temps pour vous</span>
+                        <h2>
+                            Votre prochaine pause<br />commence dans le
+                            quartier.
+                        </h2>
+                        <p>
+                            Coiffure, onglerie ou soins : découvrez les
+                            prestations proposées près de chez vous.
+                        </p>
+                        <a class="bc-text-link" href="/recherche"
+                            >Explorer les professionnels
+                            <i
+                                class="bi bi-arrow-right"
+                                aria-hidden="true"
+                            ></i></a
+                        ><i
+                            class="bi bi-flower1 bc-welcome-decoration"
+                            aria-hidden="true"
+                        ></i>
+                    </section>
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i
+                                class="bi bi-calendar2-heart"
+                                aria-hidden="true"
+                            ></i
+                        ></span>
+                        <div>
+                            <strong th:text="${totalAppointments}"></strong
+                            ><span>Rendez-vous au total</span>
+                        </div>
+                    </div>
+                </div>
+                <section class="card bc-appointments">
+                    <div class="bc-panel-heading">
+                        <h2>Derniers rendez-vous</h2>
+                        <a class="bc-text-link" href="/client/rendez-vous"
+                            >Voir tout
+                            <i class="bi bi-arrow-right" aria-hidden="true"></i
+                        ></a>
+                    </div>
+                    <div class="table-responsive">
+                        <table
+                            class="table mb-0 align-middle"
+                            th:if="${!#lists.isEmpty(appointments)}"
+                        >
+                            <thead>
+                                <tr>
+                                    <th>Professionnel</th>
+                                    <th>Prestation</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="a : ${appointments}">
+                                    <td
+                                        th:text="${a.professional.businessName}"
+                                    ></td>
+                                    <td th:text="${a.prestation.name}"></td>
+                                    <td
+                                        th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"
+                                    ></td>
+                                    <td>
+                                        <span
+                                            th:replace="~{fragments/workspace :: status(status=${a.status})}"
+                                        ></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p
+                            class="p-3 text-muted small mb-0"
+                            th:if="${#lists.isEmpty(appointments)}"
+                        >
+                            Vous n'avez pas encore de rendez-vous.
+                            <a href="/recherche">Trouvez un professionnel</a>
+                            pour commencer.
+                        </p>
+                    </div>
+                </section>
+                <div class="bc-action-grid">
+                    <a class="bc-action-card" href="/client/rendez-vous"
+                        ><i
+                            class="bi bi-calendar2-check"
+                            aria-hidden="true"
+                        ></i>
+                        <div>
+                            <strong>Mes réservations</strong
+                            ><span
+                                >Consulter mes demandes et leurs statuts.</span
+                            >
+                        </div>
+                        <i
+                            class="bi bi-arrow-up-right"
+                            aria-hidden="true"
+                        ></i></a
+                    ><a class="bc-action-card" href="/recherche"
+                        ><i class="bi bi-search" aria-hidden="true"></i>
+                        <div>
+                            <strong>Une nouvelle envie ?</strong
+                            ><span
+                                >Trouver une prestation et un
+                                professionnel.</span
+                            >
+                        </div>
+                        <i class="bi bi-arrow-up-right" aria-hidden="true"></i
+                    ></a>
+                </div>
+            </main>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center p-3">
-                <a href="/recherche" class="btn btn-primary">Trouver un professionnel</a>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm text-center p-3">
-                <a href="/client/rendez-vous" class="btn btn-outline-secondary">Voir tous mes rendez-vous</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-header bg-white"><h2 class="h5 mb-0">Derniers rendez-vous</h2></div>
-        <div class="table-responsive">
-            <table class="table mb-0 align-middle">
-                <thead><tr><th>Professionnel</th><th>Prestation</th><th>Date</th><th>Statut</th></tr></thead>
-                <tbody>
-                <tr th:each="a : ${appointments}">
-                    <td th:text="${a.professional.businessName}"></td>
-                    <td th:text="${a.prestation.name}"></td>
-                    <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
-                    <td><span class="badge" th:classappend="${a.status.name() == 'CONFIRME' ? 'text-bg-success' : a.status.name() == 'EN_ATTENTE' ? 'text-bg-warning' : 'text-bg-secondary'}" th:text="${a.status}"></span></td>
-                </tr>
-                </tbody>
-            </table>
-            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(appointments)}">
-                Vous n'avez pas encore de rendez-vous. <a href="/recherche">Trouvez un professionnel</a> pour commencer.
-            </p>
-        </div>
-    </div>
-</main>
-
-<footer th:replace="~{fragments/footer :: footer}"></footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
 </html>

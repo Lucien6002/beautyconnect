@@ -1,82 +1,181 @@
-<!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head(title='Administration')}"></head>
-<body class="d-flex flex-column min-vh-100">
-
-<nav th:replace="~{fragments/navbar :: navbar}"></nav>
-<div th:replace="~{fragments/alerts :: alerts}"></div>
-
-<main class="flex-grow-1 container my-5">
-    <h1 class="h4 mb-4">Tableau de bord administrateur</h1>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center p-3">
-                <div class="display-6" th:text="${metrics.totalClients}"></div>
-                <div class="text-muted small">Clients inscrits</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center p-3">
-                <div class="display-6" th:text="${metrics.totalProfessionals}"></div>
-                <div class="text-muted small">Professionnels inscrits</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center p-3">
-                <div class="display-6 text-success" th:text="${metrics.validatedProfessionals}"></div>
-                <div class="text-muted small">Profils valides</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center p-3">
-                <div class="display-6 text-warning" th:text="${metrics.pendingProfessionals}"></div>
-                <div class="text-muted small">En attente de validation</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h2 class="h6 mb-0">Professionnels en attente de validation</h2>
-                    <a href="/admin/professionnels?statut=en-attente" class="btn btn-sm btn-outline-primary">Gerer</a>
+<!doctype html>
+<html
+    lang="fr"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <head th:replace="~{fragments/head :: head(title='Administration')}"></head>
+    <body>
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="container bc-workspace" data-role="admin">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='admin', active='dashboard')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <header class="bc-dashboard-heading">
+                    <div>
+                        <span class="bc-eyebrow"
+                            >Votre espace administrateur</span
+                        >
+                        <h1>Veiller sur le réseau.</h1>
+                        <p>
+                            Validation des professionnels, avis et signalements
+                            : vos priorités en un regard.
+                        </p>
+                    </div>
+                    <a
+                        class="btn btn-primary"
+                        href="/admin/professionnels?statut=en-attente"
+                        ><i class="bi bi-person-check" aria-hidden="true"></i>
+                        Examiner les profils</a
+                    >
+                </header>
+                <div class="bc-stat-grid">
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i class="bi bi-people" aria-hidden="true"></i
+                        ></span>
+                        <div>
+                            <strong th:text="${metrics.totalClients}"></strong
+                            ><span>Clients inscrits</span>
+                        </div>
+                    </div>
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i class="bi bi-shop" aria-hidden="true"></i
+                        ></span>
+                        <div>
+                            <strong
+                                th:text="${metrics.totalProfessionals}"
+                            ></strong
+                            ><span>Professionnels inscrits</span>
+                        </div>
+                    </div>
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i class="bi bi-patch-check" aria-hidden="true"></i
+                        ></span>
+                        <div>
+                            <strong
+                                th:text="${metrics.validatedProfessionals}"
+                            ></strong
+                            ><span>Profils validés</span>
+                        </div>
+                    </div>
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i
+                                class="bi bi-hourglass-split"
+                                aria-hidden="true"
+                            ></i
+                        ></span>
+                        <div>
+                            <strong
+                                th:text="${metrics.pendingProfessionals}"
+                            ></strong
+                            ><span>En attente de validation</span>
+                        </div>
+                    </div>
                 </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center"
-                        th:each="p : ${pendingProfessionals}">
-                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" th:text="${p.businessName} + ' - ' + ${p.city}"></a>
-                        <a th:href="@{'/admin/professionnels/' + ${p.id}}" class="btn btn-sm btn-outline-primary">Examiner</a>
-                    </li>
-                    <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(pendingProfessionals)}">
-                        Aucun profil en attente.
-                    </li>
-                </ul>
-            </div>
-        </div>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm">
+                            <div
+                                class="card-header bg-white d-flex justify-content-between align-items-center"
+                            >
+                                <h2 class="h6 mb-0">
+                                    Professionnels en attente de validation
+                                </h2>
+                                <a
+                                    href="/admin/professionnels?statut=en-attente"
+                                    class="btn btn-sm btn-outline-primary"
+                                    >Gerer</a
+                                >
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li
+                                    class="list-group-item d-flex justify-content-between align-items-center"
+                                    th:each="p : ${pendingProfessionals}"
+                                >
+                                    <a
+                                        th:href="@{'/admin/professionnels/' + ${p.id}}"
+                                        th:text="${p.businessName} + ' - ' + ${p.city}"
+                                    ></a>
+                                    <a
+                                        th:href="@{'/admin/professionnels/' + ${p.id}}"
+                                        class="btn btn-sm btn-outline-primary"
+                                        >Examiner</a
+                                    >
+                                </li>
+                                <li
+                                    class="list-group-item text-muted small"
+                                    th:if="${#lists.isEmpty(pendingProfessionals)}"
+                                >
+                                    Aucun profil en attente.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
 
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h2 class="h6 mb-0">Signalements en attente</h2>
-                    <a href="/admin/signalements" class="btn btn-sm btn-outline-primary">Gerer</a>
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm">
+                            <div
+                                class="card-header bg-white d-flex justify-content-between align-items-center"
+                            >
+                                <h2 class="h6 mb-0">Signalements en attente</h2>
+                                <a
+                                    href="/admin/signalements"
+                                    class="btn btn-sm btn-outline-primary"
+                                    >Gerer</a
+                                >
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li
+                                    class="list-group-item"
+                                    th:each="r : ${pendingReports}"
+                                >
+                                    <div
+                                        class="small text-muted"
+                                        th:text="${r.targetType} + ' #' + ${r.targetId}"
+                                    ></div>
+                                    <div th:text="${r.reason}"></div>
+                                </li>
+                                <li
+                                    class="list-group-item text-muted small"
+                                    th:if="${#lists.isEmpty(pendingReports)}"
+                                >
+                                    Aucun signalement en attente.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item" th:each="r : ${pendingReports}">
-                        <div class="small text-muted" th:text="${r.targetType} + ' #' + ${r.targetId}"></div>
-                        <div th:text="${r.reason}"></div>
-                    </li>
-                    <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(pendingReports)}">
-                        Aucun signalement en attente.
-                    </li>
-                </ul>
-            </div>
+                <div class="bc-action-grid">
+                    <a class="bc-action-card" href="/admin/avis"
+                        ><i
+                            class="bi bi-chat-square-text"
+                            aria-hidden="true"
+                        ></i>
+                        <div>
+                            <strong>Modérer les avis</strong
+                            ><span>Consulter et gérer les avis publiés.</span>
+                        </div>
+                        <i
+                            class="bi bi-arrow-up-right"
+                            aria-hidden="true"
+                        ></i></a
+                    ><a class="bc-action-card" href="/admin/signalements"
+                        ><i class="bi bi-flag" aria-hidden="true"></i>
+                        <div>
+                            <strong>Traiter les signalements</strong
+                            ><span>Examiner les contenus signalés.</span>
+                        </div>
+                        <i class="bi bi-arrow-up-right" aria-hidden="true"></i
+                    ></a>
+                </div>
+            </main>
         </div>
-    </div>
-</main>
-
-<footer th:replace="~{fragments/footer :: footer}"></footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
 </html>

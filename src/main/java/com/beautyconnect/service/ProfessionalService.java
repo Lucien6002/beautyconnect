@@ -36,6 +36,11 @@ public class ProfessionalService {
     private final TimeSlotRepository timeSlotRepository;
     private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
 
+    @Transactional(readOnly = true)
+    public List<Prestation> getPublicPrestationPreviews() {
+        return prestationRepository.findPublicPreviews(org.springframework.data.domain.PageRequest.of(0, 6));
+    }
+
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
     // une exception metier personnalisee plutot que de retourner null (ce qui
     // provoquerait un NullPointerException plus loin, difficile a diagnostiquer).

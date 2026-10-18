@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.GetMapping;
  * Thymeleaf genere le HTML final envoye au navigateur.
  */
 @Controller
+@lombok.RequiredArgsConstructor
 public class HomeController {
+
+    private final com.beautyconnect.service.ProfessionalService professionalService;
 
     // @GetMapping({"/", "/accueil"}) : cette methode repond a DEUX URL
     // differentes (la racine du site et /accueil), pratique quand plusieurs
@@ -33,6 +36,7 @@ public class HomeController {
         model.addAttribute("searchCriteria", new SearchCriteria());
         model.addAttribute("genders", TargetGender.values());
         model.addAttribute("types", ServiceType.values());
+        model.addAttribute("featuredPrestations", professionalService.getPublicPrestationPreviews());
         return "index"; // -> src/main/resources/templates/index.html
     }
 
