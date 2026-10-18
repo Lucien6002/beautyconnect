@@ -1,0 +1,75 @@
+# Système de design — BeautyConnect (`tokens.md`)
+
+> **Document de référence partagé (Contrat d'équipe J1)**
+>
+> **Cible :** Étudiants et nouveaux arrivants cherchant un prestataire local fiable.
+> **Concept visuel :** Carnet de quartier (lisible, sobre, cartes complètes et contrastées).
+
+---
+
+## 1. Palette de couleurs (`--bc-*`)
+
+Toutes les couleurs de l'application doivent exclusivement utiliser ces variables CSS. Aucun code hexadécimal arbitraire ne doit être codé en dur dans les templates.
+
+| Token CSS | Hexadécimal | Rôle & Usage | Contraste / Accessibilité |
+| :--- | :--- | :--- | :--- |
+| `--bc-ink` | `#281F35` | Titres principaux, navigation, texte fort | Contraste élevé sur fond clair |
+| `--bc-text` | `#3E354A` | Corps de texte, labels de formulaires | Texte courant lisible |
+| `--bc-muted` | `#665D70` | Textes d'aide, métadonnées, sous-titres | Usage secondaire uniquement |
+| `--bc-primary` | `#6244C5` | Boutons d'action, liens, focus clavier | Accent principal de marque |
+| `--bc-primary-soft` | `#EEE9FC` | Badges neutres, filtres actifs, survol doux | Fond pour texte `--bc-primary` |
+| `--bc-coral` | `#D85F69` | Accent rare, alertes d'erreur | **Ne jamais utiliser seul pour une erreur** |
+| `--bc-mint` | `#D9F2E9` | Confirmation, disponibilité de créneau | Fond pour texte de validation sombre |
+| `--bc-canvas` | `#FAF9FC` | Arrière-plan global de l'application (`body`) | Fond général reposant |
+| `--bc-surface` | `#FFFFFF` | Cartes, modales, conteneurs de formulaire | Fond contrasté sur le canvas |
+
+---
+
+## 2. Typographie
+
+### Polices
+* **Titres courts (H1, H2, accroches héros) :** `'Fraunces', Georgia, serif`
+* **Corps de texte, navigation et formulaires :** `'Manrope', system-ui, -apple-system, sans-serif`
+
+### Échelle modulaire
+* **Titre héros (accueil) :** `clamp(2.25rem, 5vw, 4rem)` (line-height: `1.15`, font-weight: `700`)
+* **Titre H1 interne :** `2rem` (32 px)
+* **Titre H2 (sections, cartes clés) :** `1.25rem` (20 px)
+* **Corps de texte standard :** `1rem` (16 px)
+* **Métadonnées / petits labels :** `0.875rem` (14 px)
+
+---
+
+## 3. Espacements & Géométrie
+
+### Échelle d'espacement (rythme par pas de `0.25rem` / 4 px)
+* `0.25rem` (4 px) : espacement interne d'icônes, badges compacts
+* `0.5rem` (8 px) : écart entre label et champ de saisie
+* `1rem` (16 px) : espacement standard interne (padding de carte mobile, gap de formulaire)
+* `1.5rem` (24 px) : marges entre blocs de formulaire
+* `2rem` (32 px) : espacement de section
+
+### Rayons de courbure (`border-radius`)
+* **Petits éléments (badges, puces) :** `8px`
+* **Boutons & champs de formulaire :** `12px`
+* **Cartes prestataires & blocs conteneurs :** `16px`
+
+### Élévation & Ombres
+* **Ombre discrète de carte :** `0 2px 8px rgba(40, 31, 53, 0.06)`
+* **Ombre de focus / survol :** `0 4px 16px rgba(98, 68, 197, 0.12)`
+
+---
+
+## 4. Règles d'accessibilité et ergonomie
+
+1. **Navigation clavier :** Tout élément interactif (`a`, `button`, `input`, `select`) doit afficher au focus :
+   `outline: 2px solid var(--bc-primary); outline-offset: 2px;`
+2. **Gestion des erreurs de saisie :** Ne jamais coder une erreur uniquement avec la couleur rouge (`--bc-coral`). Toujours associer :
+   * Une bordure contrastée
+   * Un texte explicite rattaché via `th:errors`
+   * Une icône ou un préfixe textuel signalant le problème
+3. **Ergonomie mobile (tactile) :**
+   * Cible tactile minimale : **44 × 44 px** pour tous les boutons et liens cliquables.
+   * Cartes en **colonne unique** sous 768 px de largeur.
+   * Prochaine disponibilité, tarif et durée visibles sans manipulation complexe.
+4. **Mouvement réduit :** Respect strict de `@media (prefers-reduced-motion: reduce)` en neutralisant les transitions.
