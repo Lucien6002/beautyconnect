@@ -2,64 +2,83 @@
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Recherche')}"></head>
 <body class="d-flex flex-column min-vh-100">
-
 <nav th:replace="~{fragments/navbar :: navbar}"></nav>
-
+<div th:replace="~{fragments/alerts :: alerts}"></div>
 <main class="flex-grow-1 container my-5">
     <h1 class="h4 mb-4">Trouver un professionnel</h1>
-
     <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3 mb-4 bg-light p-3 rounded">
-        <div class="col-md-4">
-            <label class="form-label">Ville / quartier</label>
-            <input type="text" class="form-control" th:field="*{city}"/>
+        <div class="col-md-3"><label for="city" class="form-label">Ville / quartier</label>
+            <input class="form-control" th:field="*{city}" maxlength="100"/></div>
+        <div class="col-md-3"><label for="name" class="form-label">Nom du professionnel</label>
+            <input class="form-control" th:field="*{name}" maxlength="100"/></div>
+        <div class="col-md-3"><label for="type" class="form-label">Type de prestation</label>
+            <select class="form-select" th:field="*{type}"><option value="">Toutes</option>
+                <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option></select></div>
+        <div class="col-md-3"><label for="gender" class="form-label">Clientèle</label>
+            <select class="form-select" th:field="*{gender}"><option value="">Indifférent</option>
+                <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option></select></div>
+        <input type="hidden" th:field="*{clientLatitude}"/>
+        <input type="hidden" th:field="*{clientLongitude}"/>
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <button type="button" id="btn-autour-de-moi" class="btn btn-outline-primary">Autour de moi (GPS)</button>
+            <button type="button" id="clear-position" class="btn btn-outline-secondary">Retirer ma position</button>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Type de prestation</label>
-            <select class="form-select" th:field="*{type}">
-                <option value="">Toutes</option>
-                <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Clientele</label>
-            <select class="form-select" th:field="*{gender}">
-                <option value="">Indifferent</option>
-                <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
-            </select>
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-        </div>
+        <p class="small text-muted mb-0">Le GPS est facultatif. Sans autorisation, cherchez par ville. Votre position n’est pas enregistrée dans votre compte.</p>
     </form>
-
-    <p class="text-muted" th:text="${#lists.size(results)} + ' professionnel(le)s trouve(e)s'"></p>
-
+    <p class="text-muted" th:text="${resultPage.totalElements} + ' professionnel(le)s trouvé(e)s'"></p>
+    <p th:if="${routingNotice}" th:text="${routingNotice}" class="alert alert-info small"></p>
+    <div id="map-status" class="small mb-2" role="status" aria-live="polite"></div>
+    <div id="map" role="region" aria-label="Carte des professionnels de cette page" style="height: 380px; width: 100%; border-radius: 10px; margin-bottom: 20px; z-index: 1;"></div>
+    <noscript><p class="alert alert-info">La liste et les liens restent disponibles. Activez JavaScript pour la carte et le GPS.</p></noscript>
     <div class="row g-4">
-        <div class="col-md-6 col-lg-4" th:each="pro : ${results}">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h2 class="h5 card-title" th:text="${pro.businessName}"></h2>
-                    <p class="text-muted small mb-1"><i class="bi bi-geo-alt"></i> <span th:text="${pro.city}"></span></p>
-                    <p class="mb-2">
-                        <span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
-                        <span class="text-warning ms-2">
-                            <i class="bi bi-star-fill"></i>
-                            <span th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)}">0.0</span>/5
-                        </span>
-                    </p>
-                    <p class="card-text small" th:text="${#strings.abbreviate(pro.bio ?: 'Aucune presentation.', 100)}"></p>
-                    <a th:href="@{'/professionnels/' + ${pro.id}}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
+        <div class="col-md-6 col-lg-4" th:each="pro : ${results}" th:id="'professional-' + ${pro.id}">
+            <article class="card h-100 shadow-sm"><div class="card-body">
+                <h2 class="h5 card-title" th:text="${pro.businessName}"></h2>
+                <p class="text-muted small mb-1" th:text="${pro.city}"></p>
+                <p><span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
+                    <span class="text-warning ms-2" th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)} + '/5'"></span></p>
+                <p th:if="${walking.containsKey(pro.id)}" class="small text-primary"
+                   th:text="${#numbers.formatDecimal(walking.get(pro.id).distanceKm(), 1, 1)} + ' km à pied · environ ' + ${#numbers.formatDecimal(walking.get(pro.id).durationMinutes(), 1, 0)} + ' min'"></p>
+                <p th:if="${distances.containsKey(pro.id) and !walking.containsKey(pro.id)}" class="small text-muted"
+                   th:text="${#numbers.formatDecimal(distances.get(pro.id), 1, 1)} + ' km à vol d’oiseau · trajet piéton indisponible'"></p>
+                <p th:if="${!pro.coordinatesPublic or pro.latitude == null or pro.longitude == null}" class="small text-muted">Coordonnées et distance indisponibles.</p>
+                <p class="card-text small" th:text="${pro.bio != null ? #strings.abbreviate(pro.bio, 100) : 'Aucune présentation.'}"></p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{/professionnels/{id}(id=${pro.id})}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
+                    <button th:if="${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null}" type="button" class="btn btn-outline-secondary btn-sm show-on-map" th:attr="data-pro-id=${pro.id}">Voir sur la carte</button>
+                    <a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null ? pro.latitude + ',' + pro.longitude : pro.city},travelmode='transit')}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">Bus / transports</a>
                 </div>
-            </div>
+            </div></article>
         </div>
     </div>
-
-    <div th:if="${#lists.isEmpty(results)}" class="alert alert-info mt-4">
-        Aucun professionnel ne correspond a votre recherche pour le moment.
-    </div>
+    <p th:if="${#lists.isEmpty(results)}" class="alert alert-info mt-4">Aucun professionnel ne correspond à votre recherche.</p>
+    <nav th:if="${resultPage.totalPages > 1}" class="d-flex justify-content-between align-items-center mt-4" aria-label="Pages de résultats">
+        <a th:if="${resultPage.hasPrevious()}" class="btn btn-outline-primary" th:href="@{/recherche(city=${searchCriteria.city},name=${searchCriteria.name},type=${searchCriteria.type},gender=${searchCriteria.gender},clientLatitude=${searchCriteria.clientLatitude},clientLongitude=${searchCriteria.clientLongitude},page=${resultPage.number - 1})}">Précédente</a>
+        <span th:text="'Page ' + ${resultPage.number + 1} + ' sur ' + ${resultPage.totalPages}"></span>
+        <a th:if="${resultPage.hasNext()}" class="btn btn-outline-primary" th:href="@{/recherche(city=${searchCriteria.city},name=${searchCriteria.name},type=${searchCriteria.type},gender=${searchCriteria.gender},clientLatitude=${searchCriteria.clientLatitude},clientLongitude=${searchCriteria.clientLongitude},page=${resultPage.number + 1})}">Suivante</a>
+    </nav>
 </main>
-
 <footer th:replace="~{fragments/footer :: footer}"></footer>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="javascript">
+    window.beautyMap = {
+        latitude: /*[[${searchCriteria.clientLatitude}]]*/ null,
+        longitude: /*[[${searchCriteria.clientLongitude}]]*/ null,
+        tileUrl: /*[[${mapTileUrl}]]*/ 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        professionals: []
+    };
+    /*[# th:each="pro : ${results}"]*/
+    window.beautyMap.professionals.push({
+        id: /*[[${pro.id}]]*/ 0,
+        name: /*[[${pro.businessName}]]*/ '',
+        latitude: /*[[${pro.coordinatesPublic ? pro.latitude : null}]]*/ null,
+        longitude: /*[[${pro.coordinatesPublic ? pro.longitude : null}]]*/ null
+    });
+    /*[/]*/
+</script>
+<script th:src="@{/js/search-map.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

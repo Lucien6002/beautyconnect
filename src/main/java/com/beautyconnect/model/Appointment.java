@@ -38,13 +38,15 @@ public class Appointment {
     @JoinColumn(name = "prestation_id", nullable = false)
     private Prestation prestation;
 
-    // @OneToOne ici (et pas @ManyToOne) : un creneau (TimeSlot) ne peut etre
-    // utilise que par UN SEUL rendez-vous a la fois. "unique = true" sur la
-    // colonne traduit cette regle au niveau de la base de donnees elle-meme,
-    // en plus du controle applicatif fait dans AppointmentService.
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "time_slot_id", nullable = false, unique = true)
+    // Historique : un créneau peut avoir plusieurs demandes successives.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "time_slot_id", nullable = false)
     private TimeSlot timeSlot;
+
+    // Occupation exclusive, libérée après refus/annulation. Plusieurs NULL
+    // sont permis ; la base interdit deux occupations du même créneau.
+    @Column(name = "active_time_slot_id", unique = true)
+    private Long activeTimeSlotId;
 
     // Voir AppointmentStatus pour le detail du cycle de vie (EN_ATTENTE -> CONFIRME/REFUSE -> TERMINE/ANNULE).
     @Enumerated(EnumType.STRING)

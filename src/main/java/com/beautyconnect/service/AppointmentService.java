@@ -16,8 +16,9 @@ import java.util.List;
 
 /**
  * Prise de rendez-vous, confirmation (avec envoi du mail), refus et annulation.
- * Voir {@link UserService} pour l'explication de @Service / @RequiredArgsConstructor.
+ * Voir {@link UserService} pour l’explication de @Service / @RequiredArgsConstructor.
  */
+@lombok.extern.slf4j.Slf4j
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
@@ -26,6 +27,7 @@ public class AppointmentService {
     private final TimeSlotRepository timeSlotRepository;
     private final PrestationRepository prestationRepository;
     private final EmailService emailService;
+    private final com.beautyconnect.repository.UserRepository userRepository;
 
     /**
      * Cree un rendez-vous pour un client, apres avoir verifie que le creneau
@@ -33,7 +35,10 @@ public class AppointmentService {
      */
     @Transactional
     public Appointment book(User client, ProfessionalProfile professional, AppointmentForm form) {
-        TimeSlot slot = timeSlotRepository.findById(form.getTimeSlotId())
+        if (form.getNotes() != null && form.getNotes().length() > 1000) {
+            throw new IllegalOperationException("Le message ne doit pas dépasser 1 000 caractères");
+        }
+        TimeSlot slot = timeSlotRepository.findByIdForUpdate(form.getTimeSlotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Creneau introuvable"));
 
         if (!slot.getProfessional().getId().equals(professional.getId())) {
@@ -50,8 +55,14 @@ public class AppointmentService {
         }
 
         // Vérifier que le pro est validé par l'admin ET que son compte est actif
-        if (!professional.isValidated() || !professional.getUser().isEnabled()) {
+        if (!slot.getProfessional().isValidated() || !slot.getProfessional().getUser().isEnabled()) {
             throw new IllegalOperationException("Ce professionnel n'est pas disponible pour le moment.");
+        }
+
+        User currentClient = userRepository.findById(client.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Compte client introuvable"));
+        if (!currentClient.isEnabled() || currentClient.getRole() != Role.CLIENT) {
+            throw new IllegalOperationException("Ce compte client ne peut pas réserver.");
         }
 
         Prestation prestation = prestationRepository.findById(form.getPrestationId())
@@ -71,18 +82,15 @@ public class AppointmentService {
         timeSlotRepository.save(slot);
 
         Appointment appointment = Appointment.builder()
-                .client(client)
+                .client(currentClient)
                 .professional(professional)
                 .prestation(prestation)
                 .timeSlot(slot)
+                .activeTimeSlotId(slot.getId())
                 .status(AppointmentStatus.EN_ATTENTE)
                 .notes(form.getNotes())
                 .build();
 
-        // Note sur la concurrence : Si deux clients arrivent EXACTEMENT à la même milliseconde
-        // et passent les 'if' ci-dessus, la base de données PostgreSQL va rejeter le deuxième
-        // car la colonne 'time_slot_id' de la table 'appointments' est UNIQUE (voir entité Appointment).
-        // Cela garantit "un seul gagnant concurrent".
         return appointmentRepository.save(appointment);
     }
 
@@ -102,7 +110,14 @@ public class AppointmentService {
         validateTransition(appointment.getStatus(), AppointmentStatus.CONFIRME);
         appointment.setStatus(AppointmentStatus.CONFIRME);
         appointment = appointmentRepository.save(appointment);
-        emailService.sendAppointmentConfirmation(appointment);
+        final Appointment confirmed = appointment;
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                        try { emailService.sendAppointmentConfirmation(confirmed); }
+                        catch (RuntimeException ex) { log.warn("Mail de confirmation indisponible après enregistrement du rendez-vous."); }
+                    }
+                });
         return appointment;
     }
 
@@ -119,7 +134,7 @@ public class AppointmentService {
 
     @Transactional
     public Appointment cancelByClient(User client, Long appointmentId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
+        Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rendez-vous introuvable"));
         if (!appointment.getClient().getId().equals(client.getId())) {
             throw new IllegalOperationException("Ce rendez-vous n'appartient pas a ce client");
@@ -141,7 +156,9 @@ public class AppointmentService {
     }
 
     private void releaseSlot(Appointment appointment) {
-        TimeSlot slot = appointment.getTimeSlot();
+        TimeSlot slot = timeSlotRepository.findByIdForUpdate(appointment.getTimeSlot().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Créneau introuvable"));
+        appointment.setActiveTimeSlotId(null);
         slot.setAvailable(true);
         timeSlotRepository.save(slot);
     }
@@ -150,7 +167,7 @@ public class AppointmentService {
     // rendez-vous et verifie au passage qu'il appartient bien au
     // professionnel connecte (meme logique de securite que dans ProfessionalService).
     private Appointment getOwnedByProfessional(ProfessionalProfile professional, Long appointmentId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
+        Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rendez-vous introuvable"));
         if (!appointment.getProfessional().getId().equals(professional.getId())) {
             throw new IllegalOperationException("Ce rendez-vous n'appartient pas a ce professionnel");

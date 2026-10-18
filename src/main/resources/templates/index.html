@@ -82,6 +82,38 @@
             <div class="col-md-4">
               <label class="form-label">Ville / quartier</label>
               <input type="text" class="form-control" th:field="*{city}" placeholder="Ex : Lyon 3e" />
+<main class="flex-grow-1">
+    <section class="container my-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-3"><i class="bi bi-search"></i> Rechercher un professionnel</h2>
+                <form th:action="@{/recherche}" th:object="${searchCriteria}" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Nom du salon</label>
+                        <input type="text" class="form-control" th:field="*{name}" placeholder="Ex : Sarah Coiffure"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ville / quartier</label>
+                        <input type="text" class="form-control" th:field="*{city}" placeholder="Ex : Lyon 3e"/>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Type de prestation</label>
+                        <select class="form-select" th:field="*{type}">
+                            <option value="">Toutes les prestations</option>
+                            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Clientele</label>
+                        <select class="form-select" th:field="*{gender}">
+                            <option value="">Indifferent</option>
+                            <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary px-4">Rechercher</button>
+                    </div>
+                </form>
             </div>
             <div class="col-md-4">
               <label class="form-label">Type de prestation</label>

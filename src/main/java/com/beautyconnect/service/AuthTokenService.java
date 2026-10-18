@@ -39,6 +39,7 @@ public class AuthTokenService {
     public void generateAndSendActivationLink(User user) {
         // Supprime les anciens jetons s'il y en a
         tokenRepository.deleteByUser(user);
+        tokenRepository.flush();
 
         // Génère un jeton unique (UUID)
         String token = UUID.randomUUID().toString();
@@ -51,7 +52,7 @@ public class AuthTokenService {
         tokenRepository.save(vt);
 
         // Crée le lien cliquable
-        String activationLink = appBaseUrl + "/activer-compte?token=" + token;
+        String activationLink = appBaseUrl.replaceAll("/+$", "") + "/activer-compte?token=" + token;
 
         // Prépare l'e-mail
         SimpleMailMessage message = new SimpleMailMessage();
@@ -66,23 +67,38 @@ public class AuthTokenService {
         try{
             mailSender.send(message);
         }catch (Exception e){
-            log.warn("Erreur d'envoie d'email: "+ e.getMessage());
+            log.warn("Envoi du mail d’activation indisponible ; le renvoi reste possible.");
         }
 
     }
 
     @Transactional
+    public void resendActivation(String email) {
+        userRepository.findByEmailForUpdate(email.trim().toLowerCase(java.util.Locale.ROOT)).ifPresent(user -> {
+            if (user.isEnabled() || user.isEmailVerified()) return;
+            var previous = tokenRepository.findByUser(user);
+            if (previous.isPresent() && previous.get().getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(60))) return;
+            generateAndSendActivationLink(user);
+        });
+    }
+
+    @Transactional(noRollbackFor = IllegalOperationException.class)
     public void activateAccount(String token) {
-        VerificationToken vt = tokenRepository.findByToken(token)
+        VerificationToken vt = tokenRepository.findByTokenForUpdate(token)
                 .orElseThrow(() -> new IllegalOperationException("Lien d'activation invalide ou expiré."));
 
         if (vt.isExpired()) {
             tokenRepository.delete(vt);
-            throw new IllegalOperationException("Ce lien a expiré. Veuillez vous réinscrire.");
+            throw new IllegalOperationException("Ce lien a expiré. Demandez un nouveau lien sur la page de connexion.");
         }
 
         // Active l'utilisateur
         User user = vt.getUser();
+        if (user.isEmailVerified()) {
+            tokenRepository.delete(vt);
+            throw new IllegalOperationException("Ce lien a déjà été utilisé.");
+        }
+        user.setEmailVerified(true);
         user.setEnabled(true);
         userRepository.save(user);
 

@@ -38,7 +38,7 @@
                     <td th:text="${a.professional.businessName}"></td>
                     <td th:text="${a.prestation.name}"></td>
                     <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
-                    <td><span class="badge text-bg-secondary" th:text="${a.status}"></span></td>
+                    <td><span class="badge" th:classappend="${a.status.name() == 'CONFIRME' ? 'text-bg-success' : a.status.name() == 'EN_ATTENTE' ? 'text-bg-warning' : 'text-bg-secondary'}" th:text="${a.status}"></span></td>
                 </tr>
                 </tbody>
             </table>

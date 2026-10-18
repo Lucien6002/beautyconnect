@@ -41,7 +41,7 @@ public class UserService {
         checkEmailAvailable(form.getEmail());
 
         User user = User.builder()
-                .email(form.getEmail().toLowerCase())
+                .email(form.getEmail().trim().toLowerCase(java.util.Locale.ROOT))
                 .password(passwordEncoder.encode(form.getPassword()))
                 .firstName(form.getFirstName())
                 .lastName(form.getLastName())
@@ -60,7 +60,7 @@ public class UserService {
         checkEmailAvailable(form.getEmail());
 
         User user = User.builder()
-                .email(form.getEmail().toLowerCase())
+                .email(form.getEmail().trim().toLowerCase(java.util.Locale.ROOT))
                 .password(passwordEncoder.encode(form.getPassword()))
                 .firstName(form.getFirstName())
                 .lastName(form.getLastName())
@@ -88,7 +88,7 @@ public class UserService {
     // Methode privee : utilitaire interne a la classe, non exposee aux
     // controleurs. Leve une exception metier si l'email est deja pris.
     private void checkEmailAvailable(String email) {
-        if (userRepository.existsByEmail(email.toLowerCase())) {
+        if (userRepository.existsByEmail(email.trim().toLowerCase(java.util.Locale.ROOT))) {
             throw new EmailAlreadyUsedException(email);
         }
     }
