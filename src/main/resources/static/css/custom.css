@@ -302,9 +302,6 @@ footer a:hover {
    ========================================================================== */
 .bc-hero {
   position: relative;
-  background: linear-gradient(135deg,
-      rgba(40, 31, 53, 0.72) 0%,
-      rgba(98, 68, 197, 0.55) 100%), url('../images/acceuil1.png') center center / cover no-repeat;
   color: #FFFFFF;
 
   /* Plein écran : 100% de la hauteur moins la navbar */
@@ -316,6 +313,34 @@ footer a:hover {
   justify-content: center;
   padding: 2rem 1rem;
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 1. L'image de fond qui change en fondu */
+.bc-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transition: background-image 1.5s ease-in-out;
+  z-index: 1;
+}
+
+/* 2. Ton dégradé violet d'origine (fixe par-dessus les images) */
+.bc-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+      rgba(40, 31, 53, 0.72) 0%,
+      rgba(98, 68, 197, 0.55) 100%);
+  z-index: 2;
+}
+
+/* 3. Le texte et le formulaire restent au-dessus */
+.bc-hero .container {
+  position: relative;
+  z-index: 3;
 }
 
 .bc-hero h1 {
