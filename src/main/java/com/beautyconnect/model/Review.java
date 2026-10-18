@@ -36,8 +36,11 @@ public class Review {
     // Pas de "optional = false" ici : contrairement aux autres relations,
     // l'avis peut exister meme si le rendez-vous d'origine a ete supprime
     // (on garde une trace de l'avis, on perd juste le lien vers le rendez-vous).
+    // Renseigne = avis verifie. unique = true : un seul avis par rendez-vous
+    // (index ux_reviews_appointment cree par la migration V3 en base reelle).
+    // Plusieurs avis libres (appointment_id NULL) restent possibles en SQL.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
+    @JoinColumn(name = "appointment_id", unique = true)
     private Appointment appointment;
 
     // Note numerique (ex: 1 a 5 etoiles). La validation de la plage de valeurs

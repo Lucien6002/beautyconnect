@@ -2,6 +2,7 @@ package com.beautyconnect.repository;
 
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Review;
+import com.beautyconnect.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -28,4 +29,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // ne pourrait pas les lire apres la fermeture de la session Hibernate.
     @Query("SELECT r FROM Review r JOIN FETCH r.client JOIN FETCH r.professional ORDER BY r.createdAt DESC")
     List<Review> findAllByOrderByCreatedAtDesc();
+
+    // Un avis existe-t-il deja pour ce rendez-vous ? (un seul avis par rendez-vous)
+    boolean existsByAppointmentId(Long appointmentId);
+
+    // Le client a-t-il deja laisse un avis libre (sans rendez-vous) a ce
+    // professionnel ? Les avis masques par l'admin comptent aussi : sinon un
+    // client dont l'avis abusif a ete masque pourrait simplement le reposter.
+    boolean existsByClientAndProfessionalAndAppointmentIsNull(User client, ProfessionalProfile professional);
 }
