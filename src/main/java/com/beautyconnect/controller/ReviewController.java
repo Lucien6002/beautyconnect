@@ -1,6 +1,7 @@
 package com.beautyconnect.controller;
 
 import com.beautyconnect.dto.ReviewForm;
+import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.security.CustomUserDetails;
 import com.beautyconnect.service.ProfessionalService;
@@ -32,12 +33,21 @@ public class ReviewController {
                              @AuthenticationPrincipal CustomUserDetails principal,
                              RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("error", "Merci de renseigner une note valide (1 a 5).");
+            // Premier message de validation du formulaire (note hors 1-5,
+            // commentaire trop long...), voir les annotations de ReviewForm.
+            redirectAttributes.addFlashAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
             return "redirect:/professionnels/" + professionalId;
         }
         ProfessionalProfile professional = professionalService.getProfileOrThrow(professionalId);
-        reviewService.addReview(principal.getUser(), professional, reviewForm);
-        redirectAttributes.addFlashAttribute("success", "Merci pour votre avis !");
+        // Les regles metier (doublon, rendez-vous non termine ou d'un autre
+        // client...) sont verifiees dans ReviewService : on les affiche en
+        // message flash sur la fiche du professionnel plutot qu'en page 400.
+        try {
+            reviewService.addReview(principal.getUser(), professional, reviewForm);
+            redirectAttributes.addFlashAttribute("success", "Merci pour votre avis !");
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/professionnels/" + professionalId;
     }
 }
