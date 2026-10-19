@@ -1,6 +1,7 @@
 package com.beautyconnect.controller;
 
 import com.beautyconnect.dto.ReportForm;
+import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.model.ReportTargetType;
 import com.beautyconnect.security.CustomUserDetails;
 import com.beautyconnect.service.ReportService;
@@ -30,16 +31,7 @@ public class ReportController {
                                 BindingResult bindingResult,
                                 @AuthenticationPrincipal CustomUserDetails principal,
                                 RedirectAttributes redirectAttributes) {
-        // () -> reportService.create(...) est une expression lambda : une
-        // "action a executer plus tard", passee en parametre a
-        // handleReport() sous forme d'un Runnable (interface fonctionnelle
-        // Java qui represente "une methode sans parametre ni retour").
-        // Interet ici : reportReview() et reportProfile() ne different que
-        // par CE QUI doit etre execute en cas de succes ; handleReport()
-        // factorise tout le reste (verification des erreurs, message flash,
-        // redirection) en un seul endroit au lieu de le dupliquer.
-        return handleReport(bindingResult, redirectAttributes, () ->
-                reportService.create(principal.getUser(), ReportTargetType.AVIS, reviewId, reportForm), null);
+        return handleReport(principal, ReportTargetType.AVIS, reviewId, reportForm, bindingResult, redirectAttributes);
     }
 
     @PostMapping("/signalements/profils/{professionalId}")
@@ -48,22 +40,34 @@ public class ReportController {
                                  BindingResult bindingResult,
                                  @AuthenticationPrincipal CustomUserDetails principal,
                                  RedirectAttributes redirectAttributes) {
-        return handleReport(bindingResult, redirectAttributes, () ->
-                reportService.create(principal.getUser(), ReportTargetType.PROFIL_PROFESSIONNEL, professionalId, reportForm),
-                "/professionnels/" + professionalId);
+        return handleReport(principal, ReportTargetType.PROFIL_PROFESSIONNEL, professionalId, reportForm,
+                bindingResult, redirectAttributes);
     }
 
-    // Methode privee commune factorisant la logique partagee par les deux
-    // endpoints ci-dessus. redirectOverride permet a chaque appelant de
-    // choisir sa propre page de redirection (null -> valeur par defaut).
-    private String handleReport(BindingResult bindingResult, RedirectAttributes redirectAttributes,
-                                 Runnable action, String redirectOverride) {
+    // Methode privee commune aux deux endpoints ci-dessus, qui ne different
+    // que par le type de cible signalee.
+    //  - Erreur de formulaire (motif vide ou trop long) : premier message de
+    //    validation de ReportForm.
+    //  - Regle metier (cible inexistante ou invisible, signalement deja en
+    //    attente) : verifiee dans ReportService, affichee en message flash
+    //    plutot qu'en page 400.
+    // Redirection : la fiche du professionnel concerne si elle est visible
+    // (le client y etait), sinon son espace client.
+    private String handleReport(CustomUserDetails principal, ReportTargetType targetType, Long targetId,
+                                ReportForm reportForm, BindingResult bindingResult,
+                                RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("error", "Merci de preciser le motif du signalement.");
+            redirectAttributes.addFlashAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
         } else {
-            action.run(); // execute la lambda recue : cree effectivement le signalement en base.
-            redirectAttributes.addFlashAttribute("success", "Votre signalement a ete transmis a l'administrateur.");
+            try {
+                reportService.create(principal.getUser(), targetType, targetId, reportForm);
+                redirectAttributes.addFlashAttribute("success", "Votre signalement a ete transmis a l'administrateur.");
+            } catch (IllegalOperationException ex) {
+                redirectAttributes.addFlashAttribute("error", ex.getMessage());
+            }
         }
-        return "redirect:" + (redirectOverride != null ? redirectOverride : "/client/tableau-bord");
+        return reportService.findPublicProfessionalIdOf(targetType, targetId)
+                .map(id -> "redirect:/professionnels/" + id)
+                .orElse("redirect:/client/tableau-bord");
     }
 }
