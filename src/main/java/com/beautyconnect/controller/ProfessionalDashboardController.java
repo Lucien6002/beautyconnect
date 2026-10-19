@@ -3,6 +3,8 @@ package com.beautyconnect.controller;
 import com.beautyconnect.dto.PrestationForm;
 import com.beautyconnect.dto.TimeSlotForm;
 import com.beautyconnect.exception.IllegalOperationException;
+import com.beautyconnect.model.Appointment;
+import com.beautyconnect.model.AppointmentStatus;
 import com.beautyconnect.model.Prestation;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.ServiceType;
@@ -18,6 +20,16 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Espace professionnel : gestion du profil vitrine, des prestations
@@ -44,9 +56,25 @@ public class ProfessionalDashboardController {
         // ProfessionalProfile associe (relation 1-1, voir ProfessionalService.getProfileByUserId).
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         model.addAttribute("professional", profile);
-        model.addAttribute("prestationsCount", professionalService.getActivePrestations(profile).size());
         model.addAttribute("upcomingSlots", professionalService.getAvailableTimeSlots(profile).size());
-        model.addAttribute("appointments", appointmentService.getAppointmentsForProfessional(profile).stream().limit(5).toList());
+
+        List<Appointment> all = appointmentService.getAppointmentsForProfessional(profile);
+        List<Appointment> completed = all.stream().filter(a -> a.getStatus() == AppointmentStatus.TERMINE).toList();
+        model.addAttribute("completedCount", completed.size());
+        // Chiffre d'affaires du mois en cours : somme des tarifs des rendez-vous
+        // termines (realises) dont le creneau tombe dans le mois courant.
+        YearMonth currentMonth = YearMonth.now();
+        BigDecimal monthlyRevenue = completed.stream()
+                .filter(a -> YearMonth.from(a.getTimeSlot().getStartDateTime()).equals(currentMonth))
+                .map(a -> a.getPrestation().getPrice())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        model.addAttribute("monthlyRevenue", monthlyRevenue);
+        model.addAttribute("currentMonth", currentMonth.atDay(1));
+
+        // Seuls les rendez-vous qui ont abouti (hors annules/refuses) sont listes ici.
+        model.addAttribute("appointments", all.stream()
+                .filter(a -> a.getStatus() != AppointmentStatus.ANNULE && a.getStatus() != AppointmentStatus.REFUSE)
+                .limit(5).toList());
         return "professional/dashboard";
     }
 
@@ -193,9 +221,42 @@ public class ProfessionalDashboardController {
     public String removeTimeSlot(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
                                   RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        professionalService.removeTimeSlot(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Creneau supprime.");
+        try {
+            professionalService.removeTimeSlot(profile, id);
+            redirectAttributes.addFlashAttribute("success", "Creneau supprime.");
+        } catch (IllegalOperationException ex) {
+            // Message affiche sur la page des creneaux plutot que page d'erreur 400.
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/pro/creneaux";
+    }
+
+    // ---- Agenda ----
+
+    /** Un jour de la semaine de l'agenda, avec ses rendez-vous tries par heure. */
+    public record AgendaDay(LocalDate date, String label, boolean today, List<Appointment> appointments) {}
+
+    // Semaine en cours (lundi a dimanche). Alimente directement par les rendez-vous
+    // en base : chaque nouvelle reservation y apparait au chargement suivant.
+    // Les rendez-vous annules/refuses n'y figurent pas (le creneau est libere).
+    @GetMapping("/agenda")
+    public String agenda(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
+        LocalDate today = LocalDate.now();
+        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        List<Appointment> active = appointmentService.getAppointmentsForProfessional(profile).stream()
+                .filter(a -> a.getStatus() != AppointmentStatus.ANNULE && a.getStatus() != AppointmentStatus.REFUSE)
+                .toList();
+        DateTimeFormatter labelFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
+        List<AgendaDay> days = monday.datesUntil(monday.plusDays(7)).map(date -> new AgendaDay(
+                date, labelFormat.format(date), date.equals(today),
+                active.stream().filter(a -> a.getTimeSlot().getStartDateTime().toLocalDate().equals(date))
+                        .sorted(Comparator.comparing(a -> a.getTimeSlot().getStartDateTime())).toList())).toList();
+        model.addAttribute("days", days);
+        model.addAttribute("weekStart", monday);
+        model.addAttribute("weekEnd", monday.plusDays(6));
+        model.addAttribute("weekCount", days.stream().mapToInt(d -> d.appointments().size()).sum());
+        return "professional/agenda";
     }
 
     // ---- Rendez-vous ----
@@ -211,24 +272,6 @@ public class ProfessionalDashboardController {
     // profil du pro connecte, appeler le service (qui verifie en interne que
     // le rendez-vous appartient bien a ce professionnel), puis rediriger avec
     // un message flash de confirmation.
-    @PostMapping("/rendez-vous/{id}/confirmer")
-    public String confirmAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
-                                      RedirectAttributes redirectAttributes) {
-        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        appointmentService.confirm(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Rendez-vous confirme. Un mail a ete envoye au client.");
-        return "redirect:/pro/rendez-vous";
-    }
-
-    @PostMapping("/rendez-vous/{id}/refuser")
-    public String refuseAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
-                                     RedirectAttributes redirectAttributes) {
-        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
-        appointmentService.refuse(profile, id);
-        redirectAttributes.addFlashAttribute("success", "Rendez-vous refuse.");
-        return "redirect:/pro/rendez-vous";
-    }
-
     @PostMapping("/rendez-vous/{id}/terminer")
     public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
                                        RedirectAttributes redirectAttributes) {

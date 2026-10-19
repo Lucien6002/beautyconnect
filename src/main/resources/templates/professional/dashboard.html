@@ -18,30 +18,35 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card shadow-sm text-center p-3">
-                <div class="display-6" th:text="${prestationsCount}"></div>
-                <div class="text-muted small">Prestations actives</div>
+                <div class="display-6" th:text="${completedCount}"></div>
+                <div class="text-muted small">Rendez-vous termines</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center p-3">
+                <div class="display-6" th:text="${#numbers.formatDecimal(monthlyRevenue, 1, 'WHITESPACE', 2, 'COMMA')} + ' €'"></div>
+                <div class="text-muted small">
+                    C.A. de <span th:text="${#temporals.format(currentMonth, 'MM/yyyy')}"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
             <div class="card shadow-sm text-center p-3">
                 <div class="display-6" th:text="${upcomingSlots}"></div>
                 <div class="text-muted small">Creneaux disponibles</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <a href="/pro/prestations" class="card shadow-sm text-center p-3 text-decoration-none">
-                <i class="bi bi-list-check h3"></i>
-                <div class="small">Gerer mes prestations</div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="/pro/creneaux" class="card shadow-sm text-center p-3 text-decoration-none">
-                <i class="bi bi-calendar-week h3"></i>
-                <div class="small">Gerer mes creneaux</div>
-            </a>
-        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="/pro/prestations" class="btn btn-primary">
+            <i class="bi bi-list-check"></i> Gerer mes prestations
+        </a>
+        <a href="/pro/creneaux" class="btn btn-primary">
+            <i class="bi bi-calendar-week"></i> Gerer mes creneaux
+        </a>
     </div>
 
     <div class="card shadow-sm">

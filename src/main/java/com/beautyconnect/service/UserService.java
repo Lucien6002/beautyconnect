@@ -36,12 +36,44 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthTokenService authTokenService; // <-- AJOUTE CECI
 
+    public User getById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new com.beautyconnect.exception.ResourceNotFoundException("Compte introuvable"));
+    }
+
+    // Seuls prenom, nom et telephone sont modifiables : l'email (identifiant de
+    // connexion verifie) et le role ne passent jamais par ce formulaire.
+    @Transactional
+    public User updatePersonalInfo(Long userId, com.beautyconnect.dto.PersonalInfoForm form) {
+        User user = getById(userId);
+        user.setFirstName(form.getFirstName().trim());
+        user.setLastName(form.getLastName().trim());
+        String phone = form.getPhone() == null ? "" : form.getPhone().trim();
+        user.setPhone(phone.isEmpty() ? null : phone);
+        return userRepository.save(user);
+    }
+
+    // Le mot de passe actuel doit etre correct, et le nouveau different de l'ancien.
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = getById(userId);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new com.beautyconnect.exception.IllegalOperationException("Le mot de passe actuel est incorrect.");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new com.beautyconnect.exception.IllegalOperationException(
+                    "Le nouveau mot de passe doit etre different de l'actuel.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
     @Transactional
     public User registerClient(ClientRegistrationForm form) {
         checkEmailAvailable(form.getEmail());
 
         User user = User.builder()
-                .email(form.getEmail().toLowerCase())
+                .email(form.getEmail().trim().toLowerCase(java.util.Locale.ROOT))
                 .password(passwordEncoder.encode(form.getPassword()))
                 .firstName(form.getFirstName())
                 .lastName(form.getLastName())
@@ -60,7 +92,7 @@ public class UserService {
         checkEmailAvailable(form.getEmail());
 
         User user = User.builder()
-                .email(form.getEmail().toLowerCase())
+                .email(form.getEmail().trim().toLowerCase(java.util.Locale.ROOT))
                 .password(passwordEncoder.encode(form.getPassword()))
                 .firstName(form.getFirstName())
                 .lastName(form.getLastName())
@@ -88,7 +120,7 @@ public class UserService {
     // Methode privee : utilitaire interne a la classe, non exposee aux
     // controleurs. Leve une exception metier si l'email est deja pris.
     private void checkEmailAvailable(String email) {
-        if (userRepository.existsByEmail(email.toLowerCase())) {
+        if (userRepository.existsByEmail(email.trim().toLowerCase(java.util.Locale.ROOT))) {
             throw new EmailAlreadyUsedException(email);
         }
     }

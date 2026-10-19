@@ -1,0 +1,12 @@
+.git
+.gradle
+.idea
+build
+.env*
+docs
+*.iml
+*.ipr
+*.iws
+.agents
+.codex
+.aws

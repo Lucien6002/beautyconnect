@@ -1,6 +1,7 @@
 package com.beautyconnect.controller;
 
 import com.beautyconnect.model.Appointment;
+import com.beautyconnect.model.AppointmentStatus;
 import com.beautyconnect.security.CustomUserDetails;
 import com.beautyconnect.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
@@ -9,11 +10,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 /**
- * Espace client : vue d'ensemble et historique des rendez-vous.
- * Acces reserve au role CLIENT (voir SecurityConfig : "/client/**" -> hasRole("CLIENT")).
+ * Espace "Mon compte" du client, onglet "Mes rendez-vous" : rendez-vous a
+ * venir puis historique. Acces reserve au role CLIENT
+ * (voir SecurityConfig : "/client/**" -> hasRole("CLIENT")).
  */
 @Controller
 @RequiredArgsConstructor
@@ -22,24 +26,24 @@ public class ClientDashboardController {
     private final AppointmentService appointmentService;
 
     // @AuthenticationPrincipal CustomUserDetails principal : Spring Security
-    // injecte directement l'utilisateur actuellement connecte (sans avoir a
-    // interroger manuellement le SecurityContext). CustomUserDetails est
-    // notre adaptateur maison autour de l'entite User (voir ce fichier pour
-    // le detail).
-    @GetMapping("/client/tableau-bord")
-    public String dashboard(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
-        List<Appointment> appointments = appointmentService.getAppointmentsForClient(principal.getUser());
-        // .stream().limit(5).toList() : n'affiche que les 5 rendez-vous les
-        // plus recents sur le tableau de bord (apercu), le total complet est
-        // affiche a part et le detail integral est sur la page /client/rendez-vous.
-        model.addAttribute("appointments", appointments.stream().limit(5).toList());
-        model.addAttribute("totalAppointments", appointments.size());
-        return "client/dashboard";
+    // injecte directement l'utilisateur actuellement connecte. Les deux URL
+    // affichent la meme page : /client/tableau-bord est la destination apres connexion.
+    @GetMapping({"/client/tableau-bord", "/client/rendez-vous"})
+    public String appointments(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        List<Appointment> all = appointmentService.getAppointmentsForClient(principal.getUser());
+        LocalDateTime now = LocalDateTime.now();
+        // A venir = en attente ou confirme, dont le creneau n'est pas passe.
+        // Tout le reste (passes, termines, annules) va dans l'historique.
+        List<Appointment> upcoming = all.stream().filter(a -> isUpcoming(a, now))
+                .sorted(Comparator.comparing(a -> a.getTimeSlot().getStartDateTime())).toList();
+        List<Appointment> history = all.stream().filter(a -> !isUpcoming(a, now)).toList();
+        model.addAttribute("upcoming", upcoming);
+        model.addAttribute("history", history);
+        return "client/appointments";
     }
 
-    @GetMapping("/client/rendez-vous")
-    public String appointments(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
-        model.addAttribute("appointments", appointmentService.getAppointmentsForClient(principal.getUser()));
-        return "client/appointments";
+    private boolean isUpcoming(Appointment a, LocalDateTime now) {
+        return (a.getStatus() == AppointmentStatus.EN_ATTENTE || a.getStatus() == AppointmentStatus.CONFIRME)
+                && a.getTimeSlot().getStartDateTime().isAfter(now);
     }
 }

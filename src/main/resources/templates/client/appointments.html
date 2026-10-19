@@ -1,41 +1,81 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head(title='Mes rendez-vous')}"></head>
+<head th:replace="~{fragments/head :: head(title='Mon compte')}"></head>
 <body class="d-flex flex-column min-vh-100">
 
 <nav th:replace="~{fragments/navbar :: navbar}"></nav>
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
 <main class="flex-grow-1 container my-5">
-    <h1 class="h4 mb-4">Mes rendez-vous</h1>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <aside th:replace="~{fragments/client-account :: sidebar('rdv')}"></aside>
+        </div>
 
-    <div class="card shadow-sm">
-        <div class="table-responsive">
-            <table class="table mb-0 align-middle">
-                <thead>
-                <tr><th>Professionnel</th><th>Prestation</th><th>Date</th><th>Statut</th><th></th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="a : ${appointments}">
-                    <td>
-                        <a th:href="@{'/professionnels/' + ${a.professional.id}}" th:text="${a.professional.businessName}"></a>
-                    </td>
-                    <td th:text="${a.prestation.name}"></td>
-                    <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
-                    <td><span class="badge text-bg-secondary" th:text="${a.status}"></span></td>
-                    <td>
-                        <form th:if="${a.status.name() == 'EN_ATTENTE' or a.status.name() == 'CONFIRME'}"
-                              th:action="@{'/rendez-vous/' + ${a.id} + '/annuler'}" method="post"
-                              onsubmit="return confirm('Annuler ce rendez-vous ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(appointments)}">
-                Vous n'avez pas encore de rendez-vous.
-            </p>
+        <div class="col-lg-8">
+            <!-- Rendez-vous a venir -->
+            <div class="card shadow-sm p-4 mb-4">
+                <h2 class="h4 mb-3">Mes RDV à venir</h2>
+
+                <div class="table-responsive" th:unless="${#lists.isEmpty(upcoming)}">
+                    <table class="table mb-0 align-middle">
+                        <thead>
+                        <tr><th>Professionnel</th><th>Prestation</th><th>Date</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="a : ${upcoming}">
+                            <td>
+                                <a th:href="@{'/professionnels/' + ${a.professional.id}}" th:text="${a.professional.businessName}"></a>
+                            </td>
+                            <td th:text="${a.prestation.name}"></td>
+                            <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td>
+                                <a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${a.professional.coordinatesPublic and a.professional.latitude != null and a.professional.longitude != null ? a.professional.latitude + ',' + a.professional.longitude : a.professional.city},travelmode='walking')}" class="btn btn-sm btn-outline-primary mb-2" target="_blank" rel="noopener noreferrer">Itinéraire à pied</a>
+                                <form th:action="@{'/rendez-vous/' + ${a.id} + '/annuler'}" method="post"
+                                      onsubmit="return confirm('Annuler ce rendez-vous ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div th:if="${#lists.isEmpty(upcoming)}">
+                    <p class="text-muted">Vous n'avez pas encore pris de rdv.</p>
+                    <a href="/recherche" class="btn btn-dark">Prendre RDV</a>
+                </div>
+            </div>
+
+            <!-- Historique : termines, annules et passes -->
+            <div class="card shadow-sm p-4" th:unless="${#lists.isEmpty(history)}">
+                <h2 class="h5 mb-3">Historique</h2>
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead>
+                        <tr><th>Professionnel</th><th>Prestation</th><th>Date</th><th>Statut</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="a : ${history}">
+                            <td>
+                                <a th:href="@{'/professionnels/' + ${a.professional.id}}" th:text="${a.professional.businessName}"></a>
+                            </td>
+                            <td th:text="${a.prestation.name}"></td>
+                            <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td>
+                                <span th:switch="${a.status.name()}">
+                                    <span th:case="'EN_ATTENTE'" class="badge bg-warning text-dark">En attente</span>
+                                    <span th:case="'CONFIRME'" class="badge bg-success">Confirmé</span>
+                                    <span th:case="'REFUSE'" class="badge bg-danger">Refusé</span>
+                                    <span th:case="'ANNULE'" class="badge bg-secondary">Annulé</span>
+                                    <span th:case="'TERMINE'" class="badge bg-primary">Terminé</span>
+                                </span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </main>

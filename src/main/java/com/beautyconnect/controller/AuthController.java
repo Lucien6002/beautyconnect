@@ -49,7 +49,7 @@ public class AuthController {
             return "auth/register-client";
         }
         redirectAttributes.addFlashAttribute("success",
-                "Compte créé avec succès ! Un e-mail d'activation vient de vous être envoyé. Cliquez sur le lien pour activer votre compte (pensez à vérifier vos courriers indésirables / spams).");
+                "Compte créé avec succès ! Consultez votre e-mail pour activer votre compte. Si vous ne recevez rien, demandez un nouveau lien sur cette page. Cliquez sur le lien pour activer votre compte (pensez à vérifier vos courriers indésirables / spams).");
         return "redirect:/connexion";
     }
 
@@ -76,7 +76,24 @@ public class AuthController {
             return "auth/register-professional";
         }
         redirectAttributes.addFlashAttribute("success",
-                "Compte professionnel créé ! Un e-mail d'activation vient de vous être envoyé. Cliquez sur le lien pour activer votre compte (pensez à vérifier vos courriers indésirables / spams).");
+                "Compte professionnel créé ! Consultez votre e-mail pour activer votre compte. Si vous ne recevez rien, demandez un nouveau lien sur cette page. Cliquez sur le lien pour activer votre compte (pensez à vérifier vos courriers indésirables / spams).");
+        return "redirect:/connexion";
+    }
+
+    @PostMapping("/inscription/renvoyer-activation")
+    public String resendActivation(@RequestParam String email, jakarta.servlet.http.HttpSession session,
+                                   RedirectAttributes redirectAttributes) {
+        if (email.length() <= 254 && email.contains("@")) {
+            synchronized (session) {
+                Long last = (Long) session.getAttribute("activationResentAt");
+                long now = System.currentTimeMillis();
+                if (last == null || now - last >= 60_000) {
+                    session.setAttribute("activationResentAt", now);
+                    authTokenService.resendActivation(email);
+                }
+            }
+        }
+        redirectAttributes.addFlashAttribute("success", "Si un compte attend son activation, un nouveau lien sera envoyé. Vérifiez vos spams. Vous pouvez réessayer après une minute.");
         return "redirect:/connexion";
     }
 

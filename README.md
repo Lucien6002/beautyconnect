@@ -52,8 +52,8 @@ votre propre instance.
 ```
 
 L'application demarre sur [http://localhost:8080](http://localhost:8080).
-Le schema de base de donnees est cree/mis a jour automatiquement au demarrage
-(`spring.jpa.hibernate.ddl-auto=update`).
+Le schema de base de donnees est créé/mis à jour au démarrage
+par les migrations Flyway ; Hibernate valide ensuite le schéma.
 
 ### 3. Compte administrateur
 
@@ -62,6 +62,8 @@ n'en existe aucun :
 
 - Email : `admin@beautyconnect.local`
 - Mot de passe : `Admin123!`
+- Client : Email :`lea@beautyconnect.local `/ Mdp : `Client123!`
+- Pro : Email : `sarah@beautyconnect.local` / Mdp : `Pro12345!`
 
 Personnalisable via les variables d'environnement `ADMIN_EMAIL` et
 `ADMIN_PASSWORD` avant le premier demarrage.
@@ -124,3 +126,7 @@ docker-compose.yml          PostgreSQL pour le developpement local
 - Upload de photos de profil / realisations (portfolio)
 - Notifications par email plus completes (rappel avant rendez-vous, refus, etc.)
 - Tests unitaires et d'integration complementaires (couverture des services et controleurs)
+
+## Lot client et déploiement
+
+Le [guide Ulrich](docs/DEPLOIEMENT-ULRICH.md) décrit les migrations, le renvoi d’activation, la carte, le routage ORS, les variables et la recette Docker/Render. Les comptes de démonstration sont créés seulement en profil `dev`. Le conteneur utilise `prod`.

@@ -16,7 +16,7 @@
                             <h1 class="h3 mb-1" th:text="${professional.businessName}"></h1>
                             <p class="text-muted mb-1"><i class="bi bi-geo-alt"></i>
                                 <span th:text="${professional.city}"></span>
-                                <span th:if="${professional.address}" th:text="' - ' + ${professional.address}"></span>
+                                <span th:if="${professional.coordinatesPublic and professional.address != null}" th:text="' - ' + ${professional.address}"></span>
                             </p>
                             <span class="badge text-bg-secondary" th:text="${professional.targetGender}"></span>
                             <span class="text-warning ms-2">
@@ -25,7 +25,17 @@
                                 (<span th:text="${#lists.size(reviews)}"></span> avis)
                             </span>
                         </div>
-                        <div sec:authorize="hasRole('CLIENT')">
+                        <div sec:authorize="hasRole('CLIENT')" class="d-flex gap-2">
+                            <form th:if="${!favorite}" th:action="@{'/client/favoris/' + ${professional.id} + '/ajouter'}" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-heart"></i> Ajouter aux favoris
+                                </button>
+                            </form>
+                            <form th:if="${favorite}" th:action="@{'/client/favoris/' + ${professional.id} + '/retirer'}" method="post">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-heart-fill"></i> Favori
+                                </button>
+                            </form>
                             <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#signalerProfilModal">
                                 <i class="bi bi-flag"></i> Signaler
                             </button>
@@ -152,7 +162,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Precisions (optionnel)</label>
-                        <textarea class="form-control" th:field="*{notes}" placeholder="Toute specificite a communiquer au professionnel"></textarea>
+                        <textarea class="form-control" th:field="*{notes}" maxlength="1000" placeholder="Toute specificite a communiquer au professionnel"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

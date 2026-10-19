@@ -65,6 +65,10 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
     /** Permet a l'administrateur de desactiver un compte (spam, faux profil...). */
     @Column(nullable = false)
     @Builder.Default // Sans cette annotation, le Builder mettrait "false" par defaut (valeur par defaut de Java pour un boolean) au lieu de "true".

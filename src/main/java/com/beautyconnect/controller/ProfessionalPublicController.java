@@ -1,9 +1,13 @@
 package com.beautyconnect.controller;
 
 import com.beautyconnect.model.ProfessionalProfile;
+import com.beautyconnect.model.Role;
+import com.beautyconnect.security.CustomUserDetails;
+import com.beautyconnect.service.FavoriteService;
 import com.beautyconnect.service.ProfessionalService;
 import com.beautyconnect.service.ReviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +24,19 @@ public class ProfessionalPublicController {
 
     private final ProfessionalService professionalService;
     private final ReviewService reviewService;
+    private final FavoriteService favoriteService;
 
     // @PathVariable Long id : recupere le segment {id} de l'URL
     // (ex: /professionnels/42 -> id = 42) et le convertit automatiquement en Long.
     @GetMapping("/professionnels/{id}")
-    public String viewProfile(@PathVariable Long id, Model model) {
+    public String viewProfile(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
         ProfessionalProfile professional = professionalService.getPublicProfileOrThrow(id);
 
         model.addAttribute("professional", professional);
+        // Etat du bouton "Favori" : uniquement pour un client connecte.
+        boolean favorite = principal != null && principal.getUser().getRole() == Role.CLIENT
+                && favoriteService.isFavorite(principal.getId(), id);
+        model.addAttribute("favorite", favorite);
         model.addAttribute("prestations", professionalService.getActivePrestations(professional));
         model.addAttribute("timeSlots", professionalService.getAvailableTimeSlots(professional));
         model.addAttribute("reviews", reviewService.getVisibleReviews(professional));
