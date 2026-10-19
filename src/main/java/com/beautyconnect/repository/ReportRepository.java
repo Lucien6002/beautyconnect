@@ -2,6 +2,8 @@ package com.beautyconnect.repository;
 
 import com.beautyconnect.model.Report;
 import com.beautyconnect.model.ReportStatus;
+import com.beautyconnect.model.ReportTargetType;
+import com.beautyconnect.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +26,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     // Tous les signalements, tous statuts confondus (auteur charge, voir ci-dessus).
     @Query("SELECT r FROM Report r JOIN FETCH r.reporter ORDER BY r.createdAt DESC")
     List<Report> findAllByOrderByCreatedAtDesc();
+
+    // Anti-spam : cet auteur a-t-il deja un signalement de ce statut
+    // (EN_ATTENTE) sur cette cible ? Voir ReportService.create.
+    boolean existsByReporterAndTargetTypeAndTargetIdAndStatus(User reporter, ReportTargetType targetType,
+                                                              Long targetId, ReportStatus status);
 }
