@@ -55,6 +55,23 @@ public class Report {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // ---- Journal de moderation (renseigne quand l'admin decide) ----
+    // Les trois champs restent null tant que le signalement est EN_ATTENTE.
+
+    /** Decision prise par l'administrateur (voir ReportService.decide). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "decision")
+    private ReportDecision decision;
+
+    /** Administrateur qui a pris la decision. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "handled_by_id")
+    private User handledBy;
+
+    /** Date et heure de la decision. */
+    @Column(name = "handled_at")
+    private LocalDateTime handledAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

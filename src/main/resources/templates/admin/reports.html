@@ -65,7 +65,14 @@
                                 <button type="submit" class="btn btn-sm btn-outline-secondary">Rejeter</button>
                             </form>
                         </div>
-                        <span th:unless="${r.status.name() == 'EN_ATTENTE'}" class="small text-muted">Decision prise</span>
+                        <!-- Journal de moderation : decision, admin et date (null pour les
+                             signalements clos avant la migration V5). -->
+                        <div th:unless="${r.status.name() == 'EN_ATTENTE'}" class="small text-muted">
+                            <div class="fw-semibold" th:text="${r.decision != null} ? ${r.decision.label} : 'Decision prise'"></div>
+                            <div th:if="${r.handledBy != null}" th:text="'par ' + ${r.handledBy.fullName}"></div>
+                            <div th:if="${r.handledAt != null}"
+                                 th:text="'le ' + ${#temporals.format(r.handledAt, 'dd/MM/yyyy HH:mm')}"></div>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

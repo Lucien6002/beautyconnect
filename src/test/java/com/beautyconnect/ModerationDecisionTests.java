@@ -2,6 +2,7 @@ package com.beautyconnect;
 
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Report;
+import com.beautyconnect.model.ReportDecision;
 import com.beautyconnect.model.ReportStatus;
 import com.beautyconnect.model.ReportTargetType;
 import com.beautyconnect.model.Review;
@@ -12,6 +13,7 @@ import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.ReportRepository;
 import com.beautyconnect.repository.ReviewRepository;
 import com.beautyconnect.repository.UserRepository;
+import com.beautyconnect.security.CustomUserDetails;
 import com.beautyconnect.service.EmailService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *  - rejeter (signalement infonde).
  * Une decision qui agit sur la cible clot aussi les autres signalements en
  * attente sur cette meme cible. Rien n'est jamais masque automatiquement.
+ * Chaque signalement clos garde la decision, l'admin et la date (journal).
  *
  * Pas de @Transactional sur la classe : la page admin est rendue avec
  * open-in-view=false, comme en production.
@@ -76,6 +79,7 @@ class ModerationDecisionTests {
     private EmailService emailService;
 
     private MockMvc mockMvc;
+    private User adminUser;
     private User reporter;
     private User otherReporter;
     private ProfessionalProfile pro;
@@ -85,6 +89,7 @@ class ModerationDecisionTests {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        adminUser = createUser("admin", Role.ADMIN);
         reporter = createUser("signaleur", Role.CLIENT);
         otherReporter = createUser("autre-signaleur", Role.CLIENT);
         User author = createUser("auteur-avis", Role.CLIENT);
@@ -244,6 +249,55 @@ class ModerationDecisionTests {
                 .andExpect(status().isNotFound());
     }
 
+    // ---- Journal de moderation ----
+
+    @Test
+    void decision_isLoggedWithAdminAndDate_onEveryClosedReport() throws Exception {
+        Report first = report(reporter, ReportTargetType.AVIS, review.getId(), "Insultes");
+        Report second = report(otherReporter, ReportTargetType.AVIS, review.getId(), "Je confirme");
+
+        decide(first, "masquer-avis");
+
+        for (Report closed : List.of(first, second)) {
+            Report saved = reportRepository.findAllByOrderByCreatedAtDesc().stream()
+                    .filter(r -> r.getId().equals(closed.getId())).findFirst().orElseThrow();
+            assertThat(saved.getDecision()).isEqualTo(ReportDecision.MASQUER_AVIS);
+            assertThat(saved.getHandledBy().getId()).isEqualTo(adminUser.getId());
+            assertThat(saved.getHandledAt()).isNotNull();
+        }
+    }
+
+    @Test
+    void rejection_isLoggedAsRejection() throws Exception {
+        Report report = report(reporter, ReportTargetType.AVIS, review.getId(), "Pas d'accord");
+
+        decide(report, "rejeter");
+
+        Report saved = reportRepository.findById(report.getId()).orElseThrow();
+        assertThat(saved.getDecision()).isEqualTo(ReportDecision.REJETER);
+        assertThat(saved.getHandledAt()).isNotNull();
+    }
+
+    @Test
+    void pendingReport_hasNoLogEntry() {
+        Report report = report(reporter, ReportTargetType.AVIS, review.getId(), "Insultes");
+
+        Report saved = reportRepository.findById(report.getId()).orElseThrow();
+        assertThat(saved.getDecision()).isNull();
+        assertThat(saved.getHandledAt()).isNull();
+    }
+
+    @Test
+    void reportsPage_showsWhoDecidedWhat() throws Exception {
+        Report report = report(reporter, ReportTargetType.AVIS, review.getId(), "Insultes");
+        decide(report, "masquer-avis");
+
+        mockMvc.perform(get("/admin/signalements").with(admin()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Avis masque")))
+                .andExpect(content().string(containsString("par admin Test")));
+    }
+
     // ---- Outils ----
 
     private ResultActions decide(Report report, String action) throws Exception {
@@ -252,8 +306,10 @@ class ModerationDecisionTests {
                 .andExpect(redirectedUrl("/admin/signalements"));
     }
 
+    // Vrai compte admin (CustomUserDetails) : le controleur l'enregistre
+    // comme auteur de la decision dans le journal de moderation.
     private RequestPostProcessor admin() {
-        return user("admin" + EMAIL_SUFFIX).roles("ADMIN");
+        return user(new CustomUserDetails(adminUser));
     }
 
     private ReportStatus statusOf(Report report) {

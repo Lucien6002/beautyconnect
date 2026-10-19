@@ -5,6 +5,7 @@ import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.exception.ResourceNotFoundException;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Report;
+import com.beautyconnect.model.ReportDecision;
 import com.beautyconnect.model.ReportStatus;
 import com.beautyconnect.model.ReportTargetType;
 import com.beautyconnect.model.Review;
@@ -12,12 +13,14 @@ import com.beautyconnect.model.User;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.ReportRepository;
 import com.beautyconnect.repository.ReviewRepository;
+import com.beautyconnect.repository.UserRepository;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +38,7 @@ public class ReportService {
     // Pour desactiver un compte signale : AdminService.setUserEnabled
     // deconnecte aussi immediatement l'utilisateur (sessions expirees).
     private final AdminService adminService;
+    private final UserRepository userRepository;
 
     // Cree un signalement. targetType/targetId identifient generiquement ce
     // qui est signale (un avis ou un profil professionnel), voir Report.java.
@@ -100,18 +104,6 @@ public class ReportService {
 
     // ---- Moderation par l'administrateur ----
 
-    /** Decisions possibles sur un signalement en attente. */
-    public enum Decision {
-        /** Clore sans toucher a la cible (probleme regle autrement). */
-        TRAITER,
-        /** Masquer l'avis signale, puis clore. */
-        MASQUER_AVIS,
-        /** Desactiver le compte du profil signale, puis clore. */
-        DESACTIVER_PROFIL,
-        /** Signalement infonde : clore sans action. */
-        REJETER
-    }
-
     // Applique la decision de l'admin. Tout se fait dans UNE transaction :
     // si l'action sur la cible echoue (avis disparu, mauvais type...), le
     // statut du signalement n'est pas modifie non plus. On n'enregistre
@@ -119,8 +111,10 @@ public class ReportService {
     // Une decision qui agit sur la cible (masquer, desactiver) clot aussi
     // les autres signalements en attente sur cette cible : le probleme est
     // regle pour tous. TRAITER et REJETER ne concernent que ce signalement.
+    // Chaque signalement clos garde la trace de la decision, de l'admin et
+    // de la date (journal de moderation).
     @Transactional
-    public Report decide(Long reportId, Decision decision) {
+    public Report decide(Long reportId, ReportDecision decision, User admin) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Signalement introuvable : " + reportId));
         if (report.getStatus() != ReportStatus.EN_ATTENTE) {
@@ -138,8 +132,17 @@ public class ReportService {
             }
             case TRAITER, REJETER -> List.of(report);
         };
-        ReportStatus status = decision == Decision.REJETER ? ReportStatus.REJETE : ReportStatus.TRAITE;
-        closed.forEach(r -> r.setStatus(status));
+        ReportStatus status = decision == ReportDecision.REJETER ? ReportStatus.REJETE : ReportStatus.TRAITE;
+        // getReferenceById : reference geree par cette transaction vers le
+        // compte admin, sans recharger l'utilisateur (admin vient de la session).
+        User handledBy = userRepository.getReferenceById(admin.getId());
+        LocalDateTime now = LocalDateTime.now();
+        closed.forEach(r -> {
+            r.setStatus(status);
+            r.setDecision(decision);
+            r.setHandledBy(handledBy);
+            r.setHandledAt(now);
+        });
         reportRepository.saveAll(closed);
         return report;
     }
