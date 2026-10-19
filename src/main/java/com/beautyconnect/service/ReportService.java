@@ -3,17 +3,24 @@ package com.beautyconnect.service;
 import com.beautyconnect.dto.ReportForm;
 import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.exception.ResourceNotFoundException;
+import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.Report;
+import com.beautyconnect.model.ReportDecision;
 import com.beautyconnect.model.ReportStatus;
 import com.beautyconnect.model.ReportTargetType;
+import com.beautyconnect.model.Review;
 import com.beautyconnect.model.User;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.ReportRepository;
 import com.beautyconnect.repository.ReviewRepository;
+import com.beautyconnect.repository.UserRepository;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +35,10 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final ReviewRepository reviewRepository;
     private final ProfessionalProfileRepository professionalProfileRepository;
+    // Pour desactiver un compte signale : AdminService.setUserEnabled
+    // deconnecte aussi immediatement l'utilisateur (sessions expirees).
+    private final AdminService adminService;
+    private final UserRepository userRepository;
 
     // Cree un signalement. targetType/targetId identifient generiquement ce
     // qui est signale (un avis ou un profil professionnel), voir Report.java.
@@ -91,17 +102,143 @@ public class ReportService {
         return reportRepository.findByStatusOrderByCreatedAtDesc(ReportStatus.EN_ATTENTE);
     }
 
-    public List<Report> getAll() {
-        return reportRepository.findAllByOrderByCreatedAtDesc();
-    }
+    // ---- Moderation par l'administrateur ----
 
-    // Change le statut d'un signalement (ex: TRAITE ou REJETE) une fois que
-    // l'administrateur l'a examine.
+    // Applique la decision de l'admin. Tout se fait dans UNE transaction :
+    // si l'action sur la cible echoue (avis disparu, mauvais type...), le
+    // statut du signalement n'est pas modifie non plus. On n'enregistre
+    // jamais une decision a moitie.
+    // Une decision qui agit sur la cible (masquer, desactiver) clot aussi
+    // les autres signalements en attente sur cette cible : le probleme est
+    // regle pour tous. TRAITER et REJETER ne concernent que ce signalement.
+    // Chaque signalement clos garde la trace de la decision, de l'admin et
+    // de la date (journal de moderation).
     @Transactional
-    public Report updateStatus(Long reportId, ReportStatus status) {
+    public Report decide(Long reportId, ReportDecision decision, User admin) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Signalement introuvable : " + reportId));
-        report.setStatus(status);
-        return reportRepository.save(report);
+        if (report.getStatus() != ReportStatus.EN_ATTENTE) {
+            throw new IllegalOperationException("Le signalement #" + reportId + " a deja ete traite.");
+        }
+
+        List<Report> closed = switch (decision) {
+            case MASQUER_AVIS -> {
+                hideReportedReview(report);
+                yield pendingReportsOnSameTarget(report);
+            }
+            case DESACTIVER_PROFIL -> {
+                disableReportedProfile(report);
+                yield pendingReportsOnSameTarget(report);
+            }
+            case TRAITER, REJETER -> List.of(report);
+        };
+        ReportStatus status = decision == ReportDecision.REJETER ? ReportStatus.REJETE : ReportStatus.TRAITE;
+        // getReferenceById : reference geree par cette transaction vers le
+        // compte admin, sans recharger l'utilisateur (admin vient de la session).
+        User handledBy = userRepository.getReferenceById(admin.getId());
+        LocalDateTime now = LocalDateTime.now();
+        closed.forEach(r -> {
+            r.setStatus(status);
+            r.setDecision(decision);
+            r.setHandledBy(handledBy);
+            r.setHandledAt(now);
+        });
+        reportRepository.saveAll(closed);
+        return report;
+    }
+
+    private void hideReportedReview(Report report) {
+        if (report.getTargetType() != ReportTargetType.AVIS) {
+            throw new IllegalOperationException("Ce signalement ne concerne pas un avis.");
+        }
+        Review review = reviewRepository.findById(report.getTargetId())
+                .orElseThrow(() -> new IllegalOperationException(
+                        "L'avis signale n'existe plus : rejetez ou cloturez le signalement."));
+        review.setHidden(true);
+        reviewRepository.save(review);
+    }
+
+    private void disableReportedProfile(Report report) {
+        if (report.getTargetType() != ReportTargetType.PROFIL_PROFESSIONNEL) {
+            throw new IllegalOperationException("Ce signalement ne concerne pas un profil professionnel.");
+        }
+        ProfessionalProfile profile = professionalProfileRepository.findById(report.getTargetId())
+                .orElseThrow(() -> new IllegalOperationException(
+                        "Le profil signale n'existe plus : rejetez ou cloturez le signalement."));
+        adminService.setUserEnabled(profile.getUser().getId(), false);
+    }
+
+    private List<Report> pendingReportsOnSameTarget(Report report) {
+        return reportRepository.findByTargetTypeAndTargetIdAndStatus(
+                report.getTargetType(), report.getTargetId(), ReportStatus.EN_ATTENTE);
+    }
+
+    // Liste de moderation : chaque signalement accompagne de sa cible reelle
+    // (extrait de l'avis, nom du profil), pour que l'admin decide en
+    // connaissance de cause sans chercher l'avis ou le profil ailleurs.
+    // readOnly + construction de vues simples a l'interieur de la
+    // transaction : les relations LAZY (auteur de l'avis, compte du profil)
+    // sont lues ici, pas pendant le rendu Thymeleaf (open-in-view=false).
+    @Transactional(readOnly = true)
+    public List<ReportView> getAllForModeration() {
+        return reportRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toView)
+                .toList();
+    }
+
+    private ReportView toView(Report report) {
+        boolean pending = report.getStatus() == ReportStatus.EN_ATTENTE;
+        ReportView.ReportViewBuilder view = ReportView.builder().report(report).targetFound(false)
+                .targetTitle("Cible introuvable").targetExcerpt("Supprimee depuis le signalement.")
+                .targetState("Introuvable");
+
+        if (report.getTargetType() == ReportTargetType.AVIS) {
+            reviewRepository.findById(report.getTargetId()).ifPresent(review -> view
+                    .targetFound(true)
+                    .targetTitle("Avis " + review.getRating() + "/5 de " + review.getClient().getFullName()
+                            + " sur " + review.getProfessional().getBusinessName())
+                    .targetExcerpt(excerpt(review.getComment()))
+                    .targetState(review.isHidden() ? "Masque" : "Visible")
+                    .professionalId(review.getProfessional().getId())
+                    .canHideReview(pending && !review.isHidden()));
+        } else {
+            professionalProfileRepository.findById(report.getTargetId()).ifPresent(profile -> view
+                    .targetFound(true)
+                    .targetTitle(profile.getBusinessName() + " (" + profile.getCity() + ")")
+                    .targetExcerpt("Compte de " + profile.getUser().getFullName() + " - " + profile.getUser().getEmail())
+                    .targetState(!profile.getUser().isEnabled() ? "Compte desactive"
+                            : profile.isValidated() ? "Visible" : "Non valide")
+                    .professionalId(profile.getId())
+                    .canDisableProfile(pending && profile.getUser().isEnabled()));
+        }
+        return view.build();
+    }
+
+    private static String excerpt(String comment) {
+        if (comment == null || comment.isBlank()) {
+            return "(sans commentaire)";
+        }
+        return comment.length() <= 200 ? comment : comment.substring(0, 200) + "...";
+    }
+
+    /**
+     * Signalement + description de sa cible, prete a afficher dans
+     * admin/reports.html. Classe interne (voir AdminService.Metrics pour
+     * l'explication) : elle n'a de sens que pour la page de moderation.
+     */
+    @Getter
+    @Builder
+    public static class ReportView {
+        private Report report;
+        /** false si l'avis ou le profil a ete supprime depuis le signalement. */
+        private boolean targetFound;
+        private String targetTitle;
+        private String targetExcerpt;
+        /** Visible, Masque, Non valide, Compte desactive ou Introuvable. */
+        private String targetState;
+        /** Professionnel concerne, pour le lien vers sa fiche admin (null si introuvable). */
+        private Long professionalId;
+        private boolean canHideReview;
+        private boolean canDisableProfile;
     }
 }
