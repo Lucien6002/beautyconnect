@@ -8,6 +8,7 @@ import com.beautyconnect.service.AppointmentService;
 import com.beautyconnect.service.ProfessionalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,7 +42,11 @@ public class AppointmentController {
             ProfessionalProfile professional = professionalService.getPublicProfileOrThrow(professionalId);
             appointmentService.book(principal.getUser(), professional, appointmentForm);
             redirectAttributes.addFlashAttribute("success",
-                    "Votre demande de rendez-vous a ete envoyee. Vous recevrez un mail des sa confirmation.");
+                    "Votre rendez-vous est confirme. Un mail de confirmation vous a ete envoye. "
+                            + "Vous pouvez l'annuler depuis \"Mes rendez-vous\" en cas d'empechement.");
+            return "redirect:/client/rendez-vous";
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "Ce creneau vient d'etre reserve, merci d'en choisir un autre.");
         } catch (IllegalOperationException ex) {
             // Erreurs "metier" detectees plus tard, au niveau du service (ex:
             // creneau deja pris entre le chargement de la page et la

@@ -1,0 +1,109 @@
+<!doctype html>
+<html
+    lang="fr"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <head th:replace="~{fragments/head :: head(title='Mon agenda')}"></head>
+    <body class="d-flex flex-column min-vh-100">
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="container bc-workspace" data-role="professional">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='professional', active='agenda')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <div
+                    class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2"
+                >
+                    <div>
+                        <h1 class="h4 mb-1">Mon agenda</h1>
+                        <p class="text-muted mb-0">
+                            Semaine du
+                            <span
+                                th:text="${#temporals.format(weekStart, 'dd/MM/yyyy')}"
+                            ></span>
+                            au
+                            <span
+                                th:text="${#temporals.format(weekEnd, 'dd/MM/yyyy')}"
+                            ></span>
+                            · <span th:text="${weekCount}"></span> rendez-vous
+                        </p>
+                    </div>
+                    <a
+                        th:href="@{/pro/rendez-vous}"
+                        class="btn btn-sm btn-outline-primary"
+                        >Tous mes rendez-vous</a
+                    >
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-xl" th:each="d : ${days}">
+                        <div
+                            class="card shadow-sm h-100"
+                            th:classappend="${d.today} ? 'border-primary'"
+                        >
+                            <div class="card-header bg-white">
+                                <div
+                                    class="fw-semibold text-capitalize"
+                                    th:text="${d.label}"
+                                ></div>
+                                <span
+                                    class="badge text-bg-primary"
+                                    th:if="${d.today}"
+                                    >Aujourd'hui</span
+                                >
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li
+                                    class="list-group-item"
+                                    th:each="a : ${d.appointments}"
+                                >
+                                    <div
+                                        class="fw-semibold"
+                                        th:text="${#temporals.format(a.timeSlot.startDateTime, 'HH:mm')}"
+                                    ></div>
+                                    <div th:text="${a.client.fullName}"></div>
+                                    <div
+                                        class="small text-muted"
+                                        th:text="${a.prestation.name} + ' (' + ${a.prestation.durationMinutes} + ' min)'"
+                                    ></div>
+                                    <div
+                                        class="small fst-italic"
+                                        th:if="${a.notes != null and !#strings.isEmpty(a.notes)}"
+                                        th:text="${a.notes}"
+                                    ></div>
+                                    <span
+                                        class="badge text-bg-success mt-1"
+                                        th:if="${a.status.name() == 'CONFIRME'}"
+                                        >Confirmé</span
+                                    >
+                                    <span
+                                        class="badge text-bg-primary mt-1"
+                                        th:if="${a.status.name() == 'TERMINE'}"
+                                        >Terminé</span
+                                    >
+                                </li>
+                                <li
+                                    class="list-group-item text-muted small"
+                                    th:if="${#lists.isEmpty(d.appointments)}"
+                                >
+                                    Aucun rendez-vous
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+        <script>
+            // L'agenda se remet a jour tout seul : un nouveau rendez-vous pris par un client apparait sans action.
+            setTimeout(function () {
+                window.location.reload();
+            }, 60000);
+        </script>
+    </body>
+</html>

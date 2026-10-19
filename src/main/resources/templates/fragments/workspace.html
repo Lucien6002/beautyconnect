@@ -32,7 +32,12 @@
                     ><i class="bi bi-grid-1x2" aria-hidden="true"></i> Vue
                     d’ensemble</a
                 >
-                <th:block th:if="${role == 'client'}">
+                <th:block th:if="${role == 'client'}"
+                    ><a
+                        href="/client/favoris"
+                        th:attr="aria-current=${active == 'favorites' ? 'page' : null}"
+                        ><i class="bi bi-heart" aria-hidden="true"></i> Mes favoris</a
+                    >
                     <a
                         href="/client/rendez-vous"
                         th:attr="aria-current=${active == 'appointments' ? 'page' : null}"
@@ -44,7 +49,13 @@
                         un professionnel</a
                     >
                 </th:block>
-                <th:block th:if="${role == 'professional'}">
+                <th:block th:if="${role == 'professional'}"
+                    ><a
+                        href="/pro/agenda"
+                        th:attr="aria-current=${active == 'agenda' ? 'page' : null}"
+                        ><i class="bi bi-calendar3" aria-hidden="true"></i> Mon
+                        agenda</a
+                    >
                     <a
                         href="/pro/rendez-vous"
                         th:attr="aria-current=${active == 'appointments' ? 'page' : null}"
@@ -99,6 +110,12 @@
                         Signalements</a
                     >
                 </th:block>
+                <a
+                    href="/compte"
+                    th:attr="aria-current=${active == 'account' ? 'page' : null}"
+                    ><i class="bi bi-person-gear" aria-hidden="true"></i> Mes
+                    informations</a
+                >
             </nav>
             <div class="bc-sidebar-note">
                 <i class="bi bi-geo-alt" aria-hidden="true"></i>

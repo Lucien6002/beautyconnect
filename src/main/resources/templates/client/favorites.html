@@ -1,0 +1,81 @@
+<!doctype html>
+<html
+    lang="fr"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <head th:replace="~{fragments/head :: head(title='Mes favoris')}"></head>
+    <body class="d-flex flex-column min-vh-100">
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="container bc-workspace" data-role="client">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='client', active='favorites')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <span class="bc-eyebrow">Votre espace client</span>
+                <h1 class="h4 mb-4">Mes favoris</h1>
+                <div class="card shadow-sm p-4">
+                    <h2 class="h5 mb-3">Mes professionnels favoris</h2>
+
+                    <ul
+                        class="list-group list-group-flush"
+                        th:unless="${#lists.isEmpty(favorites)}"
+                    >
+                        <li
+                            class="list-group-item d-flex justify-content-between align-items-center px-0"
+                            th:each="p : ${favorites}"
+                        >
+                            <div>
+                                <a
+                                    class="fw-semibold"
+                                    th:href="@{'/professionnels/' + ${p.id}}"
+                                    th:text="${p.businessName}"
+                                ></a>
+                                <div class="small text-muted">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <span th:text="${p.city}"></span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a
+                                    class="btn btn-sm btn-primary"
+                                    th:href="@{'/professionnels/' + ${p.id}}"
+                                    >Prendre RDV</a
+                                >
+                                <form
+                                    th:action="@{'/client/favoris/' + ${p.id} + '/retirer'}"
+                                    method="post"
+                                >
+                                    <input
+                                        type="hidden"
+                                        name="from"
+                                        value="favoris"
+                                    />
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-danger"
+                                    >
+                                        Retirer
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div th:if="${#lists.isEmpty(favorites)}">
+                        <p class="text-muted">
+                            Vous n'avez pas encore de professionnel favori.
+                        </p>
+                        <a href="/recherche" class="btn btn-primary"
+                            >Trouver un professionnel</a
+                        >
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
+</html>

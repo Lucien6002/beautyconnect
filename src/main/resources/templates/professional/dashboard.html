@@ -71,6 +71,39 @@
                         </div>
                     </div>
                 </div>
+                <div class="bc-stat-grid bc-stat-grid-two">
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i
+                                class="bi bi-check2-circle"
+                                aria-hidden="true"
+                            ></i
+                        ></span>
+                        <div>
+                            <strong th:text="${completedCount}"></strong
+                            ><span>Rendez-vous réalisés</span>
+                        </div>
+                    </div>
+                    <div class="bc-stat">
+                        <span class="bc-stat-icon"
+                            ><i
+                                class="bi bi-currency-euro"
+                                aria-hidden="true"
+                            ></i
+                        ></span>
+                        <div>
+                            <strong
+                                th:text="${#numbers.formatDecimal(monthlyRevenue, 1, 2)} + ' €'"
+                            ></strong
+                            ><span
+                                >Prestations réalisées en
+                                <span
+                                    th:text="${#temporals.format(currentMonth, 'MM/yyyy')}"
+                                ></span
+                            ></span>
+                        </div>
+                    </div>
+                </div>
                 <div class="bc-action-grid">
                     <a class="bc-action-card" href="/pro/prestations"
                         ><i class="bi bi-scissors" aria-hidden="true"></i>
