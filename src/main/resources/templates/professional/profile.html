@@ -25,7 +25,17 @@
                                 (<span th:text="${#lists.size(reviews)}"></span> avis)
                             </span>
                         </div>
-                        <div sec:authorize="hasRole('CLIENT')">
+                        <div sec:authorize="hasRole('CLIENT')" class="d-flex gap-2">
+                            <form th:if="${!favorite}" th:action="@{'/client/favoris/' + ${professional.id} + '/ajouter'}" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-heart"></i> Ajouter aux favoris
+                                </button>
+                            </form>
+                            <form th:if="${favorite}" th:action="@{'/client/favoris/' + ${professional.id} + '/retirer'}" method="post">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-heart-fill"></i> Favori
+                                </button>
+                            </form>
                             <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#signalerProfilModal">
                                 <i class="bi bi-flag"></i> Signaler
                             </button>

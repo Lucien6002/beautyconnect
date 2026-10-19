@@ -10,13 +10,15 @@ import com.beautyconnect.repository.TimeSlotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Prise de rendez-vous, confirmation (avec envoi du mail), refus et annulation.
- * Voir {@link UserService} pour l’explication de @Service / @RequiredArgsConstructor.
+ * Prise de rendez-vous (confirmee immediatement, avec envoi du mail) et annulation par le client.
+ * Voir {@link UserService} pour l'explication de @Service / @RequiredArgsConstructor.
  */
 @lombok.extern.slf4j.Slf4j
 @Service
@@ -87,11 +89,26 @@ public class AppointmentService {
                 .prestation(prestation)
                 .timeSlot(slot)
                 .activeTimeSlotId(slot.getId())
-                .status(AppointmentStatus.EN_ATTENTE)
+                .status(AppointmentStatus.CONFIRME)
                 .notes(form.getNotes())
                 .build();
 
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        // Le rendez-vous est confirme des la reservation (creneau ouvert par le pro
+        // = "salon ouvert") : mail de confirmation envoye apres l'enregistrement,
+        // un echec d'envoi n'annule pas la reservation.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    emailService.sendAppointmentConfirmation(saved);
+                } catch (RuntimeException ex) {
+                    log.warn("Mail de confirmation indisponible apres enregistrement du rendez-vous.");
+                }
+            }
+        });
+        return saved;
     }
 
     public List<Appointment> getAppointmentsForClient(User client) {
@@ -100,36 +117,6 @@ public class AppointmentService {
 
     public List<Appointment> getAppointmentsForProfessional(ProfessionalProfile professional) {
         return appointmentRepository.findByProfessionalOrderByCreatedAtDesc(professional);
-    }
-
-    // Le professionnel accepte le rendez-vous : on change le statut ET on
-    // declenche l'envoi du mail de confirmation au client (cf. specifications).
-    @Transactional
-    public Appointment confirm(ProfessionalProfile professional, Long appointmentId) {
-        Appointment appointment = getOwnedByProfessional(professional, appointmentId);
-        validateTransition(appointment.getStatus(), AppointmentStatus.CONFIRME);
-        appointment.setStatus(AppointmentStatus.CONFIRME);
-        appointment = appointmentRepository.save(appointment);
-        final Appointment confirmed = appointment;
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronization() {
-                    @Override public void afterCommit() {
-                        try { emailService.sendAppointmentConfirmation(confirmed); }
-                        catch (RuntimeException ex) { log.warn("Mail de confirmation indisponible après enregistrement du rendez-vous."); }
-                    }
-                });
-        return appointment;
-    }
-
-    @Transactional
-    public Appointment refuse(ProfessionalProfile professional, Long appointmentId) {
-        Appointment appointment = getOwnedByProfessional(professional, appointmentId);
-        validateTransition(appointment.getStatus(), AppointmentStatus.REFUSE);
-        appointment.setStatus(AppointmentStatus.REFUSE);
-        // Le creneau redevient disponible pour un autre client puisque ce
-        // rendez-vous n'aura finalement pas lieu.
-        releaseSlot(appointment);
-        return appointmentRepository.save(appointment);
     }
 
     @Transactional
@@ -163,7 +150,7 @@ public class AppointmentService {
         timeSlotRepository.save(slot);
     }
 
-    // Utilitaire commun a confirm/refuse/markCompleted : va chercher le
+    // Utilitaire commun a markCompleted : va chercher le
     // rendez-vous et verifie au passage qu'il appartient bien au
     // professionnel connecte (meme logique de securite que dans ProfessionalService).
     private Appointment getOwnedByProfessional(ProfessionalProfile professional, Long appointmentId) {

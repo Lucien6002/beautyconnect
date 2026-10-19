@@ -30,6 +30,11 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
     // plus lointain dans le temps : pratique pour l'affichage cote client.
     List<TimeSlot> findByProfessionalAndAvailableTrueOrderByStartDateTimeAsc(ProfessionalProfile professional);
 
+    // Creneaux a venir d'un professionnel (disponibles ou reserves) : les creneaux
+    // deja passes n'ont plus d'interet dans sa page de gestion.
+    List<TimeSlot> findByProfessionalAndStartDateTimeAfterOrderByStartDateTimeAsc(
+            ProfessionalProfile professional, LocalDateTime now);
+
     // Meme chose mais sans filtrer sur "available" : utilise cote pro pour voir
     // TOUS ses creneaux, y compris ceux deja reserves.
     List<TimeSlot> findByProfessionalOrderByStartDateTimeAsc(ProfessionalProfile professional);
