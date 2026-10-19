@@ -21,7 +21,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // Avis publics d'un professionnel : on exclut ceux masques par un admin
     // suite a un signalement (hidden = true), voir AdminService.
-    List<Review> findByProfessionalAndHiddenFalseOrderByCreatedAtDesc(ProfessionalProfile professional);
+    // La fiche lit r.client.firstName après fermeture de la session Hibernate.
+    @Query("SELECT r FROM Review r JOIN FETCH r.client WHERE r.professional = :professional AND r.hidden = false ORDER BY r.createdAt DESC")
+    List<Review> findByProfessionalAndHiddenFalseOrderByCreatedAtDesc(
+            @org.springframework.data.repository.query.Param("professional") ProfessionalProfile professional);
 
     // Tous les avis, y compris masques : utilise dans l'espace de moderation admin.
     // JOIN FETCH charge le client et le professionnel dans la meme requete :
