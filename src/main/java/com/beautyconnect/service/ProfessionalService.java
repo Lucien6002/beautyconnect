@@ -152,8 +152,10 @@ public class ProfessionalService {
         return timeSlotRepository.findByProfessionalAndAvailableTrueAndStartDateTimeAfterOrderByStartDateTimeAsc(professional, LocalDateTime.now());
     }
 
+    // Creneaux a venir uniquement (disponibles ou reserves) : les creneaux passes
+    // ne sont plus affiches dans la gestion des creneaux du professionnel.
     public List<TimeSlot> getAllTimeSlots(ProfessionalProfile professional) {
-        return timeSlotRepository.findByProfessionalOrderByStartDateTimeAsc(professional);
+        return timeSlotRepository.findByProfessionalAndStartDateTimeAfterOrderByStartDateTimeAsc(professional, LocalDateTime.now());
     }
 
     // Refuse un creneau qui existe deja pour ce professionnel (meme jour et

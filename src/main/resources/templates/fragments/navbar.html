@@ -22,16 +22,19 @@
           <li class="nav-item">
             <a class="nav-link" th:href="@{/}">Accueil</a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" sec:authorize="!hasRole('PROFESSIONAL')">
             <a class="nav-link" th:href="@{/recherche}">Trouver un pro</a>
           </li>
-          <li class="nav-item" sec:authorize="hasRole('CLIENT')">
-            <a class="nav-link" th:href="@{/client/tableau-bord}">Mon espace</a>
+          <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
+            <a class="nav-link" th:href="@{/pro/agenda}">Mon agenda</a>
           </li>
           <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
             <a class="nav-link" th:href="@{/pro/tableau-bord}">Mon espace pro</a>
           </li>
-          <li class="nav-item" sec:authorize="hasAnyRole('CLIENT','PROFESSIONAL')">
+          <li class="nav-item" sec:authorize="hasRole('CLIENT')">
+            <a class="nav-link" th:href="@{/client/rendez-vous}">Mon compte</a>
+          </li>
+          <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
             <a class="nav-link" th:href="@{/compte}">Mon compte</a>
           </li>
           <li class="nav-item" sec:authorize="hasRole('ADMIN')">

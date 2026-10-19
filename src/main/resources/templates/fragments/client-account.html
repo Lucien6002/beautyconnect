@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Menu lateral de l'espace "Mon compte" du client. active : rdv | infos | favoris -->
+<aside th:fragment="sidebar(active)" class="card shadow-sm p-4">
+    <h1 class="h4 mb-4">Mon compte</h1>
+    <nav class="nav flex-column gap-1">
+        <a class="nav-link px-0" th:href="@{/client/rendez-vous}"
+           th:classappend="${active == 'rdv'} ? 'fw-bold text-dark'">Mes rendez-vous</a>
+        <a class="nav-link px-0" th:href="@{/compte}"
+           th:classappend="${active == 'infos'} ? 'fw-bold text-dark'">Mes informations</a>
+        <a class="nav-link px-0" th:href="@{/client/favoris}"
+           th:classappend="${active == 'favoris'} ? 'fw-bold text-dark'">Mes favoris</a>
+    </nav>
+    <hr class="my-4">
+    <form th:action="@{/deconnexion}" method="post">
+        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0">Se déconnecter</button>
+    </form>
+</aside>
+</body>
+</html>

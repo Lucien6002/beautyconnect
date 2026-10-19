@@ -40,8 +40,11 @@ class ClientJourneyTests {
     @Autowired PrestationRepository prestations;
     @Autowired TimeSlotRepository slots;
     @Autowired AppointmentRepository appointments;
+    @Autowired FavoriteRepository favorites;
     @Autowired VerificationTokenRepository tokens;
     @Autowired AppointmentService service;
+    @Autowired AccountService accountService;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
     @Autowired AuthTokenService activation;
     @Autowired ProfessionalService professionals;
     @Autowired NearestProfessionalService nearest;
@@ -63,7 +66,7 @@ class ClientJourneyTests {
         slot = slots.save(TimeSlot.builder().professional(pro).startDateTime(LocalDateTime.now().plusDays(7)).available(true).build());
     }
     @AfterEach void cleanup() {
-        appointments.deleteAll(); tokens.deleteAll(); slots.deleteAll(); prestations.deleteAll(); profiles.deleteAll(); users.deleteAll();
+        favorites.deleteAll(); appointments.deleteAll(); tokens.deleteAll(); slots.deleteAll(); prestations.deleteAll(); profiles.deleteAll(); users.deleteAll();
     }
     private User account(String email, Role role) {
         return User.builder().email(email).firstName("Prénom").lastName("Nom").password("hashed")
@@ -148,6 +151,96 @@ class ClientJourneyTests {
         mvc.perform(post("/rendez-vous/reserver/{id}", pro.getId()).with(user(new CustomUserDetails(client))))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/pro/rendez-vous").with(user(new CustomUserDetails(pro.getUser())))).andExpect(status().isOk());
+    }
+
+    @Test void clientCanAddListAndRemoveFavorites() throws Exception {
+        var principal = new CustomUserDetails(client);
+        mvc.perform(post("/client/favoris/{id}/ajouter", pro.getId()).with(user(principal)).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/client/favoris/{id}/ajouter", pro.getId()).with(user(principal)).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(favorites.count()).isEqualTo(1);
+        mvc.perform(get("/client/favoris").with(user(principal))).andExpect(status().isOk())
+                .andExpect(content().string(containsString(pro.getBusinessName())));
+        mvc.perform(get("/professionnels/{id}", pro.getId()).with(user(principal))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("/retirer")));
+        mvc.perform(post("/client/favoris/{id}/retirer", pro.getId()).param("from", "favoris")
+                        .with(user(principal)).with(csrf()))
+                .andExpect(redirectedUrl("/client/favoris"));
+        assertThat(favorites.count()).isZero();
+        var hidden = professional("hidden-fav@journey.test", false);
+        mvc.perform(post("/client/favoris/{id}/ajouter", hidden.getId()).with(user(principal)).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/compte").with(user(principal))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Mes favoris")));
+        mvc.perform(post("/client/favoris/{id}/ajouter", pro.getId()).with(user(new CustomUserDetails(pro.getUser()))).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test void deletingAClientAccountAnonymizesItAndFreesItsSlots() throws Exception {
+        client.setPassword(encoder.encode("Delete123!")); users.save(client);
+        var a = service.book(client, pro, form());
+        favorites.save(Favorite.builder().client(client).professional(pro).build());
+
+        assertThatThrownBy(() -> accountService.deleteClientAccount(client.getId(), "mauvais"))
+                .isInstanceOf(IllegalOperationException.class);
+        assertThat(users.findById(client.getId()).orElseThrow().isEnabled()).isTrue();
+
+        mvc.perform(post("/client/compte/supprimer").with(user(new CustomUserDetails(client))).with(csrf())
+                        .param("password", "Delete123!"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/"));
+
+        var deleted = users.findById(client.getId()).orElseThrow();
+        assertThat(deleted.isEnabled()).isFalse();
+        assertThat(deleted.getEmail()).endsWith("@deleted.invalid").doesNotContain("client@journey.test");
+        assertThat(deleted.getPhone()).isNull();
+        assertThat(favorites.count()).isZero();
+        assertThat(appointments.findById(a.getId()).orElseThrow().getStatus()).isEqualTo(AppointmentStatus.ANNULE);
+        assertThat(slots.findById(slot.getId()).orElseThrow().isAvailable()).isTrue();
+        // L'adresse email peut etre reutilisee pour une nouvelle inscription.
+        assertThat(users.findByEmail("client@journey.test")).isEmpty();
+        // Un professionnel ne peut pas utiliser cette route.
+        mvc.perform(post("/client/compte/supprimer").with(user(new CustomUserDetails(pro.getUser()))).with(csrf())
+                .param("password", "x")).andExpect(status().isForbidden());
+    }
+
+    @Test void professionalAgendaShowsThisWeeksActiveAppointmentsOnly() throws Exception {
+        var thisWeek = slots.save(TimeSlot.builder().professional(pro).available(true)
+                .startDateTime(LocalDateTime.now().plusMinutes(5)).build());
+        var form = new AppointmentForm(); form.setTimeSlotId(thisWeek.getId()); form.setPrestationId(prestation.getId());
+        service.book(client, pro, form);
+        // Le creneau de setup (J+7) tombe dans la semaine suivante : reserve puis annule, il n'apparait jamais.
+        var next = service.book(client, pro, form());
+        service.cancelByClient(client, next.getId());
+
+        var principal = new CustomUserDetails(pro.getUser());
+        var page = mvc.perform(get("/pro/agenda").with(user(principal))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Mon agenda")))
+                .andExpect(content().string(containsString("Prénom Nom")))
+                .andExpect(content().string(containsString("Coupe")))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).doesNotContain("Aucun rendez-vous pour le moment");
+        mvc.perform(get("/pro/agenda").with(user(new CustomUserDetails(client)))).andExpect(status().isForbidden());
+    }
+
+    @Test void proDashboardShowsCompletedCountAndCurrentMonthRevenue() throws Exception {
+        var thisMonth = slots.save(TimeSlot.builder().professional(pro).available(false)
+                .startDateTime(LocalDateTime.now().withDayOfMonth(1).withHour(9).withMinute(0)).build());
+        var lastMonth = slots.save(TimeSlot.builder().professional(pro).available(false)
+                .startDateTime(LocalDateTime.now().minusMonths(1).withDayOfMonth(1).withHour(9).withMinute(0)).build());
+        for (var sl : List.of(thisMonth, lastMonth)) {
+            appointments.save(Appointment.builder().client(client).professional(pro).prestation(prestation)
+                    .timeSlot(sl).status(AppointmentStatus.TERMINE).build());
+        }
+        // Un rendez-vous confirme (non termine) ne compte ni dans le total ni dans le C.A.
+        appointments.save(Appointment.builder().client(client).professional(pro).prestation(prestation)
+                .timeSlot(slot).status(AppointmentStatus.CONFIRME).activeTimeSlotId(slot.getId()).build());
+
+        mvc.perform(get("/pro/tableau-bord").with(user(new CustomUserDetails(pro.getUser()))))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("completedCount", 2))
+                .andExpect(result -> assertThat((BigDecimal) result.getModelAndView().getModel().get("monthlyRevenue"))
+                        .isEqualByComparingTo("20"));
     }
 
     @Test void smtpFailureCanBeRecoveredAndExpiredTokensAreDeleted() throws Exception {

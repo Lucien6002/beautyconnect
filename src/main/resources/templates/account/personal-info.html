@@ -1,12 +1,17 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/head :: head(title='Mon compte')}"></head>
 <body class="d-flex flex-column min-vh-100">
 
 <nav th:replace="~{fragments/navbar :: navbar}"></nav>
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-<main class="flex-grow-1 container my-5" style="max-width: 640px;">
+<main class="flex-grow-1 container my-5">
+    <div class="row g-4">
+    <div class="col-lg-4" sec:authorize="hasRole('CLIENT')">
+        <aside th:replace="~{fragments/client-account :: sidebar('infos')}"></aside>
+    </div>
+    <div class="col" style="max-width: 640px;">
     <h1 class="h4 mb-4">Mes informations personnelles</h1>
 
     <form th:action="@{/compte}" th:object="${personalInfoForm}" method="post" class="card shadow-sm p-4">
@@ -36,6 +41,25 @@
         <button type="submit" class="btn btn-primary w-100">Enregistrer</button>
         <a th:href="@{/compte/mot-de-passe}" class="btn btn-outline-secondary w-100 mt-2">Changer mon mot de passe</a>
     </form>
+
+    <!-- Suppression du compte : reservee aux clients -->
+    <div class="card border-danger shadow-sm p-4 mt-4" sec:authorize="hasRole('CLIENT')">
+        <h2 class="h5 text-danger">Supprimer mon compte</h2>
+        <p class="small text-muted">
+            Cette action est definitive. Vos rendez-vous a venir seront annules, vos favoris supprimes et vos
+            informations personnelles effacees. Vous ne pourrez plus vous connecter avec ce compte.
+        </p>
+        <form th:action="@{/client/compte/supprimer}" method="post"
+              onsubmit="return confirm('Supprimer definitivement votre compte ?');">
+            <div class="mb-3">
+                <label class="form-label">Confirmez avec votre mot de passe</label>
+                <input type="password" name="password" class="form-control" autocomplete="current-password" required/>
+            </div>
+            <button type="submit" class="btn btn-outline-danger">Supprimer mon compte</button>
+        </form>
+    </div>
+    </div>
+    </div>
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
