@@ -7,32 +7,65 @@
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
 <main class="flex-grow-1 container my-5">
-    <h1 class="h4 mb-4">Signalements</h1>
+    <h1 class="h4 mb-2">Signalements</h1>
+    <p class="text-muted small mb-4">
+        Examinez la cible et le motif, puis choisissez une decision. Rien n'est masque ni desactive
+        automatiquement. Masquer un avis ou desactiver un compte cloture aussi les autres signalements
+        en attente sur la meme cible.
+    </p>
 
     <div class="card shadow-sm">
         <div class="table-responsive">
             <table class="table mb-0 align-middle">
                 <thead>
-                <tr><th>Type</th><th>Cible</th><th>Motif</th><th>Signale par</th><th>Statut</th><th>Actions</th></tr>
+                <tr><th>Signalement</th><th>Cible</th><th>Motif</th><th>Statut</th><th>Decision</th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="r : ${reports}">
-                    <td th:text="${r.targetType}"></td>
-                    <td th:text="'#' + ${r.targetId}"></td>
+                <!-- v = ReportService.ReportView : signalement + description de sa cible,
+                     preparee dans le service (relations LAZY deja lues, open-in-view=false). -->
+                <tr th:each="v : ${reports}" th:with="r=${v.report}">
+                    <td class="small text-nowrap">
+                        <div class="fw-semibold" th:text="'#' + ${r.id}"></div>
+                        <div th:text="${#temporals.format(r.createdAt, 'dd/MM/yyyy HH:mm')}"></div>
+                        <div class="text-muted" th:text="${r.reporter.fullName}"></div>
+                    </td>
+                    <td style="min-width: 16rem;">
+                        <span class="badge text-bg-light border mb-1"
+                              th:text="${r.targetType.name() == 'AVIS'} ? 'Avis' : 'Profil'"></span>
+                        <span class="badge mb-1"
+                              th:classappend="${v.targetState == 'Visible'} ? 'text-bg-success' : (${v.targetFound} ? 'text-bg-secondary' : 'text-bg-danger')"
+                              th:text="${v.targetState}"></span>
+                        <div class="fw-semibold" th:text="${v.targetTitle}"></div>
+                        <div class="small text-muted fst-italic" th:text="${v.targetExcerpt}"></div>
+                        <a th:if="${v.professionalId != null}" class="small"
+                           th:href="@{'/admin/professionnels/' + ${v.professionalId}}">Voir la fiche du professionnel</a>
+                    </td>
                     <td class="small" th:text="${r.reason}"></td>
-                    <td th:text="${r.reporter.fullName}"></td>
                     <td>
                         <span class="badge"
                               th:classappend="${r.status.name() == 'EN_ATTENTE'} ? 'text-bg-warning' : (${r.status.name() == 'TRAITE'} ? 'text-bg-success' : 'text-bg-secondary')"
-                              th:text="${r.status}"></span>
+                              th:text="${r.status.name() == 'EN_ATTENTE'} ? 'En attente' : (${r.status.name() == 'TRAITE'} ? 'Traite' : 'Rejete')"></span>
                     </td>
-                    <td class="d-flex gap-1" th:if="${r.status.name() == 'EN_ATTENTE'}">
-                        <form th:action="@{'/admin/signalements/' + ${r.id} + '/traiter'}" method="post">
-                            <button type="submit" class="btn btn-sm btn-success">Marquer traite</button>
-                        </form>
-                        <form th:action="@{'/admin/signalements/' + ${r.id} + '/rejeter'}" method="post">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">Rejeter</button>
-                        </form>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1" th:if="${r.status.name() == 'EN_ATTENTE'}">
+                            <form th:if="${v.canHideReview}" th:action="@{'/admin/signalements/' + ${r.id} + '/masquer-avis'}"
+                                  method="post" onsubmit="return confirm('Masquer cet avis de la fiche publique ?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Masquer l'avis</button>
+                            </form>
+                            <form th:if="${v.canDisableProfile}" th:action="@{'/admin/signalements/' + ${r.id} + '/desactiver-profil'}"
+                                  method="post" onsubmit="return confirm('Desactiver ce compte ? Le professionnel sera deconnecte et son profil masque.');">
+                                <button type="submit" class="btn btn-sm btn-danger">Desactiver le compte</button>
+                            </form>
+                            <form th:action="@{'/admin/signalements/' + ${r.id} + '/traiter'}" method="post"
+                                  onsubmit="return confirm('Cloturer ce signalement sans action sur la cible ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Cloturer sans action</button>
+                            </form>
+                            <form th:action="@{'/admin/signalements/' + ${r.id} + '/rejeter'}" method="post"
+                                  onsubmit="return confirm('Rejeter ce signalement comme infonde ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Rejeter</button>
+                            </form>
+                        </div>
+                        <span th:unless="${r.status.name() == 'EN_ATTENTE'}" class="small text-muted">Decision prise</span>
                     </td>
                 </tr>
                 </tbody>

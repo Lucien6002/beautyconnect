@@ -31,4 +31,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     // (EN_ATTENTE) sur cette cible ? Voir ReportService.create.
     boolean existsByReporterAndTargetTypeAndTargetIdAndStatus(User reporter, ReportTargetType targetType,
                                                               Long targetId, ReportStatus status);
+
+    // Tous les signalements d'un statut donne sur une meme cible : une
+    // decision qui agit sur la cible (masquer l'avis, desactiver le compte)
+    // clot aussi les autres signalements en attente sur elle.
+    List<Report> findByTargetTypeAndTargetIdAndStatus(ReportTargetType targetType, Long targetId, ReportStatus status);
 }

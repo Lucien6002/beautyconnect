@@ -218,6 +218,8 @@ class AdminAccessControlTests {
                 "/admin/utilisateurs/" + disabledClient.getId() + "/activer",
                 "/admin/avis/" + review.getId() + "/masquer",
                 "/admin/signalements/" + report.getId() + "/traiter",
+                "/admin/signalements/" + report.getId() + "/masquer-avis",
+                "/admin/signalements/" + report.getId() + "/desactiver-profil",
                 "/admin/signalements/" + report.getId() + "/rejeter");
     }
 

@@ -2,8 +2,6 @@ package com.beautyconnect.controller;
 
 import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.model.ProfessionalProfile;
-import com.beautyconnect.model.Report;
-import com.beautyconnect.model.ReportStatus;
 import com.beautyconnect.model.User;
 import com.beautyconnect.service.AdminService;
 import com.beautyconnect.service.ReportService;
@@ -129,22 +127,49 @@ public class AdminController {
 
     // ---- Signalements ----
 
+    // Chaque signalement est affiche avec sa cible reelle (voir ReportService.ReportView).
     @GetMapping("/signalements")
     public String reports(Model model) {
-        model.addAttribute("reports", reportService.getAll());
+        model.addAttribute("reports", reportService.getAllForModeration());
         return "admin/reports";
     }
 
+    // Quatre decisions explicites, toutes appliquees par ReportService.decide
+    // en une seule transaction. Les refus metier (deja traite, mauvais type
+    // de cible, cible disparue) deviennent un message flash.
+
     @PostMapping("/signalements/{id}/traiter")
     public String treatReport(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Report report = reportService.updateStatus(id, ReportStatus.TRAITE);
-        redirectAttributes.addFlashAttribute("success", "Signalement #" + report.getId() + " marque comme traite.");
-        return "redirect:/admin/signalements";
+        return decide(id, ReportService.Decision.TRAITER, "Signalement #" + id + " cloture sans action.",
+                redirectAttributes);
+    }
+
+    @PostMapping("/signalements/{id}/masquer-avis")
+    public String hideReportedReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return decide(id, ReportService.Decision.MASQUER_AVIS,
+                "Avis masque : les signalements en attente sur cet avis sont clotures.", redirectAttributes);
+    }
+
+    @PostMapping("/signalements/{id}/desactiver-profil")
+    public String disableReportedProfile(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return decide(id, ReportService.Decision.DESACTIVER_PROFIL,
+                "Compte desactive : le profil n'est plus visible et les signalements en attente sont clotures.",
+                redirectAttributes);
     }
 
     @PostMapping("/signalements/{id}/rejeter")
     public String rejectReport(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        reportService.updateStatus(id, ReportStatus.REJETE);
+        return decide(id, ReportService.Decision.REJETER, "Signalement #" + id + " rejete.", redirectAttributes);
+    }
+
+    private String decide(Long reportId, ReportService.Decision decision, String successMessage,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            reportService.decide(reportId, decision);
+            redirectAttributes.addFlashAttribute("success", successMessage);
+        } catch (IllegalOperationException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/admin/signalements";
     }
 }
