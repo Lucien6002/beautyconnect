@@ -32,14 +32,55 @@
                         <i class="bi bi-arrow-down" aria-hidden="true"></i
                     ></a>
                 </div>
-                <div class="bc-home-photo">
-                    <img
-                        th:src="@{/images/acceuil1.png}"
-                        alt="Un espace de coiffure lumineux aux fauteuils roses"
-                        width="960"
-                        height="720"
-                        fetchpriority="high"
-                    />
+                <div
+                    class="bc-home-photo"
+                    data-bc-carousel
+                    data-carousel-interval="8000"
+                    role="group"
+                    aria-roledescription="diaporama"
+                    aria-label="Ambiances de salons de beauté"
+                >
+                    <div class="bc-carousel-frame">
+                        <img
+                            class="bc-carousel-image is-current"
+                            th:src="@{/images/acceuil1.png}"
+                            alt=""
+                            width="960"
+                            height="720"
+                            fetchpriority="high"
+                        />
+                    </div>
+                    <div class="bc-carousel-controls" hidden>
+                        <button
+                            type="button"
+                            data-carousel-previous
+                            aria-label="Image précédente"
+                        >
+                            <i
+                                class="bi bi-chevron-left"
+                                aria-hidden="true"
+                            ></i>
+                        </button>
+                        <span data-carousel-counter aria-live="off">1 / 4</span>
+                        <button
+                            type="button"
+                            data-carousel-next
+                            aria-label="Image suivante"
+                        >
+                            <i
+                                class="bi bi-chevron-right"
+                                aria-hidden="true"
+                            ></i>
+                        </button>
+                        <button
+                            type="button"
+                            data-carousel-pause
+                            aria-label="Mettre en pause le défilement"
+                            aria-pressed="false"
+                        >
+                            <i class="bi bi-pause-fill" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <div class="bc-photo-caption">
                         <i class="bi bi-scissors" aria-hidden="true"></i
                         ><span
@@ -249,7 +290,8 @@
                     <i class="bi bi-calendar2-check" aria-hidden="true"></i>
                     <h3>Une réservation simple</h3>
                     <p>
-                        Choisissez un créneau et retrouvez votre réservation dans votre espace.
+                        Choisissez un créneau et retrouvez votre réservation
+                        dans votre espace.
                     </p>
                 </div>
                 <div>
@@ -283,5 +325,6 @@
             </section>
         </main>
         <footer th:replace="~{fragments/footer :: footer}"></footer>
+        <script th:src="@{/js/home-carousel.js}"></script>
     </body>
 </html>
