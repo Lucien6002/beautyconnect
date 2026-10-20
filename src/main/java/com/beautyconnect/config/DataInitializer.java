@@ -114,20 +114,6 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
 
             log.info("Professionnel Sarah créé !");
-        } else {
-            // CORRECTION SANS PIÈGE LAZY :
-            // On cherche Sarah directement par son email, puis son profil par son ID
-            userRepository.findByEmail("sarah@beautyconnect.local").ifPresent(sarahUser -> {
-                professionalProfileRepository.findByUserId(sarahUser.getId()).ifPresent(p -> {
-                    if (p.getLatitude() == null) {
-                        p.setLatitude(48.8566);
-                        p.setLongitude(2.3522);
-                        p.setCoordinatesPublic(true);
-                        professionalProfileRepository.save(p);
-                        log.info("Coordonnées GPS de Sarah mises à jour avec succès !");
-                    }
-                });
-            });
         }
 
         // 3. Compte Professionnel 2 (Chloé) à Lyon

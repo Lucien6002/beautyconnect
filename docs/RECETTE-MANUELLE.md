@@ -7,7 +7,7 @@
 ## Préparer la session
 
 - [ ] Suivre le lancement du [README](../README.md). L'accueil répond ; Mailpit s'ouvre sur `http://localhost:8025`.
-- [ ] Sur la base locale préparée, laisser le jeu France désactivé. Ouvrir la recherche sans filtres : six établissements dans six villes. Sur une base vide uniquement, initialiser les six comptes selon le README.
+- [ ] Sur la base locale préparée, laisser le jeu France désactivé. Sur un nouveau poste, initialiser le catalogue selon le README, même si la base contient déjà des comptes. Une base vide reçoit six établissements dans six villes ; une base existante conserve aussi ses autres profils.
 - [ ] Préparer une photo JPEG, une PNG, une WebP, un fichier texte renommé `.jpg`, un fichier dépassant 5 Mo. Utiliser des images destinées à être publiques.
 - [ ] Utiliser trois profils de navigateur séparés pour client, professionnel et admin, ou se déconnecter entre les rôles. Deux onglets d'une même session partagent le même compte.
 - [ ] Créer un compte client jetable pour le changement de mot de passe et la suppression du compte ; conserver les comptes communs pour les autres membres.
@@ -23,6 +23,17 @@ Comptes de démarrage :
 | Admin local | `admin@beautyconnect.local` | `Admin123!` |
 
 Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le jeu France. Si les comptes ont été modifiés, utiliser leurs identifiants actuels. Ne jamais réutiliser ces secrets en production.
+
+## Import du catalogue sur un autre poste
+
+À faire sur une base de développement destinée à la recette. Conserver une sauvegarde si elle contient du travail à préserver.
+
+- [ ] Récupérer le code, garder son `.env` local, activer `DEMO_FRANCE_ENABLED=true`, démarrer Spring. L'import se termine sans erreur Flyway.
+- [ ] Sans clés Cloudinary et avec le stockage local, ouvrir les six vitrines : couvertures et photos de prestations s'affichent avec Internet. Aucun nouveau rendez-vous ni avis n'a été ajouté.
+- [ ] Sur une base déjà remplie, vérifier qu'un mot de passe personnalisé, une position privée, un prix modifié et une photo personnelle sont conservés. Les anciens établissements supplémentaires doivent rester présents.
+- [ ] Renommer une prestation de présentation, modifier son prix, supprimer une de ses photos et sa couverture, retirer une prestation. Redémarrer avec l'import encore actif : aucune modification n'est annulée ni photo rétablie.
+- [ ] Remplacer une photo partagée sur ce poste, puis consulter la photo d'origine sur un autre poste : elle reste visible. L'import ne synchronise pas les modifications des utilisateurs entre leurs bases.
+- [ ] Remettre `DEMO_FRANCE_ENABLED=false` et conserver la table `showcase_imports`. Pour uploader de nouvelles photos vers Cloudinary, configurer ses clés et le fournisseur selon le README.
 
 ## Parcours conseillé pour la recette de ce soir
 

@@ -125,6 +125,24 @@ class PhotoIntegrationTests {
         assertThat(photos.ownedPrestation(owner.getId(), prestation.getId()).getPhotos()).isEmpty();
     }
 
+    @Test void removingSharedGalleryPhotoAndCoverOnlyRemovesLocalReferences() {
+        var profile = prestation.getProfessional();
+        profile.setProfilePhotoUrl("https://res.cloudinary.com/shared-cover.jpg");
+        profile.setProfilePhotoPublicId("shared:salon:cover");
+        prestation.setPhotos(new java.util.ArrayList<>());
+        var image = images.save(PrestationPhoto.builder().prestation(prestation)
+                .photoUrl("https://res.cloudinary.com/shared-offer.jpg").publicId("shared:offer:0").displayOrder(0).build());
+        prestation.getPhotos().add(image);
+        entityManager.flush(); entityManager.clear();
+        int callbacks = org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations().size();
+        photos.deletePrestationPhoto(owner.getId(), prestation.getId(), image.getId());
+        photos.profilePhoto(owner.getId(), true, null);
+        assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()).hasSize(callbacks);
+        entityManager.flush(); entityManager.clear();
+        assertThat(images.findById(image.getId())).isEmpty();
+        assertThat(profiles.findById(profile.getId()).orElseThrow().getProfilePhotoUrl()).isNull();
+    }
+
     @Test void enforcesFivePhotoLimit() throws Exception {
         for (int i = 0; i < 5; i++) photos.addPrestationPhoto(owner.getId(), prestation.getId(), ImageStorageTests.photo());
         assertThatThrownBy(() -> photos.addPrestationPhoto(owner.getId(), prestation.getId(), ImageStorageTests.photo())).isInstanceOf(IllegalOperationException.class);

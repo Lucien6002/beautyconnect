@@ -1,0 +1,226 @@
+{
+  "salons": [
+    {
+      "key": "sarah-paris",
+      "email": "sarah@beautyconnect.local",
+      "firstName": "Sarah",
+      "businessName": "Sarah Coiffure & Ongles",
+      "cityCode": "75056",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523244/beautyconnect/catalogue/d9726ccd97b768e0cbc824c4ac11b0554c8cb3ad98d87a79ddbeb1e832f38f92.jpg",
+      "offers": [
+        {
+          "key": "haircut",
+          "name": "Coupe & Brushing",
+          "aliases": [
+            "Coupe et brushing"
+          ],
+          "type": "COIFFURE",
+          "price": 30,
+          "durationMinutes": 45,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523262/beautyconnect/catalogue/3e942e3e1ad1e964550dfcc3550cc17c2f5241f15b511da5df2e3b6684f68f42.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523264/beautyconnect/catalogue/0f2a648e77885c36fee07b8bf360f94ec7ce16c4565d7db15a37b8187fe620cc.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523244/beautyconnect/catalogue/d9726ccd97b768e0cbc824c4ac11b0554c8cb3ad98d87a79ddbeb1e832f38f92.jpg"
+          ]
+        },
+        {
+          "key": "nails",
+          "name": "Pose Vernis Semi-Permanent",
+          "aliases": [
+            "Vernis semi-permanent"
+          ],
+          "type": "ONGLERIE",
+          "price": 25,
+          "durationMinutes": 40,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523260/beautyconnect/catalogue/43860d9cf15f409a19379cbca74f55bbce726ea107e84f6bb48c02b9ab2a17d4.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523242/beautyconnect/catalogue/5035b36d67e4043a3d14783ee5f469e4fde94a83ace726f3ea04f6a886991639.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523248/beautyconnect/catalogue/614984e9423ce562ba5ab9fdc6a2cba6db6a2c5435709cc4205fd67f96b5e64e.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "chloe-lyon",
+      "email": "chloe@beautyconnect.local",
+      "firstName": "Chloé",
+      "businessName": "Chloé Coiffure Lyon",
+      "cityCode": "69123",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523264/beautyconnect/catalogue/0f2a648e77885c36fee07b8bf360f94ec7ce16c4565d7db15a37b8187fe620cc.jpg",
+      "offers": [
+        {
+          "key": "haircut",
+          "name": "Coupe et brushing",
+          "aliases": [
+            "Coupe & Brushing"
+          ],
+          "type": "COIFFURE",
+          "price": 30,
+          "durationMinutes": 45,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523234/beautyconnect/catalogue/03e931ff712505271c0ef91ab6c1537e4a6eaa6a8e5c131e08b9d3abd2c1a840.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523238/beautyconnect/catalogue/c84e3947fa0c5ab6e3a564752d418f47908368b8b2322afecb909837ae785f36.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523255/beautyconnect/catalogue/5fcdb42b50f10a43d6283dd1ca4c049886f3a9c22a00d34ce4dec94a6cd69a7c.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523258/beautyconnect/catalogue/e6956728ab22542f814121863ab350a86d47624b8268e74e3706244f73e238b9.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523266/beautyconnect/catalogue/4a916ebd8bf48edf10775ba9702a75f9f029473513b77b90aaf108aa825fed44.jpg"
+          ]
+        },
+        {
+          "key": "coloration",
+          "name": "Coloration et soin",
+          "aliases": [],
+          "type": "COIFFURE",
+          "price": 65,
+          "durationMinutes": 90,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523262/beautyconnect/catalogue/3e942e3e1ad1e964550dfcc3550cc17c2f5241f15b511da5df2e3b6684f68f42.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523264/beautyconnect/catalogue/0f2a648e77885c36fee07b8bf360f94ec7ce16c4565d7db15a37b8187fe620cc.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523244/beautyconnect/catalogue/d9726ccd97b768e0cbc824c4ac11b0554c8cb3ad98d87a79ddbeb1e832f38f92.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "coiffure-lille",
+      "email": "coiffure.59350@demo.beautyconnect.invalid",
+      "firstName": "Camille",
+      "businessName": "Coiffure · Lille",
+      "cityCode": "59350",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523248/beautyconnect/catalogue/b01eee450c4d11f7c7af3be40ca0ced160f34f1cded82e40f3594e98a6d0ad11.jpg",
+      "offers": [
+        {
+          "key": "braids",
+          "name": "Tresses et coiffures protectrices",
+          "aliases": [],
+          "type": "COIFFURE",
+          "price": 30,
+          "durationMinutes": 45,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523245/beautyconnect/catalogue/8e0d153bdfb2d591e7969ef0717b2f972c2d3fc756ef50a7893e5c07e2a2801a.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523246/beautyconnect/catalogue/e211e664f20cd561580587534f5eeea9b693ef66e3e5bcbf392005c39d77f207.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523253/beautyconnect/catalogue/5218f341ae2fe2542dd7d1a4040cbb287841e7fba4e5468ea29708c040f02f3e.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523254/beautyconnect/catalogue/8ae8eaf1258e658f2b43aae4da3da1b429278939a86a6420fab1e046743d93fd.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523250/beautyconnect/catalogue/2cb7c8fc757b4f6839832bd5ba3677bd7bae3483dc278accc29fe2a0ff810c1d.jpg"
+          ]
+        },
+        {
+          "key": "fade",
+          "name": "Dégradé et coupe homme",
+          "aliases": [],
+          "type": "COIFFURE",
+          "price": 30,
+          "durationMinutes": 45,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523247/beautyconnect/catalogue/4bb379d7bace90f9ae92cc5b4df0707dd2e27dcfd95030f23e4019dbfaffaa9c.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523258/beautyconnect/catalogue/e6956728ab22542f814121863ab350a86d47624b8268e74e3706244f73e238b9.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523266/beautyconnect/catalogue/4a916ebd8bf48edf10775ba9702a75f9f029473513b77b90aaf108aa825fed44.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "onglerie-nantes",
+      "email": "onglerie.44109@demo.beautyconnect.invalid",
+      "firstName": "Lina",
+      "businessName": "Onglerie · Nantes",
+      "cityCode": "44109",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523248/beautyconnect/catalogue/614984e9423ce562ba5ab9fdc6a2cba6db6a2c5435709cc4205fd67f96b5e64e.jpg",
+      "offers": [
+        {
+          "key": "manicure",
+          "name": "Manucure",
+          "aliases": [],
+          "type": "ONGLERIE",
+          "price": 20,
+          "durationMinutes": 30,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523260/beautyconnect/catalogue/43860d9cf15f409a19379cbca74f55bbce726ea107e84f6bb48c02b9ab2a17d4.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523242/beautyconnect/catalogue/5035b36d67e4043a3d14783ee5f469e4fde94a83ace726f3ea04f6a886991639.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523248/beautyconnect/catalogue/614984e9423ce562ba5ab9fdc6a2cba6db6a2c5435709cc4205fd67f96b5e64e.jpg"
+          ]
+        },
+        {
+          "key": "polish",
+          "name": "Vernis semi-permanent",
+          "aliases": [],
+          "type": "ONGLERIE",
+          "price": 38,
+          "durationMinutes": 60,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523263/beautyconnect/catalogue/d890d6e660f6fde8664a0bae89fe38747eff476f4bf4277ac37d8779d41a337a.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523237/beautyconnect/catalogue/72c220761122007f751a8c34051bbc3d9e8b4afe53119884c9e9321af2dc1d58.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "onglerie-bordeaux",
+      "email": "onglerie.33063@demo.beautyconnect.invalid",
+      "firstName": "Inès",
+      "businessName": "Onglerie · Bordeaux",
+      "cityCode": "33063",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523236/beautyconnect/catalogue/2e942bf1785920de518019acdee09f53a494f0b20ca6cca238dd8239c499fc14.jpg",
+      "offers": [
+        {
+          "key": "manicure",
+          "name": "Manucure",
+          "aliases": [],
+          "type": "ONGLERIE",
+          "price": 20,
+          "durationMinutes": 30,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523236/beautyconnect/catalogue/2e942bf1785920de518019acdee09f53a494f0b20ca6cca238dd8239c499fc14.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523237/beautyconnect/catalogue/72c220761122007f751a8c34051bbc3d9e8b4afe53119884c9e9321af2dc1d58.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523248/beautyconnect/catalogue/614984e9423ce562ba5ab9fdc6a2cba6db6a2c5435709cc4205fd67f96b5e64e.jpg"
+          ]
+        },
+        {
+          "key": "polish",
+          "name": "Vernis semi-permanent",
+          "aliases": [],
+          "type": "ONGLERIE",
+          "price": 38,
+          "durationMinutes": 60,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523263/beautyconnect/catalogue/d890d6e660f6fde8664a0bae89fe38747eff476f4bf4277ac37d8779d41a337a.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523260/beautyconnect/catalogue/43860d9cf15f409a19379cbca74f55bbce726ea107e84f6bb48c02b9ab2a17d4.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "maquillage-marseille",
+      "email": "soin.13055@demo.beautyconnect.invalid",
+      "firstName": "Alex",
+      "businessName": "Maquillage · Marseille",
+      "cityCode": "13055",
+      "cover": "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523231/beautyconnect/catalogue/75a8b1002d3c631d3e4a5eb5337b2977f1bfbe7cf9a16e15c5afad4987d2afec.jpg",
+      "offers": [
+        {
+          "key": "day",
+          "name": "Maquillage de jour",
+          "aliases": [],
+          "type": "SOIN",
+          "price": 35,
+          "durationMinutes": 45,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523231/beautyconnect/catalogue/75a8b1002d3c631d3e4a5eb5337b2977f1bfbe7cf9a16e15c5afad4987d2afec.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523242/beautyconnect/catalogue/c6da0f3133a8f267f7d2b6757832def9c5456252f2f9070f5a3d7c5fad46c0f4.jpg"
+          ]
+        },
+        {
+          "key": "evening",
+          "name": "Maquillage de soirée",
+          "aliases": [],
+          "type": "SOIN",
+          "price": 55,
+          "durationMinutes": 60,
+          "photos": [
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523233/beautyconnect/catalogue/daa8c1462cc692eeb770edd9be290d35837825b4f5be2a1308b6e4e6238f25e5.jpg",
+            "https://res.cloudinary.com/dsanuxbtn/image/upload/v1792523252/beautyconnect/catalogue/12f36f3dac92f96bc2b458272106518bee1e62e5721bbf8c20beaf80c3faee41.jpg"
+          ]
+        }
+      ]
+    }
+  ]
+}

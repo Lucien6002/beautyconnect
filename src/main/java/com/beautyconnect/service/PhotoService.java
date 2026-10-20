@@ -147,7 +147,8 @@ public class PhotoService {
 
     public void deleteAfterCommit(String publicId, String url) {
         String id = publicId != null ? publicId : url != null && url.startsWith("/uploads/") ? "local:" + url.substring(9) : null;
-        if (id == null) return;
+        // Les images du catalogue partagé sont communes à plusieurs bases : retirer le lien local seulement.
+        if (id == null || id.startsWith("shared:")) return;
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override public void afterCommit() { removeFile(id); }
         });

@@ -31,6 +31,8 @@ public class FranceDemoData {
     private final ReviewRepository reviews;
     private final FavoriteRepository favorites;
     private final PasswordEncoder passwordEncoder;
+    private final PrestationPhotoRepository photos;
+    private final ShowcaseImportRepository imports;
 
     public record City(String code, String name, double latitude, double longitude) {}
     public record Result(int cities, int professionalsCreated) {}
@@ -55,47 +57,97 @@ public class FranceDemoData {
      */
     @Transactional(rollbackFor = Exception.class)
     public Result seedShowcase() throws IOException {
-        record Example(String email, String firstName, String business, String cityCode, ServiceType type, String password) {}
-        var examples = List.of(
-                new Example("sarah@beautyconnect.local", "Sarah", "Sarah Coiffure & Ongles", "75056", ServiceType.COIFFURE, "Pro12345!"),
-                new Example("chloe@beautyconnect.local", "Chloé", "Chloé Coiffure Lyon", "69123", ServiceType.COIFFURE, "Pro12345!"),
-                new Example("coiffure.59350" + DOMAIN, "Camille", "Coiffure · Lille", "59350", ServiceType.COIFFURE, PASSWORD),
-                new Example("onglerie.44109" + DOMAIN, "Lina", "Onglerie · Nantes", "44109", ServiceType.ONGLERIE, PASSWORD),
-                new Example("onglerie.33063" + DOMAIN, "Inès", "Onglerie · Bordeaux", "33063", ServiceType.ONGLERIE, PASSWORD),
-                new Example("soin.13055" + DOMAIN, "Alex", "Maquillage · Marseille", "13055", ServiceType.SOIN, PASSWORD));
-        int created = 0;
-        for (var example : examples) {
-            var owner = users.findByEmail(example.email()).orElse(null);
-            // Une réexécution ne remplace ni mot de passe, ni profil, ni catalogue personnalisé.
-            if (owner != null) continue;
-            var city = cities().stream().filter(c -> c.code().equals(example.cityCode())).findFirst().orElseThrow();
-            owner = users.save(User.builder().email(example.email()).password(passwordEncoder.encode(example.password()))
-                    .firstName(example.firstName()).lastName(city.name()).role(Role.PROFESSIONAL)
-                    .enabled(true).emailVerified(true).build());
-            var profile = profiles.save(ProfessionalProfile.builder().user(owner).businessName(example.business())
-                    .city(city.name()).targetGender(TargetGender.MIXTE).validated(true)
-                    .latitude(city.latitude()).longitude(city.longitude()).coordinatesPublic(true)
-                    .bio("Établissement fictif de présentation. Coordonnées au centre de la commune ; prestations et tarifs simulés.").build());
-            List<ServiceExample> catalog = switch (example.type()) {
-                case COIFFURE -> List.of(new ServiceExample("Coupe et brushing", "30", 45), new ServiceExample("Coloration et soin", "65", 90));
-                case ONGLERIE -> List.of(new ServiceExample("Manucure", "20", 30), new ServiceExample("Vernis semi-permanent", "38", 60));
-                case SOIN -> List.of(new ServiceExample("Maquillage de jour", "35", 45), new ServiceExample("Maquillage de soirée", "55", 60));
-            };
-            for (var service : catalog) prestations.save(Prestation.builder().professional(profile)
-                    .name(service.name()).type(example.type()).price(new BigDecimal(service.price()))
-                    .durationMinutes(service.minutes()).description("Prestation fictive de présentation.").active(true).build());
-            for (int day = 1; day <= 4; day++) for (int hour : new int[]{9, 14})
-                slots.save(TimeSlot.builder().professional(profile).startDateTime(LocalDate.now().plusDays(day).atTime(hour, 0)).available(true).build());
-            created++;
+        SharedShowcaseCatalog catalog;
+        try (var input = new ClassPathResource("demo/showcase-catalog.json").getInputStream()) {
+            catalog = new JsonMapper().readValue(input, SharedShowcaseCatalog.class);
         }
-        var hash = passwordEncoder.encode(PASSWORD);
+        int created = 0;
+        for (var salon : catalog.salons()) {
+            String profileKey = "salon:" + salon.key();
+            var previous = imports.findById(profileKey).orElse(null);
+            ProfessionalProfile profile;
+            if (previous != null) {
+                // Le profil supprimé volontairement ne doit pas être recréé.
+                profile = profiles.findById(previous.getTargetId()).orElse(null);
+                if (profile == null) continue;
+            } else {
+                var city = cities().stream().filter(c -> c.code().equals(salon.cityCode())).findFirst().orElseThrow();
+                var owner = users.findByEmail(salon.email()).orElse(null);
+                if (owner != null && owner.getRole() != Role.PROFESSIONAL) continue;
+                if (owner == null) {
+                    owner = users.save(User.builder().email(salon.email())
+                            .password(passwordEncoder.encode(salon.email().endsWith(DOMAIN) ? PASSWORD : "Pro12345!"))
+                            .firstName(salon.firstName()).lastName(city.name()).role(Role.PROFESSIONAL)
+                            .enabled(true).emailVerified(true).build());
+                }
+                profile = profiles.findByUserId(owner.getId()).orElse(null);
+                if (profile == null) {
+                    profile = profiles.save(ProfessionalProfile.builder().user(owner).businessName(salon.businessName())
+                            .city(city.name()).targetGender(TargetGender.MIXTE).validated(true)
+                            .latitude(city.latitude()).longitude(city.longitude()).coordinatesPublic(true)
+                            .bio("Établissement fictif de présentation. Coordonnées au centre de la commune ; prestations et tarifs simulés.").build());
+                    created++;
+                }
+                imported(profileKey, profile.getId());
+            }
+            String coverKey = profileKey + ":cover";
+            if (!imports.existsById(coverKey)) {
+                if (profile.getProfilePhotoUrl() == null || profile.getProfilePhotoUrl().isBlank()) {
+                    profile.setProfilePhotoUrl(salon.cover());
+                    profile.setProfilePhotoPublicId("shared:" + coverKey);
+                }
+                imported(coverKey, profile.getId());
+            }
+            for (var offer : salon.offers()) {
+                String offerKey = "offer:" + salon.key() + ":" + offer.key();
+                if (imports.existsById(offerKey)) continue;
+                var prestation = prestations.findByProfessional(profile).stream()
+                        .filter(p -> p.getType() == offer.type()
+                                && (p.getName().equalsIgnoreCase(offer.name())
+                                    || offer.aliases().stream().anyMatch(alias -> alias.equalsIgnoreCase(p.getName()))))
+                        .min(java.util.Comparator.comparing(Prestation::getId)).orElse(null);
+                if (prestation == null) {
+                    prestation = prestations.save(Prestation.builder().professional(profile).name(offer.name())
+                            .type(offer.type()).price(offer.price()).durationMinutes(offer.durationMinutes())
+                            .description("Prestation fictive de présentation.").photos(new ArrayList<>()).active(true).build());
+                }
+                // Ne pas mélanger la galerie de présentation à des photos déjà ajoutées par le propriétaire.
+                if (prestation.getPhotos().isEmpty()) {
+                    for (int order = 0; order < offer.photos().size(); order++) {
+                        var photo = photos.save(PrestationPhoto.builder().prestation(prestation)
+                                .photoUrl(offer.photos().get(order)).publicId("shared:" + offerKey + ":" + order)
+                                .displayOrder(order).build());
+                        prestation.getPhotos().add(photo);
+                    }
+                }
+                imported(offerKey, prestation.getId());
+            }
+            String slotsKey = profileKey + ":slots";
+            if (!imports.existsById(slotsKey)) {
+                if (slots.findByProfessionalOrderByStartDateTimeAsc(profile).isEmpty()) {
+                    for (int day = 1; day <= 4; day++) for (int hour : new int[]{9, 14})
+                        slots.save(TimeSlot.builder().professional(profile)
+                                .startDateTime(LocalDate.now().plusDays(day).atTime(hour, 0)).available(true).build());
+                }
+                imported(slotsKey, profile.getId());
+            }
+        }
         for (int i = 1; i <= 3; i++) {
+            String key = "client:" + i;
+            if (imports.existsById(key)) continue;
             String email = "client" + i + DOMAIN;
-            if (!users.existsByEmail(email)) users.save(User.builder().email(email).password(hash)
+            var client = users.findByEmail(email).orElse(null);
+            if (client != null && client.getRole() != Role.CLIENT) continue;
+            if (client == null) client = users.save(User.builder().email(email).password(passwordEncoder.encode(PASSWORD))
                     .firstName(CLIENT_FIRST_NAMES[i - 1]).lastName(CLIENT_LAST_NAMES[i - 1])
                     .role(Role.CLIENT).enabled(true).emailVerified(true).build());
+            imported(key, client.getId());
         }
-        return new Result(6, created);
+        return new Result(catalog.salons().size(), created);
+    }
+
+    private void imported(String key, Long targetId) {
+        imports.save(new ShowcaseImport(key, targetId, java.time.LocalDateTime.now()));
     }
 
     /** Ancien générateur volumineux, conservé pour vérifier les scénarios historiques.
