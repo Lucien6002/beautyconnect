@@ -346,6 +346,8 @@ class ClientJourneyTests {
         assertThat(a.getStatus()).isEqualTo(AppointmentStatus.CONFIRME);
         assertThat(appointments.findById(a.getId()).orElseThrow().getStatus()).isEqualTo(AppointmentStatus.CONFIRME);
         verify(mail, times(1)).sendAppointmentConfirmation(any());
+        // Le pro est prevenu meme si l'envoi au client a echoue.
+        verify(mail, times(1)).sendAppointmentNotificationToProfessional(any());
     }
 
     @Test void inactiveProfessionalAndInactiveClientAreNotReservable() {

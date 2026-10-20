@@ -80,6 +80,18 @@ Variables d'environnement disponibles : `MAIL_HOST`, `MAIL_PORT`,
 `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`, `MAIL_SMTP_STARTTLS`,
 `MAIL_FROM`.
 
+**En local, sans rien configurer** : `docker compose up -d` lance Mailpit. Tous les
+mails de l'application y sont interceptes et lisibles sur http://localhost:8025
+(ils ne sont jamais livres a de vraies boites).
+
+**Pour recevoir de vrais mails** : creer un fichier `.env.local` a la racine
+(copier le bloc SMTP commente de `.env.example`) avec **ses propres**
+identifiants, par exemple un compte Gmail avec un « mot de passe d'application »
+(https://myaccount.google.com/apppasswords, validation en 2 etapes requise).
+Ce fichier est ignore par Git : chaque developpeur a le sien, il ne doit jamais
+etre commite ni partage (le mot de passe d'application donne acces a l'envoi de
+mails depuis le compte Gmail). Redemarrer l'application apres modification.
+
 ## Tests
 
 ```bash

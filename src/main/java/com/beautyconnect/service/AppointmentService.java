@@ -96,15 +96,21 @@ public class AppointmentService {
         Appointment saved = appointmentRepository.save(appointment);
 
         // Le rendez-vous est confirme des la reservation (creneau ouvert par le pro
-        // = "salon ouvert") : mail de confirmation envoye apres l'enregistrement,
+        // = "salon ouvert") : mails (client + professionnel) envoyes apres l'enregistrement,
         // un echec d'envoi n'annule pas la reservation.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                // Deux envois independants : l'echec de l'un ne bloque pas l'autre.
                 try {
                     emailService.sendAppointmentConfirmation(saved);
                 } catch (RuntimeException ex) {
-                    log.warn("Mail de confirmation indisponible apres enregistrement du rendez-vous.");
+                    log.warn("Mail de confirmation au client indisponible apres enregistrement du rendez-vous.");
+                }
+                try {
+                    emailService.sendAppointmentNotificationToProfessional(saved);
+                } catch (RuntimeException ex) {
+                    log.warn("Mail de notification au professionnel indisponible apres enregistrement du rendez-vous.");
                 }
             }
         });

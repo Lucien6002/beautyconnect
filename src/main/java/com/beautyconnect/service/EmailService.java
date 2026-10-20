@@ -80,6 +80,37 @@ public class EmailService {
         send(to, subject, body);
     }
 
+    // Prevenir le professionnel qu'un client vient de reserver un de ses creneaux
+    // (le rendez-vous est confirme des la reservation).
+    public void sendAppointmentNotificationToProfessional(Appointment appointment) {
+        String to = appointment.getProfessional().getUser().getEmail();
+        String subject = "Nouveau rendez-vous BeautyConnect";
+        String phone = appointment.getClient().getPhone();
+        String notes = appointment.getNotes();
+        String body = """
+                Bonjour %s,
+
+                Un nouveau rendez-vous a ete confirme.
+
+                Client : %s
+                Telephone : %s
+                Prestation : %s
+                Date : %s
+                Message du client : %s
+
+                Retrouvez-le dans votre agenda BeautyConnect.
+                """.formatted(
+                appointment.getProfessional().getUser().getFirstName(),
+                appointment.getClient().getFullName(),
+                phone != null && !phone.isBlank() ? phone : "non renseigne",
+                appointment.getPrestation().getName(),
+                appointment.getTimeSlot().getStartDateTime().format(FORMAT),
+                notes != null && !notes.isBlank() ? notes : "aucun"
+        );
+
+        send(to, subject, body);
+    }
+
     // Prevenir le professionnel que son profil est desormais visible
     // publiquement (appele par AdminService.validateProfessional). Le User
     // doit etre deja charge (profil obtenu via findByIdWithUser).
