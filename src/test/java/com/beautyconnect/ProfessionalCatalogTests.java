@@ -58,6 +58,9 @@ class ProfessionalCatalogTests {
     @Autowired
     private TimeSlotRepository timeSlotRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${image.storage.upload-dir}")
+    private String imageDirectory;
+
     private MockMvc mockMvc;
     private ProfessionalProfile profile;
     private RequestPostProcessor asPro;
@@ -81,6 +84,29 @@ class ProfessionalCatalogTests {
                     profileRepository.delete(p);
                     userRepository.delete(u);
                 }));
+    }
+
+    @Test
+    void badSecondaryImageRollsBackCreationAndUploadedFiles() throws Exception {
+        long before = prestationRepository.count();
+        var filesBefore = uploadedFiles();
+        byte[] image = com.beautyconnect.service.storage.ImageStorageTests.photo().getBytes();
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/pro/prestations")
+                .file(new org.springframework.mock.web.MockMultipartFile("file", "main.png", "image/png", image))
+                .file(new org.springframework.mock.web.MockMultipartFile("secondaryPhotos", "bad.png", "image/png", "not an image".getBytes()))
+                .with(asPro).with(csrf()).param("name", "Création à annuler").param("type", "COIFFURE")
+                .param("price", "25").param("durationMinutes", "30"))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("prestationForm"));
+        assertThat(prestationRepository.count()).isEqualTo(before);
+        assertThat(uploadedFiles()).isEqualTo(filesBefore);
+    }
+
+    private java.util.List<String> uploadedFiles() throws java.io.IOException {
+        var directory = java.nio.file.Path.of(imageDirectory);
+        if (!java.nio.file.Files.isDirectory(directory)) return java.util.List.of();
+        try (var files = java.nio.file.Files.list(directory)) {
+            return files.map(file -> file.getFileName().toString()).sorted().toList();
+        }
     }
 
     // ---- Prestations ----

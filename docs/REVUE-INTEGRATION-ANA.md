@@ -33,7 +33,21 @@ La galerie suit l'ordre d'ajout ; il n'existe pas encore de commande pour réord
 
 ## Résultats de validation du 20 octobre 2026
 
-- **112 tests automatisés réussis**, zéro échec et zéro test ignoré, avec les variables `POSTGRES_TEST_*` : parcours H2, stockage local, Cloudinary simulé et migrations PostgreSQL sur schémas isolés.
+- **119 tests automatisés réussis**, zéro échec et zéro test ignoré, avec les variables `POSTGRES_TEST_*` : parcours H2, stockage local, Cloudinary simulé et migrations PostgreSQL sur schémas isolés.
 - **JAR construit** avec `bash ./gradlew bootJar` et démarré sur le port 8097.
 - **38 navigations contrôlées dans Chrome**, vérifications aux largeurs 320, 390, 768 et 1440 px, sans erreur JavaScript finale. Avatars de compte et d'établissement, création avec photo, édition, galerie publique, rejet d'un faux JPEG et suppression physique locale vérifiés. Les prestations et photos temporaires de recette ont été supprimées.
 - Les cases du document de recette manuelle restent volontairement vides pour la campagne de l'équipe. L'API Cloudinary réelle, ORS réel et l'environnement déployé ne sont pas validés par ces contrôles locaux.
+
+## Mise à jour GitHub : correctif de Teddy
+
+Le commit `54e42a6`, intégré dans `main` par `30b1102` (PR #11), ajoute uniquement la table SQL `prestation_images` qui manquait à l'ancienne entité d'Ana. Notre branche utilise déjà une galerie unifiée ; son intégration conserve la compatibilité avec ces anciens enregistrements.
+
+Deux historiques existent déjà : `V8__prestation_images.sql` sur main et `V8__unified_photo_storage.sql` dans l’ancienne branche design. Les deux fichiers historiques restent strictement identiques à leurs originaux. `FlywayPhotoHistoryCompatibility` lit les noms des scripts déjà enregistrés et charge uniquement les variantes V8/V9 correspondantes ; sur une base vierge, la V8 officielle de Teddy est retenue. Les checksums restent vérifiés par Flyway.
+
+La **V9 commune** ajoute les colonnes de stockage si elles manquent et crée l’ancienne table si elle manque. La **V10** récupère les réalisations de cette ancienne table dans la galerie unifiée, sans dupliquer une URL déjà présente. Les fichiers image ne sont pas déplacés.
+
+La solution a d’abord été vérifiée dans `/tmp` sur des schémas PostgreSQL temporaires : base vide, V8 de Teddy et ancienne V8 design. Le test compare la ligne V8 entière avant/après et vérifie qu’un deuxième lancement n’ajoute aucune migration. Un test supplémentaire couvre la V9 intermédiaire déjà appliquée en développement et compare l’historique entier avant/après. Le JAR a également démarré sur un schéma temporaire distinct. Aucun `repair`, `UPDATE` de l’historique existant ou effacement des données applicatives n’est utilisé.
+
+Pour un outil de migration externe à Spring Boot, utiliser `FlywayPhotoHistoryCompatibility.configure(...)`, comme dans `PostgresMigrationTests` : le scan Flyway par défaut ne connaît pas la sélection des V8. Toute future migration doit utiliser un nouveau numéro au-delà de V10, sans modifier ces scripts historiques.
+
+Complément de recette après intégration : navigation latérale visible dans les trois espaces ; formulaire unique avec une principale et deux secondaires, aperçus, changement de couverture sur la vitrine et suppression physique des trois fichiers vérifiés dans Chrome. Une image dépassant 20 mégapixels a été refusée sans créer de prestation partielle. L’aperçu réel a démarré sans nouvelle migration nécessaire et les lignes V8/V9/V10 ont été comparées avant/après : elles sont strictement identiques.

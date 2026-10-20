@@ -132,7 +132,11 @@ src/test/        tests automatisés
 docs/            recette, revue et tâches restantes
 ```
 
-Spring Boot 4, Java 21, PostgreSQL 16, Spring Security par session, Thymeleaf, Bootstrap et Leaflet. Les changements de structure SQL doivent passer par une **nouvelle migration** ; ne pas modifier une migration déjà appliquée.
+Spring Boot 4, Java 21, PostgreSQL 16, Spring Security par session, Thymeleaf, Bootstrap et Leaflet.
+
+**Compatibilité des V8 :** `main` utilisait V8 pour la table d’images de Teddy ; une ancienne version de cette branche utilisait V8 pour les identifiants de stockage. L’application reconnaît les scripts V8 et V9 déjà enregistrés et conserve leurs noms, contenus et checksums, y compris la V9 intermédiaire de développement. Une base vide utilise la V8 de Teddy ; la V9 commune ajoute les éléments manquants et la V10 récupère les anciennes images. Aucun `repair` ni changement de l’historique existant n’est nécessaire. Lancer les migrations via l’application ou les tests du projet, qui chargent cette compatibilité ; un appel Flyway externe avec sa configuration par défaut ne sélectionnera pas la bonne V8.
+
+Les changements de structure SQL doivent passer par une **nouvelle migration** ; ne pas modifier une migration déjà appliquée.
 
 Les valeurs de `.env.local` prennent priorité sur `.env`. En cas de configuration inattendue, vérifier aussi les variables exportées par le terminal ou l'IDE. Pour une connexion PostgreSQL différente, adapter `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, ou utiliser `SPRING_DATASOURCE_URL` au format JDBC. En production, injecter les secrets dans l'environnement de l'hébergeur et ne pas copier les fichiers `.env` locaux dans l'image ni sur le serveur.
 

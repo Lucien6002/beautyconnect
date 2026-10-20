@@ -14,9 +14,87 @@ class PostgresMigrationTests {
     private final String user = System.getenv("POSTGRES_TEST_USER");
     private final String password = System.getenv("POSTGRES_TEST_PASSWORD");
     private Flyway flyway(String schema) {
-        return Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema)
-                .baselineOnMigrate(true).baselineVersion("0").load();
+        return com.beautyconnect.config.FlywayPhotoHistoryCompatibility.configure(Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema)
+                .baselineOnMigrate(true).baselineVersion("0")).load();
     }
+    @Test void bothV8HistoriesConvergeWithoutChangingAppliedRows() throws Exception {
+        for (String script : new String[]{com.beautyconnect.config.FlywayPhotoHistoryCompatibility.MAIN_V8,
+                com.beautyconnect.config.FlywayPhotoHistoryCompatibility.DESIGN_V8}) {
+            String schema = "v8_compat_" + System.nanoTime();
+            try (var connection = DriverManager.getConnection(url, user, password); var sql = connection.createStatement()) {
+                try {
+                    Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema).target("8")
+                            .resourceProvider(com.beautyconnect.config.FlywayPhotoHistoryCompatibility.migrations(script, StandardCharsets.UTF_8)).load().migrate();
+                    sql.execute("SET search_path TO " + schema);
+                    String before;
+                    try (var rows = sql.executeQuery("SELECT row_to_json(h)::text FROM flyway_schema_history h WHERE version='8'")) {
+                        rows.next(); before = rows.getString(1); assertThat(before).contains(script);
+                    }
+                    flyway(schema).migrate();
+                    try (var rows = sql.executeQuery("SELECT row_to_json(h)::text FROM flyway_schema_history h WHERE version='8'")) {
+                        rows.next(); assertThat(rows.getString(1)).isEqualTo(before);
+                    }
+                    sql.executeQuery("SELECT public_id FROM prestation_photos LIMIT 0").close();
+                    sql.executeQuery("SELECT profile_photo_public_id FROM users LIMIT 0").close();
+                    sql.executeQuery("SELECT profile_photo_public_id FROM professional_profiles LIMIT 0").close();
+                    sql.executeQuery("SELECT public_id FROM prestation_images LIMIT 0").close();
+                    assertThat(flyway(schema).validateWithResult().validationSuccessful).isTrue();
+                    assertThat(flyway(schema).migrate().migrationsExecuted).isZero();
+                } finally {
+                    sql.execute("SET search_path TO public"); sql.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+                }
+            }
+        }
+    }
+
+    @Test void preservesTheAlreadyAppliedIntermediateV9() throws Exception {
+        String schema = "v9_compat_" + System.nanoTime();
+        try (var connection = DriverManager.getConnection(url, user, password); var sql = connection.createStatement()) {
+            try {
+                Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema)
+                        .resourceProvider(com.beautyconnect.config.FlywayPhotoHistoryCompatibility.migrations(
+                                com.beautyconnect.config.FlywayPhotoHistoryCompatibility.DESIGN_V8,
+                                com.beautyconnect.config.FlywayPhotoHistoryCompatibility.LEGACY_V9, StandardCharsets.UTF_8)).load().migrate();
+                sql.execute("SET search_path TO " + schema);
+                String before;
+                try (var rows = sql.executeQuery("SELECT json_agg(h ORDER BY installed_rank)::text FROM flyway_schema_history h")) {
+                    rows.next(); before = rows.getString(1);
+                }
+                assertThat(flyway(schema).validateWithResult().validationSuccessful).isTrue();
+                assertThat(flyway(schema).migrate().migrationsExecuted).isZero();
+                try (var rows = sql.executeQuery("SELECT json_agg(h ORDER BY installed_rank)::text FROM flyway_schema_history h")) {
+                    rows.next(); assertThat(rows.getString(1)).isEqualTo(before);
+                }
+            } finally {
+                sql.execute("SET search_path TO public"); sql.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+            }
+        }
+    }
+
+    @Test void oldImageRecordsJoinTheUnifiedGalleryWithoutDuplicates() throws Exception {
+        String schema = "media_upgrade_" + System.nanoTime();
+        try (var connection = DriverManager.getConnection(url, user, password); var sql = connection.createStatement()) {
+            try {
+                com.beautyconnect.config.FlywayPhotoHistoryCompatibility.configure(Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema).target("8")).load().migrate();
+                sql.execute("SET search_path TO " + schema);
+                sql.execute("INSERT INTO users(id,email,password,first_name,last_name,role,enabled,created_at) VALUES (1,'media@test','hash','Pro','Media','PROFESSIONAL',true,now())");
+                sql.execute("INSERT INTO professional_profiles(id,user_id,business_name,city,target_gender,validated,created_at) VALUES(1,1,'Salon','Paris','MIXTE',true,now())");
+                sql.execute("INSERT INTO prestations(id,professional_id,name,type,price,duration_minutes,active) VALUES(1,1,'Coupe','COIFFURE',20,30,true)");
+                sql.execute("INSERT INTO prestation_photos(prestation_id,photo_url,display_order) VALUES(1,'/uploads/current.png',0)");
+                sql.execute("INSERT INTO prestation_images(prestation_id,public_id,secure_url,display_order,created_at) VALUES(1,'current.png','/uploads/current.png',0,now()),(1,'legacy.png','/uploads/legacy.png',1,now())");
+                flyway(schema).migrate();
+                try (var rows = sql.executeQuery("SELECT photo_url, public_id FROM prestation_photos ORDER BY display_order")) {
+                    assertThat(rows.next()).isTrue(); assertThat(rows.getString(1)).isEqualTo("/uploads/current.png");
+                    assertThat(rows.next()).isTrue(); assertThat(rows.getString(1)).isEqualTo("/uploads/legacy.png");
+                    assertThat(rows.getString(2)).isEqualTo("local:legacy.png"); assertThat(rows.next()).isFalse();
+                }
+                assertThat(flyway(schema).validateWithResult().validationSuccessful).isTrue();
+            } finally {
+                sql.execute("SET search_path TO public"); sql.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+            }
+        }
+    }
+
     @Test void newAndLegacySchemasMigrateWithoutLosingCancelledAppointments() throws Exception {
         String fresh = "audit_fresh_" + System.nanoTime();
         String legacy = "audit_legacy_" + System.nanoTime();
