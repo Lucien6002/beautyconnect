@@ -22,6 +22,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public String handleLargePhoto(Model model, HttpServletRequest request) {
+        model.addAttribute("message", "La photo dépasse la taille autorisée. Choisissez un JPEG ou PNG de 5 Mo maximum.");
+        model.addAttribute("path", request.getRequestURI());
+        return "error/400";
+    }
+
 
     // @ExceptionHandler(...) : cette methode est appelee automatiquement des
     // qu'une ResourceNotFoundException (ou une sous-classe) est levee

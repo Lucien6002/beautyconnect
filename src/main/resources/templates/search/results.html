@@ -134,6 +134,7 @@
                         th:each="pro, proStat : ${results}"
                         th:id="'professional-' + ${pro.id}"
                     >
+                        <img th:if="${pro.profilePhotoUrl != null}" th:src="${pro.profilePhotoUrl}" th:alt="${pro.businessName}" class="bc-result-photo" width="800" height="260" loading="lazy"/>
                         <div class="card-body">
                             <div class="bc-result-heading">
                                 <span

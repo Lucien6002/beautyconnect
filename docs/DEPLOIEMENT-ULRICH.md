@@ -94,7 +94,7 @@ Puis utiliser le démarrage habituel. La désactivation du drapeau ne supprime p
 `DEMO_FRANCE_CITY_LIMIT` permet de limiter le jeu à 1–30 villes (30 par défaut).
 Aucun appel réseau n'est effectué au démarrage : `demo/france-cities.json` contient les noms et centres de 30 communes récupérés via l'API officielle `geo.api.gouv.fr`, dont Saint-Denis (La Réunion) et Fort-de-France.
 
-Le jeu comprend 90 professionnels marqués `[DÉMO]`, répartis entre coiffure, onglerie et soins ; 180 prestations actives et 90 retirées ; huit créneaux futurs par professionnel, plus des créneaux historiques pour les scénarios. Un profil est en attente de validation et un autre compte est désactivé. Les clientèles ciblées et les tarifs d'exemple varient.
+Le jeu comprend 90 professionnels fictifs sans préfixe dans leur nom, répartis entre coiffure, onglerie et soins ; 180 prestations actives et 90 retirées ; huit créneaux futurs par professionnel, plus des créneaux historiques pour les scénarios. Un profil est en attente de validation et un autre compte est désactivé. Les clientèles ciblées et les tarifs d'exemple varient.
 
 Trois clients possèdent chacun un rendez-vous confirmé, un terminé, un annulé, un favori et un avis fictif lié au rendez-vous terminé. Les premiers scénarios concernent Paris, Lyon et Marseille. Les points publics représentent les centres des communes, jamais de vraies adresses de professionnels ; d'autres profils ont un point privé ou aucune coordonnée pour tester les replis. Aucun email n'est envoyé par cet initialiseur.
 
@@ -104,14 +104,13 @@ Comptes de test : `client1@demo.beautyconnect.invalid`, `client2@demo.beautyconn
 
 Ce jeu ne fournit pas de photos de réalisations : le véritable upload et le portfolio restent les lots Anaelle/Emmanuelle.
 
-## Point sur les travaux restant à intégrer au 19 octobre 2026
+## Points ouverts au 20 octobre 2026
 
 Le README et les anciennes feuilles de route décrivent parfois un état antérieur : Flyway, la carte, les favoris, l'agenda et le changement des informations personnelles sont déjà présents. Les réservations sont maintenant confirmées directement. Le portfolio ne doit pas être remplacé par des images de réalisations statiques.
 
 | Sujet | Responsable prévu | État constaté dans cette branche |
 |---|---|---|
-| Upload et portfolio par prestation | Anaelle A6 + Emmanuelle E5/E6 | À développer : formulaire pro, stockage, contrôles des fichiers, suppression et galerie publique. |
-| Édition d'une prestation existante | Anaelle A2 | Création, retrait et restauration présents ; formulaire et sauvegarde d'édition absents. |
+| Recette des médias réels | Anaelle + Emmanuelle | Formulaires, galerie et adaptateur livrés ; renseigner Cloudinary et exécuter M1–M7 de la recette. |
 | Chevauchements selon les durées | Manuel M3 | Les départs identiques sont refusés ; la compatibilité des intervalles selon la durée reste à traiter. |
 | Validation serveur renforcée du profil | Anaelle A4 | Compléter les contrôles sur nom, ville et bio dans le formulaire de modification. |
 | Rappels de rendez-vous | Évolution mail à coordonner | Confirmation et validation pro présentes ; rappels planifiés absents. |

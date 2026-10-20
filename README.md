@@ -1,132 +1,141 @@
 # BeautyConnect
 
-Plateforme web de mise en relation entre clients et prestataires de beaute
-independants (coiffure, onglerie, soins). Projet base sur les specifications
-fonctionnelles fournies (personas Client / Professionnel / Administrateur).
+Application de réservation de prestations de beauté : coiffure, onglerie et soins. Les pages sont rendues par Spring MVC et Thymeleaf dans une seule application Spring Boot ; aucun serveur frontend séparé ni installation npm n'est nécessaire.
 
-## Stack technique
+## Lancer en local
 
-- **Backend** : Java 21, Spring Boot 4.0 (Spring MVC, Spring Data JPA, Spring Security, Spring Mail)
-- **Frontend** : Thymeleaf (rendu cote serveur) + Bootstrap 5 (CDN) + CSS custom
-- **Base de donnees** : PostgreSQL (H2 en memoire pour les tests automatises)
-- **Build** : Gradle (wrapper fourni, aucune installation locale requise)
-
-Architecture en monolithe : le backend Spring Boot sert directement les
-pages HTML via Thymeleaf (pas d'API REST separee dans cette base).
-
-## Perimetre couvert
-
-- Creation de compte Client et de compte Professionnel
-- Creation/consultation du profil professionnel (vitrine : bio, ville, tarifs, clientele visee)
-- Gestion des prestations (nom, type, duree, tarif) et des creneaux de disponibilite
-- Recherche de prestataires avec filtres : ville, type de prestation, sexe de la clientele visee
-- Prise de rendez-vous, confirmation/refus par le professionnel
-- Envoi d'un mail de confirmation de rendez-vous
-- Avis clients et signalements (avis abusif, faux profil)
-- Espace administrateur : validation des comptes professionnels, moderation des avis/signalements, metriques d'usage
-
-Hors perimetre (cf. specifications) : la gestion des paiements.
-
-## Demarrage rapide
-
-### 1. Base de donnees
+Prérequis : **JDK 21**, Docker avec Docker Compose et un navigateur. Le wrapper télécharge Gradle au premier lancement.
 
 ```bash
-docker compose up -d
+# À la racine du dépôt
+cp -n .env.example .env
+# Si .env existe déjà, le conserver et compléter uniquement les variables manquantes.
+docker compose up -d db mailpit
+bash ./gradlew bootRun
 ```
 
-Cela demarre PostgreSQL sur `localhost:5433` (base `beautyconnect`,
-utilisateur/mot de passe `beautyconnect`). Le port 5433 est utilise plutot
-que le 5432 standard pour ne pas entrer en conflit avec une eventuelle
-instance PostgreSQL deja installee localement sur la machine.
+Ouvrir **http://localhost:8080**. Les messages d'activation et de réservation arrivent dans **http://localhost:8025** (Mailpit, aucun email externe en configuration locale). PostgreSQL écoute sur `localhost:5433`. Le profil par défaut est `dev` ; Flyway applique les migrations et Hibernate vérifie le schéma. Une base vide est créée automatiquement par PostgreSQL au premier démarrage du conteneur.
 
-Sans Docker, installez PostgreSQL localement et creez une base + un
-utilisateur correspondants, ou surchargez les variables d'environnement
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` pour pointer vers
-votre propre instance.
+Pour arrêter : `Ctrl+C` dans le terminal Spring, puis `docker compose stop`. Cette commande conserve les données. Éviter `docker compose down -v` : elle supprimerait la base.
 
-### 2. Lancer l'application
+Le frontend utilise des polices, Bootstrap, des icônes et les tuiles de carte sur Internet. Le catalogue reste consultable si le routage ORS n'est pas configuré.
+
+## Comptes de développement
+
+Ces comptes connus sont créés uniquement en développement. Ne jamais utiliser ces mots de passe en production.
+
+| Rôle | Email | Mot de passe |
+|---|---|---|
+| Administrateur | `admin@beautyconnect.local` | `Admin123!` |
+| Client | `lea@beautyconnect.local` | `Client123!` |
+| Professionnelle | `sarah@beautyconnect.local` | `Pro12345!` |
+
+Les valeurs `ADMIN_EMAIL` et `ADMIN_PASSWORD`, si définies, remplacent celles de l'administrateur. Les initialiseurs ne réinitialisent pas les mots de passe des comptes existants.
+
+## Remplir le catalogue pour une présentation
+
+Dans `.env`, ajouter :
+
+```dotenv
+DEMO_FRANCE_ENABLED=true
+DEMO_FRANCE_CITY_LIMIT=30
+```
+
+Relancer Spring. Jusqu'à **90 professionnels**, sur **30 communes**, avec 180 prestations actives et des scénarios de réservation, favoris et avis sont générés. Pour une petite base, choisir par exemple `DEMO_FRANCE_CITY_LIMIT=5`. Repasser ensuite `DEMO_FRANCE_ENABLED=false` : les données enregistrées restent disponibles.
+
+| Scénario | Email | Mot de passe |
+|---|---|---|
+| Client avec historique, favori et avis | `client1@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Deux autres clients | `client2@demo.beautyconnect.invalid`, `client3@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Professionnel à Paris | `coiffure.75056@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Professionnel à Lyon | `onglerie.69123@demo.beautyconnect.invalid` | `DemoFrance123!` |
+
+**Les établissements, comptes, prix, rendez-vous et avis de ce jeu sont fictifs.** Les noms des établissements n'ont pas de préfixe `[DÉMO]`, mais les emails techniques et les présentations identifient la simulation. Les coordonnées correspondent au centre des communes, pas à des salons réels. Certaines localisations restent privées ; certains comptes servent à tester l'attente de validation ou la suspension. Les photos des prestations doivent être ajoutées par un professionnel : aucun faux portfolio n'est généré.
+
+L'initialiseur est réexécutable sans dupliquer les comptes ni écraser leurs modifications. Il retire aussi l'ancien préfixe `[DÉMO]` des seuls noms générés restés inchangés et remplace les prénoms techniques `Démo` restés intacts par des prénoms de présentation. Il ne renouvelle pas les créneaux d'un compte déjà créé : ajouter des disponibilités depuis l'espace professionnel si elles sont passées. Il est exclu dès que `prod` est actif.
+
+## Ajouter des photos et activer Cloudinary
+
+En local, cela fonctionne sans compte externe : **Mon profil** pour l'établissement, **Mon compte** pour l'avatar personnel et **Mes prestations → Photos** pour une galerie publique de cinq photos maximum par prestation. Une première photo peut aussi être jointe lors de la création de la prestation.
+
+Les fichiers acceptés sont de vraies images **JPEG ou PNG**, au maximum **5 Mo et 20 mégapixels**. Le serveur les décode puis les réencode ; le nom original n'est pas utilisé comme chemin. Les photos de profil professionnel et de prestations sont publiques, comme les avatars servis par URL. N'envoyer que des images destinées à être publiées.
+
+Les champs suivants sont déjà prévus dans `.env.example` et dans le `.env` local préparé pour cette branche :
+
+```dotenv
+IMAGE_STORAGE_PROVIDER=local
+IMAGE_UPLOAD_DIR=uploads
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_FOLDER=beautyconnect
+CLOUDINARY_FOLDER_MODE=dynamic
+```
+
+Pour Cloudinary : renseigner les trois identifiants depuis les paramètres du compte, passer `IMAGE_STORAGE_PROVIDER=cloudinary`, puis **redémarrer Spring**. Le fichier `.env` est lu comme un fichier de propriétés : saisir les valeurs sans guillemets. Aucun upload preset n'est nécessaire : l'authentification se fait entre le serveur et Cloudinary. Le secret n'est jamais envoyé au navigateur. `.env` et `.env.local` sont ignorés par Git ; seul `.env.example` contient des valeurs vides.
+
+Au premier envoi réussi, les images sont placées dans le dossier **`beautyconnect`** de la Media Library. `dynamic` convient aux environnements Cloudinary récents ; pour un ancien environnement utilisant les dossiers fixes, choisir `CLOUDINARY_FOLDER_MODE=fixed`. Le code utilise `asset_folder` ou `folder` selon ce mode ([référence officielle Cloudinary](https://cloudinary.com/documentation/image_upload_api_reference)).
+
+Les anciens fichiers locaux ne sont pas transférés automatiquement. Conserver `uploads/` pour qu'ils restent visibles, y compris après activation de Cloudinary. Les nouveaux fichiers enregistrent leur fournisseur et leur identifiant de suppression. Garder les identifiants Cloudinary tant que des images distantes sont utilisées. Pour le stockage local déployé, monter un volume persistant accessible en écriture et le sauvegarder ; les disques éphémères d'un hébergeur ne conviennent pas.
+
+Une suppression physique est déclenchée après validation de la transaction SQL. Si le fournisseur échoue, l'image n'est plus affichée mais un avertissement serveur identifie le nettoyage à reprendre ; aucune file de reprise automatique n'est encore implémentée. Les tests Cloudinary simulent l'API : une recette avec les vrais identifiants reste nécessaire.
+
+## Parcours disponibles
+
+- **Visiteur** : accueil, catalogue, recherche par ville/type/clientèle/nom, carte, vitrine et galerie.
+- **Client** : inscription et activation par email, réservation immédiatement confirmée, annulation, historique, favoris, avis et signalements, modification du compte.
+- **Professionnel** : profil et photo, catalogue avec édition/retrait/restauration, galerie, disponibilités, agenda et rendez-vous terminés. La suppression définitive est refusée si la prestation appartient à un rendez-vous.
+- **Administrateur** : validation des professionnels, suspension, modération des avis et décisions de signalement avec auteur/date/motif.
+
+La publication d'une localisation exige l'accord du professionnel. Sans `ORS_API_KEY`, les liens Google Maps restent disponibles. Avec une clé ORS côté serveur, la recherche propose des mesures à pied sur les candidats de la page et un itinéraire ; ce classement n'est pas une comparaison exhaustive de tous les professionnels de France.
+
+Les avis libres et les avis rattachés à un rendez-vous terminé coexistent actuellement. Un avis libre n'est pas une preuve de prestation réalisée. La règle finale doit être validée par l'équipe.
+
+## Tests et recette manuelle
 
 ```bash
-./gradlew bootRun
+# Tests H2 et API externes simulées, sans Docker obligatoire
+bash ./gradlew test
+# Construire le JAR
+bash ./gradlew bootJar
+# Rapport HTML : build/reports/tests/test/index.html
 ```
 
-L'application demarre sur [http://localhost:8080](http://localhost:8080).
-Le schema de base de donnees est créé/mis à jour au démarrage
-par les migrations Flyway ; Hibernate valide ensuite le schéma.
-
-### 3. Compte administrateur
-
-Un compte administrateur est cree automatiquement au premier demarrage s'il
-n'en existe aucun :
-
-- Email : `admin@beautyconnect.local`
-- Mot de passe : `Admin123!`
-- Client : Email :`lea@beautyconnect.local `/ Mdp : `Client123!`
-- Pro : Email : `sarah@beautyconnect.local` / Mdp : `Pro12345!`
-
-Personnalisable via les variables d'environnement `ADMIN_EMAIL` et
-`ADMIN_PASSWORD` avant le premier demarrage.
-
-### 4. Envoi de mail (confirmation de rendez-vous)
-
-Par defaut, l'application tente d'envoyer les mails via un serveur SMTP local
-(`localhost:1025`, compatible [MailHog](https://github.com/mailhog/MailHog)
-ou [Mailtrap](https://mailtrap.io)). Si aucun serveur SMTP n'est disponible,
-l'echec d'envoi est simplement journalise (`app.mail.fail-silently=true`) et
-ne bloque pas la confirmation du rendez-vous.
-
-Variables d'environnement disponibles : `MAIL_HOST`, `MAIL_PORT`,
-`MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH`, `MAIL_SMTP_STARTTLS`,
-`MAIL_FROM`.
-
-## Tests
+Pour tester aussi les migrations sur PostgreSQL local, Docker doit être démarré :
 
 ```bash
-./gradlew test
+POSTGRES_TEST_URL=jdbc:postgresql://localhost:5433/beautyconnect \
+POSTGRES_TEST_USER=beautyconnect POSTGRES_TEST_PASSWORD=beautyconnect \
+bash ./gradlew test --rerun-tasks
 ```
 
-Les tests s'executent avec le profil `test` (base H2 en memoire), ils ne
-necessitent pas d'instance PostgreSQL.
+Ce test utilise des schémas temporaires isolés et les supprime ; il ne vide pas les tables de l'application. Sans ces variables, le test PostgreSQL est ignoré. La CI les renseigne avec son propre service PostgreSQL.
 
-## Structure du projet
+La [recette manuelle par rôle](docs/RECETTE-MANUELLE.md) fournit les étapes et résultats attendus à cocher soi-même. Le [reste à faire de l'équipe](docs/ROADMAP-EQUIPE.md) sépare les corrections nécessaires des décisions produit et des validations externes. La [revue de l'intégration d'Ana](docs/REVUE-INTEGRATION-ANA.md) explique les corrections apportées à son travail.
 
-```
+## Structure et configuration
+
+```text
 src/main/java/com/beautyconnect/
-  config/          Configuration Spring (securite, donnees initiales)
-  controller/      Controleurs MVC (pages publiques, client, pro, admin)
-  dto/             Formulaires (inscription, prestation, creneau, rendez-vous, avis...)
-  exception/       Exceptions metier + gestionnaire global
-  model/           Entites JPA (User, ProfessionalProfile, Prestation, TimeSlot, Appointment, Review, Report)
-  repository/      Repositories Spring Data JPA
-  security/        Integration Spring Security (UserDetails)
-  service/         Logique metier
-
+  config/        sécurité, initialiseurs, ressources locales
+  controller/    routes et préparation des vues
+  dto/           formulaires et validation
+  model/         entités JPA
+  repository/    accès SQL via Spring Data
+  service/       règles métier et stockage des photos
 src/main/resources/
-  application.properties   Configuration (BDD, mail, admin par defaut)
-  templates/                Vues Thymeleaf (Bootstrap 5)
-  static/                   CSS/JS
-
-src/test/                  Tests (profil H2)
-docker-compose.yml          PostgreSQL pour le developpement local
+  templates/     pages Thymeleaf et fragments partagés
+  static/        CSS, JavaScript et images de Joyce
+  db/migration/  migrations Flyway versionnées
+  demo/          coordonnées des communes utilisées en démonstration
+src/test/        tests automatisés
+docs/            recette, revue et tâches restantes
 ```
 
-## Roles et parcours
+Spring Boot 4, Java 21, PostgreSQL 16, Spring Security par session, Thymeleaf, Bootstrap et Leaflet. Les changements de structure SQL doivent passer par une **nouvelle migration** ; ne pas modifier une migration déjà appliquée.
 
-| Role | Parcours principal |
-|---|---|
-| Client | Inscription -> recherche -> consultation profil -> prise de rendez-vous -> avis |
-| Professionnel | Inscription -> attente de validation admin -> gestion profil/prestations/creneaux -> confirmation des rendez-vous |
-| Administrateur | Validation des comptes professionnels, moderation des avis, traitement des signalements |
+Les valeurs de `.env.local` prennent priorité sur `.env`. En cas de configuration inattendue, vérifier aussi les variables exportées par le terminal ou l'IDE. Pour une connexion PostgreSQL différente, adapter `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, ou utiliser `SPRING_DATASOURCE_URL` au format JDBC. En production, injecter les secrets dans l'environnement de l'hébergeur et ne pas copier les fichiers `.env` locaux dans l'image ni sur le serveur.
 
-## Pistes d'evolution (hors base actuelle)
+## Mise en ligne
 
-- Migration de `ddl-auto=update` vers une vraie strategie de migration (Flyway/Liquibase)
-- Geolocalisation avancee (coordonnees GPS, calcul de distance, carte interactive)
-- Upload de photos de profil / realisations (portfolio)
-- Notifications par email plus completes (rappel avant rendez-vous, refus, etc.)
-- Tests unitaires et d'integration complementaires (couverture des services et controleurs)
-
-## Lot client et déploiement
-
-Le [guide Ulrich](docs/DEPLOIEMENT-ULRICH.md) décrit les migrations, le renvoi d’activation, la carte, le routage ORS, les variables et la recette Docker/Render. Les comptes de démonstration sont créés seulement en profil `dev`. Le conteneur utilise `prod`.
+Voir [DEPLOIEMENT-ULRICH.md](docs/DEPLOIEMENT-ULRICH.md). Utiliser `SPRING_PROFILES_ACTIVE=prod`, une base et des secrets distincts, une URL `APP_BASE_URL` HTTPS, un SMTP réel et un stockage persistant ou Cloudinary. La présence du Dockerfile et de `render.yaml` ne signifie pas que le service est déjà déployé. L'environnement réel doit passer la recette avant une présentation publique.

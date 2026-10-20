@@ -1,0 +1,511 @@
+/* L'atelier BeautyConnect : charte de Joyce, panneaux de navigation et galeries. */
+:root {
+    --bc-rose: #f9e4e9;
+    --bc-forest: #24614f;
+    --bc-honey: #f6e7bd;
+    --bc-canvas: #f6f5fa;
+    --bc-radius-lg: 20px;
+}
+body {
+    background-image: radial-gradient(
+        ellipse at 95% 0,
+        #eee9fc 0,
+        transparent 42%
+    );
+}
+:focus-visible {
+    outline: 3px solid var(--bc-primary);
+    outline-offset: 4px;
+}
+.bc-navbar {
+    border-bottom: 1px solid #e6dff0;
+    box-shadow: 0 5px 25px #281f3505;
+}
+.bc-navbar .navbar-brand {
+    letter-spacing: -0.8px;
+}
+.btn {
+    border-radius: 12px;
+    font-weight: 600;
+}
+.btn-primary {
+    box-shadow: 0 4px 10px #6244c51c;
+}
+.btn:hover {
+    transform: translateY(-1px);
+}
+.form-control,
+.form-select {
+    min-height: 46px;
+    border-color: #dcd6e7;
+    background-color: #fdfcfe;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--bc-primary);
+    box-shadow: 0 0 0 3px #6244c51a;
+}
+.card {
+    border-color: #e9e3ee;
+    overflow-wrap: anywhere;
+}
+.card-header {
+    border-bottom-color: #eee8f2;
+    padding: 20px 24px;
+}
+.table > thead > tr > th {
+    background: #f5f1fa;
+    color: #665576;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    padding: 16px;
+}
+.table > tbody > tr > td {
+    padding: 16px;
+}
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+.modal-content {
+    border: 0;
+    border-radius: 22px;
+    box-shadow: 0 30px 100px #281f3533;
+}
+.modal-header,
+.modal-footer {
+    padding: 20px 24px;
+    border-color: #eee8f2;
+}
+.modal-body {
+    padding: 24px;
+}
+.alert {
+    border-radius: 14px;
+}
+/* Le menu occupe une ligne, son panneau apparaît uniquement à la demande. */
+.bc-workspace,
+.bc-admin-page .bc-workspace {
+    display: block;
+    width: min(1440px, 100%);
+    max-width: 1440px;
+    padding: 0 32px 56px;
+    margin: 28px auto 0;
+}
+.bc-workspace-main,
+.bc-admin-page .bc-workspace-main {
+    width: 100%;
+    max-width: none;
+    padding: 28px 0 0;
+    min-width: 0;
+}
+.bc-workspace[data-role="client"] {
+    --bc-space-accent: #9d3c58;
+    --bc-space-surface: var(--bc-rose);
+}
+.bc-workspace[data-role="professional"] {
+    --bc-space-accent: var(--bc-forest);
+    --bc-space-surface: var(--bc-mint);
+}
+.bc-workspace[data-role="admin"] {
+    --bc-space-accent: var(--bc-primary);
+    --bc-space-surface: var(--bc-primary-soft);
+}
+.bc-workspace-menu {
+    position: relative;
+    z-index: 30;
+    border-bottom: 1px solid #e1dae9;
+    padding-bottom: 20px;
+}
+.bc-workspace-menu > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    list-style: none;
+    cursor: pointer;
+}
+.bc-workspace-menu > summary::-webkit-details-marker {
+    display: none;
+}
+.bc-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    border-radius: 14px;
+    color: var(--bc-space-accent);
+    background: var(--bc-space-surface);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+.bc-menu-trigger .bi-chevron-down {
+    transition: transform 0.2s ease;
+    font-size: 0.75rem;
+}
+.bc-workspace-menu[open] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+.bc-menu-identity {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--bc-muted);
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar {
+    position: absolute;
+    top: calc(100% - 8px);
+    left: 0;
+    width: min(350px, 100%);
+    height: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 22px;
+    margin: 0;
+    border: 1px solid #e4ddeb;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 20px 65px #281f3526;
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-label {
+    padding-bottom: 18px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #eee8f2;
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: visible;
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-links > a {
+    min-height: 46px;
+    white-space: normal;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-links > a[aria-current="page"] {
+    background: var(--bc-space-surface);
+    color: var(--bc-space-accent);
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-links > a::before {
+    display: none;
+}
+.bc-workspace .bc-workspace-menu .bc-sidebar-note {
+    margin-top: 18px;
+    padding: 16px;
+    background: #f8f6fb;
+    border-radius: 12px;
+}
+.bc-workspace-main > h1,
+.bc-workspace-main > div > h1 {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+.bc-stat {
+    border: 0;
+    border-top: 3px solid var(--bc-space-accent, var(--bc-primary));
+    box-shadow: 0 7px 24px #281f3506;
+}
+.bc-stat:nth-child(2) {
+    background: var(--bc-space-surface, var(--bc-primary-soft));
+}
+.bc-stat:nth-child(3) {
+    background: #f5eedc;
+}
+.bc-stat-icon {
+    border-radius: 14px;
+}
+.bc-action-card {
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s,
+        transform 0.2s;
+}
+.bc-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px #281f350d;
+}
+/* L'accueil conserve le diaporama de Joyce : une vitrine aux coins de miroir. */
+.bc-home-photo {
+    border-radius: 90px 20px 90px 20px;
+    box-shadow: 18px 18px 0 var(--bc-mint);
+}
+.bc-carousel-frame {
+    border-radius: inherit;
+}
+.bc-home-copy h1 em {
+    color: #8157b4;
+}
+.bc-home-search {
+    position: relative;
+    z-index: 2;
+}
+.bc-category {
+    min-height: 142px;
+    border: 0;
+    background: var(--bc-primary-soft);
+}
+.bc-category:nth-child(2) {
+    background: var(--bc-rose);
+}
+.bc-category:nth-child(3) {
+    background: var(--bc-mint);
+}
+.bc-category:hover {
+    box-shadow: 0 12px 24px #281f350d;
+}
+.bc-service-preview {
+    position: relative;
+    overflow: hidden;
+    border-color: #e6deec;
+}
+.bc-service-preview::before {
+    content: "";
+    display: block;
+    width: 42px;
+    height: 3px;
+    background: var(--bc-coral);
+    margin-bottom: 18px;
+    border-radius: 4px;
+}
+.bc-result-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 20px 20px 0 0;
+}
+.bc-profile-cover {
+    display: block;
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 14px;
+    margin-bottom: 24px;
+}
+.bc-photo-editor-intro {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.bc-photo-editor-intro h2 {
+    margin-top: 8px;
+    font-size: 1.5rem;
+}
+.bc-avatar-large {
+    width: 112px;
+    height: 112px;
+    object-fit: cover;
+    border-radius: 28px;
+    border: 5px solid var(--bc-space-surface, var(--bc-primary-soft));
+}
+.bc-upload-zone {
+    padding: 20px;
+    border: 1px dashed #b9a5d0;
+    background: #f9f7fc;
+    border-radius: 16px;
+}
+.bc-upload-zone > i {
+    display: block;
+    font-size: 1.7rem;
+    color: var(--bc-primary);
+    margin-bottom: 12px;
+}
+.bc-upload-preview {
+    display: block;
+    width: min(100%, 340px);
+    max-height: 260px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-top: 16px;
+    background: #eee9fc;
+}
+.bc-upload-preview[hidden] {
+    display: none;
+}
+.bc-service-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-right: 12px;
+    float: left;
+}
+.bc-photo-link {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.8rem;
+}
+.bc-public-services {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+.bc-public-service {
+    min-width: 0;
+    border: 1px solid #e6deec;
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.bc-public-service-body {
+    padding: 22px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+.bc-public-service-body h3 {
+    font-size: 1.35rem;
+    margin-top: 8px;
+}
+.bc-service-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: auto 0 18px;
+    padding-top: 12px;
+}
+.bc-service-price strong {
+    font-size: 1.4rem;
+    color: var(--bc-ink);
+}
+.bc-service-gallery {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+}
+.bc-service-gallery > a {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+}
+.bc-service-gallery img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+.bc-service-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    height: 170px;
+    color: #79648c;
+    background: #f2edf8;
+    font-size: 0.8rem;
+}
+.bc-service-placeholder i {
+    font-size: 2.4rem;
+}
+.bc-public-service:nth-child(even) .bc-service-placeholder {
+    background: #e7f3ee;
+    color: #3f715f;
+}
+body > footer {
+    background: #eee9f5 !important;
+    border: 0 !important;
+    margin-top: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+    main {
+        animation: bc-enter 0.35s ease both;
+    }
+    @keyframes bc-enter {
+        from {
+            opacity: 0.25;
+            translate: 0 8px;
+        }
+        to {
+            opacity: 1;
+            translate: 0 0;
+        }
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+    .btn:hover,
+    .bc-action-card:hover {
+        transform: none;
+    }
+}
+@media (max-width: 767px) {
+    .bc-workspace,
+    .bc-admin-page .bc-workspace {
+        padding: 0 16px 32px;
+        margin-top: 20px;
+    }
+    .bc-workspace-main,
+    .bc-admin-page .bc-workspace-main {
+        padding: 24px 0 0;
+    }
+    .bc-menu-identity {
+        max-width: 110px;
+        text-align: right;
+        font-size: 0.7rem;
+    }
+    .bc-menu-trigger {
+        font-size: 0.8rem;
+        gap: 8px;
+        padding: 12px;
+    }
+    .bc-public-services {
+        grid-template-columns: 1fr;
+    }
+    .bc-photo-editor-intro {
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .bc-avatar-large {
+        width: 76px;
+        height: 76px;
+        border-radius: 20px;
+    }
+    .bc-photo-editor-intro h2 {
+        font-size: 1.2rem;
+    }
+    .bc-home-photo {
+        border-radius: 48px 16px 48px 16px;
+        box-shadow: 8px 8px 0 var(--bc-mint);
+    }
+    .bc-profile-cover {
+        height: 200px;
+    }
+}
+.bc-home-service-photo {
+    width: calc(100% + 48px);
+    max-width: none;
+    height: 180px;
+    object-fit: cover;
+    margin: -24px -24px 22px;
+}
+.bc-footer-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    text-align: left;
+}
+.bc-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 0.85rem;
+}
+@media (max-width: 767px) {
+    .bc-footer-layout {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+}
+.table-responsive > .table { min-width: 620px; }
+.bc-status { white-space: nowrap; overflow-wrap: normal; }
+.bc-gallery-hint { font-size: .75rem; color: var(--bc-muted); margin: 10px 16px 0; }

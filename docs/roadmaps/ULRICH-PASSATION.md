@@ -1,3 +1,5 @@
+> Document historique de passation. Pour les tâches encore ouvertes au 20 octobre 2026, consulter [ULRICH.md](ULRICH.md) et [ROADMAP-EQUIPE.md](../ROADMAP-EQUIPE.md).
+
 # Passation du lot Ulrich et coordination avec l’équipe
 
 Les corrections locales du lot Ulrich sont conservées. Les changements déjà réalisés dans les fichiers partagés restent disponibles pour revue par leurs propriétaires. Ulrich ne poursuit pas les fonctionnalités propres aux autres lots. Ce fichier distingue le travail livré localement, les dépendances et les points à reprendre ensemble.

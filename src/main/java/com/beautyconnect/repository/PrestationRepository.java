@@ -19,6 +19,13 @@ public interface PrestationRepository extends JpaRepository<Prestation, Long> {
             select p from Prestation p
             join fetch p.professional pro
             join pro.user u
+            where p.active = true and pro.validated = true and u.enabled = true and p.type = :type
+            order by pro.businessName, p.name, p.id
+            """)
+    List<Prestation> findPublicPreviewsByType(@org.springframework.data.repository.query.Param("type") com.beautyconnect.model.ServiceType type, org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("""
+            select p from Prestation p join fetch p.professional pro join pro.user u
             where p.active = true and pro.validated = true and u.enabled = true
             order by pro.businessName, p.name, p.id
             """)
@@ -26,6 +33,7 @@ public interface PrestationRepository extends JpaRepository<Prestation, Long> {
 
     // SELECT * FROM prestations WHERE professional_id = ? AND active = true
     // Utilise pour la vitrine publique : on ne montre que les prestations actives.
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "photos")
     List<Prestation> findByProfessionalAndActiveTrue(ProfessionalProfile professional);
 
     // SELECT * FROM prestations WHERE professional_id = ?
@@ -36,6 +44,7 @@ public interface PrestationRepository extends JpaRepository<Prestation, Long> {
     // SELECT * FROM prestations WHERE professional_id = ? AND active = false
     // Prestations retirees par le pro : affichees sur la page "Prestations
     // supprimees" d'ou il peut les restaurer.
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "photos")
     List<Prestation> findByProfessionalAndActiveFalse(ProfessionalProfile professional);
 
     long countByProfessionalAndActiveFalse(ProfessionalProfile professional);

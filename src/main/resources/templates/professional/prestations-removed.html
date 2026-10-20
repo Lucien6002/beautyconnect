@@ -30,6 +30,7 @@
                         <form th:action="@{'/pro/prestations/' + ${p.id} + '/restaurer'}" method="post">
                             <button type="submit" class="btn btn-sm btn-outline-success">Restaurer</button>
                         </form>
+                        <form th:action="@{/pro/prestations/{id}/supprimer-definitivement(id=${p.id})}" method="post" class="mt-2" onsubmit="return confirm('Supprimer définitivement cette prestation et ses photos ? Cette action est irréversible.');"><button type="submit" class="btn btn-sm btn-outline-danger">Supprimer définitivement</button></form>
                     </td>
                 </tr>
                 </tbody>

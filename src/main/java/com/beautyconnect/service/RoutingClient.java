@@ -56,7 +56,9 @@ public class RoutingClient {
             JsonNode feature = result.path("features").get(0);
             JsonNode geometry = feature.path("geometry");
             JsonNode summary = feature.path("properties").path("summary");
-            if (!"LineString".equals(geometry.path("type").asText())
+            @SuppressWarnings("deprecation")
+            String type = geometry.path("type").asText();
+            if (!"LineString".equals(type)
                     || geometry.path("coordinates").size() < 2 || geometry.path("coordinates").size() > 10000) {
                 throw new RoutingUnavailableException();
             }

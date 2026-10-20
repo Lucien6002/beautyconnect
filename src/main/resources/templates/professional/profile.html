@@ -13,6 +13,7 @@
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
+                    <img th:if="${professional.profilePhotoUrl != null}" th:src="${professional.profilePhotoUrl}" th:alt="${professional.businessName}" class="bc-profile-cover" width="960" height="360"/>
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h1 class="h3 mb-1" th:text="${professional.businessName}"></h1>
@@ -49,34 +50,19 @@
 
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white" id="prestations"><h2 class="h5 mb-0">Prestations proposées</h2></div>
-                <div class="table-responsive">
-                    <table class="table mb-0 align-middle">
-                        <thead>
-                        <tr><th>Prestation</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="p : ${prestations}">
-                            <td>
-                                <strong th:text="${p.name}"></strong>
-                                <div class="small text-muted" th:text="${p.description}"></div>
-                            </td>
-                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
-                            <td th:text="${p.durationMinutes} + ' min'"></td>
-                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
-                            <td sec:authorize="hasRole('CLIENT')">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reserverModal"
-                                        th:disabled="${#lists.isEmpty(timeSlots)}" th:attr="onclick='document.getElementById(\'prestationId\').value=' + ${p.id} + ';'">
-                                    Réserver
-                                </button>
-                            </td>
-                            <td sec:authorize="isAnonymous()"><a class="btn btn-sm btn-outline-primary" href="/connexion">Se connecter pour réserver</a></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(prestations)}">
-                        Aucune prestation renseignee pour le moment. Pour toute demande specifique, contactez directement le professionnel.
-                    </p>
-                </div>
+                <div class="card-body"><div class="bc-public-services">
+                    <article class="bc-public-service" th:each="p : ${prestations}">
+                        <div class="bc-service-gallery" th:if="${!#lists.isEmpty(p.photos)}" aria-label="Photos de la prestation">
+                            <a th:each="photo, state : ${p.photos}" th:href="${photo.photoUrl}" target="_blank" rel="noopener" th:aria-label="${'Ouvrir la photo ' + (state.index + 1) + ' de ' + p.name}"><img th:src="${photo.photoUrl}" th:alt="${p.name} + ' — exemple de réalisation'" loading="lazy" width="480" height="320"/></a>
+                        </div>
+                        <div class="bc-service-placeholder" th:if="${#lists.isEmpty(p.photos)}"><i th:class="${p.type.name() == 'COIFFURE' ? 'bi bi-scissors' : p.type.name() == 'ONGLERIE' ? 'bi bi-flower1' : 'bi bi-droplet'}" aria-hidden="true"></i><span>Les photos arrivent bientôt</span></div>
+                        <p class="bc-gallery-hint" th:if="${#lists.size(p.photos) > 1}"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> Faites défiler les photos · <span th:text="${#lists.size(p.photos)}"></span> réalisations</p><div class="bc-public-service-body"><span class="bc-eyebrow" th:text="${p.type}"></span><h3 th:text="${p.name}"></h3><p class="text-muted" th:text="${p.description}"></p>
+                            <div class="bc-service-price"><span th:text="${p.durationMinutes} + ' min'"></span><strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong></div>
+                            <button sec:authorize="hasRole('CLIENT')" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reserverModal" th:disabled="${#lists.isEmpty(timeSlots)}" th:attr="data-prestation-id=${p.id}">Réserver</button>
+                            <a sec:authorize="isAnonymous()" class="btn btn-outline-primary w-100" href="/connexion">Se connecter pour réserver</a>
+                        </div>
+                    </article>
+                </div><p class="text-muted my-3" th:if="${#lists.isEmpty(prestations)}">Aucune prestation renseignée pour le moment.</p></div>
             </div>
 
             <div class="card shadow-sm">
@@ -89,7 +75,7 @@
                 <div class="list-group list-group-flush">
                     <div class="list-group-item" th:each="r : ${reviews}">
                         <div class="d-flex justify-content-between">
-                            <strong th:text="${r.client.firstName}"></strong>
+                            <div><strong th:text="${r.client.firstName}"></strong><span th:if="${r.appointment != null}" class="bc-status bc-status-success ms-2">Rendez-vous vérifié</span><span th:if="${r.appointment == null}" class="bc-meta ms-2">Avis libre</span></div>
                             <span class="text-warning"><i class="bi bi-star-fill"></i> <span th:text="${r.rating}"></span>/5</span>
                         </div>
                         <p class="mb-1" th:text="${r.comment}"></p>

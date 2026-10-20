@@ -230,6 +230,7 @@
                         class="bc-service-preview"
                         th:each="p : ${featuredPrestations}"
                     >
+                        <img th:if="${!#lists.isEmpty(p.photos)}" th:src="${p.photos[0].photoUrl}" th:alt="${p.name}" loading="lazy" class="bc-home-service-photo" width="480" height="240"/>
                         <div class="bc-service-top">
                             <span class="bc-category-icon"
                                 ><i

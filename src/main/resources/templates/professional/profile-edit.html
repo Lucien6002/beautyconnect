@@ -11,26 +11,28 @@
 <main class="bc-workspace-main" id="main-content">
     <h1 class="h4 mb-4">Modifier mon profil professionnel</h1>
 
+    <section th:replace="~{fragments/photo-upload :: editor(action=@{/pro/profil/photo/upload}, currentUrl=${professional.profilePhotoUrl}, deleteAction=@{/pro/profil/photo/delete}, label='La photo de mon établissement')}"></section>
+
     <form th:action="@{/pro/profil}" method="post" class="card shadow-sm p-4">
         <div class="mb-3">
-            <label class="form-label">Nom de l'activite</label>
-            <input type="text" name="businessName" class="form-control" th:value="${professional.businessName}" required/>
+            <label class="form-label" for="businessName">Nom de l'activite</label>
+            <input type="text" name="businessName" id="businessName" class="form-control" th:value="${professional.businessName}" required/>
         </div>
         <div class="mb-3">
-            <label class="form-label">Presentation</label>
-            <textarea name="bio" class="form-control" rows="4" th:text="${professional.bio}"></textarea>
+            <label class="form-label" for="bio">Presentation</label>
+            <textarea name="bio" id="bio" class="form-control" rows="4" th:text="${professional.bio}"></textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label">Ville / quartier</label>
-            <input type="text" name="city" class="form-control" th:value="${professional.city}" required/>
+            <label class="form-label" for="city">Ville / quartier</label>
+            <input type="text" name="city" id="city" class="form-control" th:value="${professional.city}" required/>
         </div>
         <div class="mb-3">
-            <label class="form-label">Adresse</label>
-            <input type="text" name="address" class="form-control" th:value="${professional.address}"/>
+            <label class="form-label" for="address">Adresse</label>
+            <input type="text" name="address" id="address" class="form-control" th:value="${professional.address}"/>
         </div>
         <div class="mb-3">
-            <label class="form-label">Clientele visee</label>
-            <select name="targetGender" class="form-select">
+            <label class="form-label" for="targetGender">Clientele visee</label>
+            <select name="targetGender" id="targetGender" class="form-select">
                 <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"
                         th:selected="${g == professional.targetGender}"></option>
             </select>

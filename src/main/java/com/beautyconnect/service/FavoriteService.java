@@ -52,7 +52,7 @@ public class FavoriteService {
     @Transactional(readOnly = true)
     public List<ProfessionalProfile> getFavorites(Long clientId) {
         return favoriteRepository.findVisibleByClient(getClient(clientId)).stream()
-                .map(Favorite::getProfessional).toList();
+                .map(f -> f.getProfessional()).toList();
     }
 
     private User getClient(Long clientId) {

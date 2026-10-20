@@ -1,8 +1,11 @@
 <!doctype html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
     <body>
+        <details th:fragment="navigation(role, active)" class="bc-workspace-menu">
+            <summary><span class="bc-menu-trigger"><i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i> Explorer mon espace <i class="bi bi-chevron-down" aria-hidden="true"></i></span>
+                <span class="bc-menu-identity" th:text="${role == 'client' ? 'Mon carnet · Client' : role == 'professional' ? 'Mon atelier · Professionnel' : 'Pilotage · Administration'}"></span>
+            </summary>
         <aside
-            th:fragment="navigation(role, active)"
             class="bc-sidebar"
             aria-label="Navigation de votre espace"
         >
@@ -124,6 +127,7 @@
                 ></p>
             </div>
         </aside>
+        </details>
         <span
             th:fragment="status(status)"
             class="bc-status"

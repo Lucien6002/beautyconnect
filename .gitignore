@@ -42,6 +42,12 @@ bin/
 .DS_Store
 Thumbs.db
 
+### Uploads (images) ###
+uploads/
+uploads/profile-photos/
+uploads/user-photos/
+uploads/prestation-photos/
+
 
 
 .env*

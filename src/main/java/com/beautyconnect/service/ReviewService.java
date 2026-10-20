@@ -105,10 +105,10 @@ public class ReviewService {
             return 0.0;
         }
         // .stream() transforme la liste en flux d'elements traitables un par
-        // un ; .mapToInt(Review::getRating) recupere seulement la note de
+        // un ; .mapToInt(r -> r.getRating()) recupere seulement la note de
         // chaque avis ; .average() calcule la moyenne ; .orElse(0.0) fournit
         // une valeur par defaut si jamais le flux etait vide (securite en plus du isEmpty() ci-dessus).
-        return reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+        return reviews.stream().mapToInt(r -> r.getRating()).average().orElse(0.0);
     }
 
     // Masque un avis suite a un signalement traite par l'administrateur

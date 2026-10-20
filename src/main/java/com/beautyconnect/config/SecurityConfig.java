@@ -50,7 +50,7 @@ public class SecurityConfig {
             // Une autorité supplémentaire (par exemple FACTOR_PASSWORD) ne
             // doit jamais écraser la destination choisie pour le rôle.
             var authorities = authentication.getAuthorities().stream()
-                    .map(org.springframework.security.core.GrantedAuthority::getAuthority).toList();
+                    .map(a -> a.getAuthority()).toList();
             String redirect = authorities.contains("ROLE_ADMIN") ? "/admin/tableau-bord"
                     : authorities.contains("ROLE_PROFESSIONAL") ? "/pro/tableau-bord"
                     : authorities.contains("ROLE_CLIENT") ? "/client/tableau-bord" : "/";
@@ -63,7 +63,7 @@ public class SecurityConfig {
                                                    SessionRegistry sessionRegistry) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/accueil", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/", "/accueil", "/css/**", "/js/**", "/images/**", "/uploads/**", "/webjars/**").permitAll()
                         .requestMatchers("/recherche", "/recherche/**", "/itineraire/**").permitAll()
                         .requestMatchers("/professionnels/**").permitAll()
                         // On autorise /activer-compte pour que le lien de l'email fonctionne sans être connecté

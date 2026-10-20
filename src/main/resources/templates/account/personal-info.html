@@ -16,6 +16,7 @@
             <main class="bc-workspace-main" id="main-content">
                 <h1 class="h4 mb-4">Mes informations personnelles</h1>
 
+                <section th:replace="~{fragments/photo-upload :: editor(action=@{/compte/photo/upload}, currentUrl=${profilePhotoUrl}, deleteAction=@{/compte/photo/delete}, label='Ma photo de profil')}"></section>
                 <form
                     th:action="@{/compte}"
                     th:object="${personalInfoForm}"

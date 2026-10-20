@@ -51,7 +51,7 @@ class FranceDemoDataTests {
         assertThat(demoUsers).hasSize(9);
         assertThat(demoUsers).allMatch(u -> encoder.matches(FranceDemoData.PASSWORD, u.getPassword()));
         var demoProfiles = profiles.findAll().stream().filter(p -> p.getUser().getEmail().endsWith(FranceDemoData.DOMAIN)).toList();
-        assertThat(demoProfiles).hasSize(6).allMatch(p -> p.getBusinessName().startsWith("[DÉMO]"));
+        assertThat(demoProfiles).hasSize(6).allMatch(p -> !p.getBusinessName().startsWith("[DÉMO]"));
         assertThat(demoProfiles.stream().map(ProfessionalProfile::getCity).distinct()).containsExactlyInAnyOrder("Paris", "Lyon");
         assertThat(demoProfiles.stream().filter(ProfessionalProfile::isCoordinatesPublic)).hasSize(2);
         assertThat(demoProfiles.stream().filter(p -> p.getLatitude() == null)).hasSize(2);
@@ -79,6 +79,18 @@ class FranceDemoDataTests {
         assertThat(favorites.count()).isEqualTo(favoriteCount);
         assertThat(reviews.count()).isEqualTo(reviewCount);
         assertThat(users.findById(owner.getId()).orElseThrow().getFirstName()).isEqualTo("Mon prénom modifié");
+    }
+
+    @Test void refreshesLegacyGeneratedNamesButPreservesCustomizedBusinessNames() throws Exception {
+        data.seed(1);
+        var owner = users.findByEmail("coiffure.75056" + FranceDemoData.DOMAIN).orElseThrow();
+        var profile = profiles.findByUserId(owner.getId()).orElseThrow();
+        profile.setBusinessName("[DÉMO] Coiffure · Paris"); profiles.save(profile);
+        data.seed(1);
+        assertThat(profiles.findById(profile.getId()).orElseThrow().getBusinessName()).isEqualTo("Coiffure · Paris");
+        profile.setBusinessName("Mon atelier personnalisé"); profiles.save(profile);
+        data.seed(1);
+        assertThat(profiles.findById(profile.getId()).orElseThrow().getBusinessName()).isEqualTo("Mon atelier personnalisé");
     }
 
     @Test void confirmedAndCompletedAppointmentsOccupyTheirSlotsAndReviewsAreLinkedToCompletedVisits() throws Exception {

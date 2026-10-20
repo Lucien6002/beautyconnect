@@ -29,7 +29,7 @@ public class FavoriteController {
     }
 
     @PostMapping("/client/favoris/{professionalId}/ajouter")
-    public String add(@PathVariable Long professionalId, @AuthenticationPrincipal CustomUserDetails principal,
+    public String add(@PathVariable("professionalId") Long professionalId, @AuthenticationPrincipal CustomUserDetails principal,
                       RedirectAttributes redirectAttributes) {
         favoriteService.add(principal.getId(), professionalId);
         redirectAttributes.addFlashAttribute("success", "Professionnel ajoute a vos favoris.");
@@ -39,7 +39,7 @@ public class FavoriteController {
     // "from=favoris" : le retrait depuis la page des favoris y revient ;
     // sinon retour sur la fiche du professionnel (valeur fixe, pas de redirection libre).
     @PostMapping("/client/favoris/{professionalId}/retirer")
-    public String remove(@PathVariable Long professionalId, @RequestParam(required = false) String from,
+    public String remove(@PathVariable("professionalId") Long professionalId, @RequestParam(required = false) String from,
                          @AuthenticationPrincipal CustomUserDetails principal, RedirectAttributes redirectAttributes) {
         favoriteService.remove(principal.getId(), professionalId);
         redirectAttributes.addFlashAttribute("success", "Professionnel retire de vos favoris.");

@@ -67,6 +67,20 @@ class HomeCatalogTests {
         assertThat((List<?>) result.getModelAndView().getModel().get("featuredPrestations")).hasSize(6);
     }
 
+    @Test void homepageRepresentsEachAvailableCategory() throws Exception {
+        var visible = professional("diverse", true, true);
+        for (var type : ServiceType.values()) {
+            for (int i = 0; i < 3; i++) {
+                var p = service(visible, type.name() + i, true); p.setType(type); prestations.save(p);
+            }
+        }
+        var result = mvc.perform(get("/")).andExpect(status().isOk()).andReturn();
+        @SuppressWarnings("unchecked")
+        var featured = (List<Prestation>) result.getModelAndView().getModel().get("featuredPrestations");
+        assertThat(featured).hasSize(6);
+        assertThat(featured.stream().map(Prestation::getType).distinct()).containsExactlyInAnyOrder(ServiceType.values());
+    }
+
     private ProfessionalProfile professional(String name, boolean validated, boolean enabled) {
         var user = users.save(User.builder().email(name + "@home-catalog.test").password("hash")
                 .firstName("Accueil").lastName("Test").role(Role.PROFESSIONAL).enabled(enabled).emailVerified(true).build());

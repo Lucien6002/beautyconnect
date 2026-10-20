@@ -11,10 +11,10 @@ import com.beautyconnect.model.TimeSlot;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
-import com.beautyconnect.utils.LocationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,10 +35,23 @@ public class ProfessionalService {
     private final PrestationRepository prestationRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
+    private final com.beautyconnect.repository.PrestationPhotoRepository photoRepository;
+    private final PhotoService photoService;
 
     @Transactional(readOnly = true)
     public List<Prestation> getPublicPrestationPreviews() {
-        return prestationRepository.findPublicPreviews(org.springframework.data.domain.PageRequest.of(0, 6));
+        var previews = new java.util.ArrayList<Prestation>();
+        for (var type : com.beautyconnect.model.ServiceType.values()) {
+            previews.addAll(prestationRepository.findPublicPreviewsByType(type, org.springframework.data.domain.PageRequest.of(0, 2)));
+        }
+        if (previews.size() < 6) {
+            for (var candidate : prestationRepository.findPublicPreviews(org.springframework.data.domain.PageRequest.of(0, 6))) {
+                if (previews.size() == 6) break;
+                if (previews.stream().noneMatch(p -> p.getId().equals(candidate.getId()))) previews.add(candidate);
+            }
+        }
+        previews.forEach(p -> p.getPhotos().size());
+        return previews;
     }
 
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
@@ -93,6 +106,11 @@ public class ProfessionalService {
         return professionalProfileRepository.save(profile);
     }
 
+    @Transactional
+    public ProfessionalProfile updateProfile(ProfessionalProfile profile) {
+        return professionalProfileRepository.save(profile);
+    }
+
     public List<Prestation> getPrestations(ProfessionalProfile professional) {
         return prestationRepository.findByProfessional(professional);
     }
@@ -124,6 +142,22 @@ public class ProfessionalService {
     }
 
     @Transactional
+    public void addPrestationImage(ProfessionalProfile professional, Long prestationId, MultipartFile file) {
+        photoService.addPrestationPhoto(professional.getUser().getId(), prestationId, file);
+    }
+
+    @Transactional
+    public void updatePrestation(ProfessionalProfile professional, Long id, PrestationForm form) {
+        var prestation = prestationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable"));
+        assertOwnership(professional, prestation.getProfessional());
+        prestation.setName(form.getName().trim());
+        prestation.setDescription(form.getDescription());
+        prestation.setType(form.getType());
+        prestation.setPrice(form.getPrice());
+        prestation.setDurationMinutes(form.getDurationMinutes());
+    }
+
+    @Transactional
     public void removePrestation(ProfessionalProfile professional, Long prestationId) {
         Prestation prestation = prestationRepository.findById(prestationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
@@ -136,6 +170,25 @@ public class ProfessionalService {
         // deja pris sur cette prestation (qui referencent son ID).
         prestation.setActive(false);
         prestationRepository.save(prestation);
+    }
+
+    @Transactional
+    public void permanentlyDeletePrestation(ProfessionalProfile professional, Long prestationId) {
+        Prestation prestation = prestationRepository.findById(prestationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
+        assertOwnership(professional, prestation.getProfessional());
+
+        // Vérifier qu'il n'y a pas de rendez-vous sur cette prestation
+        if (appointmentRepository.existsByPrestationId(prestationId)) {
+            throw new IllegalOperationException("Impossible de supprimer définitivement : des rendez-vous existent sur cette prestation.");
+        }
+
+        if (prestation.isActive()) throw new IllegalOperationException("Retirez d'abord la prestation avant de la supprimer définitivement.");
+        photoRepository.findByPrestationOrderByDisplayOrderAsc(prestation).forEach(photo ->
+                photoService.deleteAfterCommit(photo.getPublicId(), photo.getPhotoUrl()));
+
+        // Supprimer la prestation définitivement
+        prestationRepository.delete(prestation);
     }
 
     // Inverse de removePrestation : la prestation retiree redevient visible

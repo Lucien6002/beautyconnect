@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+    <head
+        th:replace="~{fragments/head :: head(title='Modifier une prestation')}"
+    ></head>
+    <body>
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="container bc-workspace" data-role="professional">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='professional', active='services')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <a href="/pro/prestations" class="bc-text-link"
+                    >← Retour aux prestations</a
+                >
+                <h1 class="my-4">Affiner votre prestation</h1>
+                <div class="card p-4" style="max-width: 800px">
+                    <form
+                        th:action="@{/pro/prestations/{id}/modifier(id=${prestationId})}"
+                        th:object="${prestationForm}"
+                        method="post"
+                    >
+                        <div class="mb-3">
+                            <label class="form-label" for="name">Nom</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                th:field="*{name}"
+                                placeholder="Ex : Balayage"
+                                th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"
+                            />
+                            <div
+                                class="invalid-feedback"
+                                th:if="${#fields.hasErrors('name')}"
+                                th:errors="*{name}"
+                            ></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"
+                                >Description (optionnel)</label
+                            >
+                            <textarea
+                                class="form-control"
+                                th:field="*{description}"
+                            ></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="type">Type</label>
+                            <select class="form-select" th:field="*{type}">
+                                <option
+                                    th:each="t : ${types}"
+                                    th:value="${t}"
+                                    th:text="${t}"
+                                ></option>
+                            </select>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label" for="durationMinutes">Duree (min)</label>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    th:field="*{durationMinutes}"
+                                    min="5"
+                                    th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid'"
+                                />
+                                <div
+                                    class="invalid-feedback"
+                                    th:if="${#fields.hasErrors('durationMinutes')}"
+                                    th:errors="*{durationMinutes}"
+                                ></div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="price">Tarif (€)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    class="form-control"
+                                    th:field="*{price}"
+                                    th:classappend="${#fields.hasErrors('price')} ? 'is-invalid'"
+                                />
+                                <div
+                                    class="invalid-feedback"
+                                    th:if="${#fields.hasErrors('price')}"
+                                    th:errors="*{price}"
+                                ></div>
+                            </div>
+                        </div>
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100 mt-3"
+                        >
+                            Enregistrer les modifications
+                        </button>
+                    </form>
+                </div>
+            </main>
+        </div>
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
+</html>

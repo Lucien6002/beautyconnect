@@ -34,6 +34,8 @@ public class FranceDemoData {
 
     public record City(String code, String name, double latitude, double longitude) {}
     public record Result(int cities, int professionalsCreated) {}
+    private static final String[] CLIENT_FIRST_NAMES = {"Camille", "Alex", "Noa"};
+    private static final String[] CLIENT_LAST_NAMES = {"Martin", "Bernard", "Dubois"};
     private record ServiceExample(String name, String price, int minutes) {}
     private record CreatedProfile(ProfessionalProfile profile, Prestation prestation, TimeSlot nextSlot, int clientIndex) {}
 
@@ -59,9 +61,16 @@ public class FranceDemoData {
         List<User> clients = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             String email = "client" + i + DOMAIN;
-            clients.add(users.findByEmail(email).orElseGet(() -> users.save(User.builder()
-                    .email(email).password(hash).firstName("Démo").lastName(email.substring(0, email.indexOf('@')))
-                    .role(Role.CLIENT).enabled(true).emailVerified(true).build())));
+            User client = users.findByEmail(email).orElse(null);
+            if (client == null) {
+                client = users.save(User.builder().email(email).password(hash)
+                        .firstName(CLIENT_FIRST_NAMES[i - 1]).lastName(CLIENT_LAST_NAMES[i - 1])
+                        .role(Role.CLIENT).enabled(true).emailVerified(true).build());
+            } else if ("Démo".equals(client.getFirstName()) && ("client" + i).equals(client.getLastName())) {
+                client.setFirstName(CLIENT_FIRST_NAMES[i - 1]); client.setLastName(CLIENT_LAST_NAMES[i - 1]);
+                users.save(client);
+            }
+            clients.add(client);
         }
         int created = 0;
         var scenarioProfiles = new ArrayList<CreatedProfile>();
@@ -72,13 +81,30 @@ public class FranceDemoData {
                 ServiceType type = types[j];
                 String email = type.name().toLowerCase(java.util.Locale.ROOT) + "." + city.code() + DOMAIN;
                 // Ne jamais écraser les modifications faites en testant les comptes de démo.
-                if (users.existsByEmail(email)) continue;
-                User owner = users.save(User.builder().email(email).password(hash).firstName("Démo")
+                if (users.existsByEmail(email)) {
+                    // Retire uniquement l'ancien préfixe généré, sans écraser un nom personnalisé.
+                    users.findByEmail(email).flatMap(u -> profiles.findByUserId(u.getId())).ifPresent(existing -> {
+                        User account = existing.getUser();
+                        if ("Démo".equals(account.getFirstName()) && (city.name() + " " + type.name().toLowerCase(java.util.Locale.ROOT)).equals(account.getLastName())) {
+                            account.setFirstName(switch (type) { case COIFFURE -> "Camille"; case ONGLERIE -> "Lina"; case SOIN -> "Alex"; });
+                            users.save(account);
+                        }
+                        String generated = "[DÉMO] " + switch (type) {
+                            case COIFFURE -> "Coiffure"; case ONGLERIE -> "Onglerie"; case SOIN -> "Soins";
+                        } + " · " + city.name();
+                        if (generated.equals(existing.getBusinessName())) {
+                            existing.setBusinessName(generated.substring("[DÉMO] ".length()));
+                            profiles.save(existing);
+                        }
+                    });
+                    continue;
+                }
+                User owner = users.save(User.builder().email(email).password(hash).firstName(new String[]{"Camille", "Lina", "Alex"}[j])
                         .lastName(city.name() + " " + type.name().toLowerCase(java.util.Locale.ROOT))
                         .role(Role.PROFESSIONAL).enabled(!(i == 1 && j == 2)).emailVerified(true).build());
                 String category = switch (type) { case COIFFURE -> "Coiffure"; case ONGLERIE -> "Onglerie"; case SOIN -> "Soins"; };
                 ProfessionalProfile profile = profiles.save(ProfessionalProfile.builder().user(owner)
-                        .businessName("[DÉMO] " + category + " · " + city.name()).city(city.name())
+                        .businessName(category + " · " + city.name()).city(city.name())
                         .bio("PROFIL FICTIF DE DÉMONSTRATION. Prestations et tarifs d'exemple, aucun établissement réel. "
                                 + "Le point de carte correspond au centre officiel de la commune, pas à une adresse de salon.")
                         .targetGender(TargetGender.values()[(i + j) % TargetGender.values().length])
