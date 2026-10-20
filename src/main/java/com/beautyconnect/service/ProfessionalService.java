@@ -141,6 +141,21 @@ public class ProfessionalService {
         return prestationRepository.save(prestation);
     }
 
+    /** Une création et toutes ses photos dans la même transaction. */
+    @Transactional
+    public Prestation addPrestationWithPhotos(ProfessionalProfile professional, PrestationForm form,
+            MultipartFile mainPhoto, List<MultipartFile> secondaryPhotos) {
+        var secondary = secondaryPhotos == null ? List.<MultipartFile>of()
+                : secondaryPhotos.stream().filter(file -> !file.isEmpty()).toList();
+        boolean hasMain = mainPhoto != null && !mainPhoto.isEmpty();
+        if (secondary.size() > 4) throw new IllegalOperationException("Choisissez au maximum quatre photos secondaires.");
+        if (!secondary.isEmpty() && !hasMain) throw new IllegalOperationException("Ajoutez une photo principale avant les photos secondaires.");
+        var prestation = addPrestation(professional, form);
+        if (hasMain) photoService.addPrestationPhoto(professional.getUser().getId(), prestation.getId(), mainPhoto);
+        for (var photo : secondary) photoService.addPrestationPhoto(professional.getUser().getId(), prestation.getId(), photo);
+        return prestation;
+    }
+
     @Transactional
     public void addPrestationImage(ProfessionalProfile professional, Long prestationId, MultipartFile file) {
         photoService.addPrestationPhoto(professional.getUser().getId(), prestationId, file);

@@ -56,7 +56,7 @@ L'initialiseur est réexécutable sans dupliquer les comptes ni écraser leurs m
 
 ## Ajouter des photos et activer Cloudinary
 
-En local, cela fonctionne sans compte externe : **Mon profil** pour l'établissement, **Mon compte** pour l'avatar personnel et **Mes prestations → Photos** pour une galerie publique de cinq photos maximum par prestation. Une première photo peut aussi être jointe lors de la création de la prestation.
+En local, cela fonctionne sans compte externe : **Mon profil** pour l'établissement, **Mon compte** pour l'avatar personnel et **Mes prestations → Photos** pour une galerie publique de cinq photos maximum par prestation. Le formulaire de création contient une photo principale et jusqu’à quatre photos secondaires, avec aperçu ; la prestation et ses photos sont enregistrées ensemble. La galerie permet ensuite de choisir une autre photo principale.
 
 Les fichiers acceptés sont de vraies images **JPEG ou PNG**, au maximum **5 Mo et 20 mégapixels**. Le serveur les décode puis les réencode ; le nom original n'est pas utilisé comme chemin. Les photos de profil professionnel et de prestations sont publiques, comme les avatars servis par URL. N'envoyer que des images destinées à être publiées.
 

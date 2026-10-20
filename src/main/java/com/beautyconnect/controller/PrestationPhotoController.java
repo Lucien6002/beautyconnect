@@ -29,6 +29,13 @@ public class PrestationPhotoController {
         } catch (ImageUploadException | IllegalOperationException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
         return "redirect:/pro/prestations/" + id + "/photos";
     }
+    @PostMapping("/{id}/photos/{photoId}/principale")
+    public String chooseMain(@PathVariable("id") Long id, @PathVariable("photoId") Long photoId,
+            @AuthenticationPrincipal CustomUserDetails principal, RedirectAttributes flash) {
+        photos.chooseMainPhoto(principal.getId(), id, photoId);
+        flash.addFlashAttribute("success", "La photo principale a été mise à jour.");
+        return "redirect:/pro/prestations/" + id + "/photos";
+    }
     @PostMapping("/{id}/photos/{photoId}/delete")
     public String delete(@PathVariable("id") Long id, @PathVariable("photoId") Long photoId,
             @AuthenticationPrincipal CustomUserDetails principal, RedirectAttributes flash) {

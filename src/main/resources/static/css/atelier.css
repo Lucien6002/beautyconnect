@@ -82,22 +82,6 @@ body {
 .alert {
     border-radius: 14px;
 }
-/* Le menu occupe une ligne, son panneau apparaît uniquement à la demande. */
-.bc-workspace,
-.bc-admin-page .bc-workspace {
-    display: block;
-    width: min(1440px, 100%);
-    max-width: 1440px;
-    padding: 0 32px 56px;
-    margin: 28px auto 0;
-}
-.bc-workspace-main,
-.bc-admin-page .bc-workspace-main {
-    width: 100%;
-    max-width: none;
-    padding: 28px 0 0;
-    min-width: 0;
-}
 .bc-workspace[data-role="client"] {
     --bc-space-accent: #9d3c58;
     --bc-space-surface: var(--bc-rose);
@@ -109,92 +93,6 @@ body {
 .bc-workspace[data-role="admin"] {
     --bc-space-accent: var(--bc-primary);
     --bc-space-surface: var(--bc-primary-soft);
-}
-.bc-workspace-menu {
-    position: relative;
-    z-index: 30;
-    border-bottom: 1px solid #e1dae9;
-    padding-bottom: 20px;
-}
-.bc-workspace-menu > summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    list-style: none;
-    cursor: pointer;
-}
-.bc-workspace-menu > summary::-webkit-details-marker {
-    display: none;
-}
-.bc-menu-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 18px;
-    border-radius: 14px;
-    color: var(--bc-space-accent);
-    background: var(--bc-space-surface);
-    font-weight: 700;
-    font-size: 0.9rem;
-}
-.bc-menu-trigger .bi-chevron-down {
-    transition: transform 0.2s ease;
-    font-size: 0.75rem;
-}
-.bc-workspace-menu[open] .bi-chevron-down {
-    transform: rotate(180deg);
-}
-.bc-menu-identity {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--bc-muted);
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar {
-    position: absolute;
-    top: calc(100% - 8px);
-    left: 0;
-    width: min(350px, 100%);
-    height: auto;
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: 22px;
-    margin: 0;
-    border: 1px solid #e4ddeb;
-    border-radius: 20px;
-    background: #fff;
-    box-shadow: 0 20px 65px #281f3526;
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-label {
-    padding-bottom: 18px;
-    margin-bottom: 14px;
-    border-bottom: 1px solid #eee8f2;
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-links {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    overflow: visible;
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-links > a {
-    min-height: 46px;
-    white-space: normal;
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-links > a[aria-current="page"] {
-    background: var(--bc-space-surface);
-    color: var(--bc-space-accent);
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-links > a::before {
-    display: none;
-}
-.bc-workspace .bc-workspace-menu .bc-sidebar-note {
-    margin-top: 18px;
-    padding: 16px;
-    background: #f8f6fb;
-    border-radius: 12px;
 }
 .bc-workspace-main > h1,
 .bc-workspace-main > div > h1 {
@@ -437,25 +335,6 @@ body > footer {
     }
 }
 @media (max-width: 767px) {
-    .bc-workspace,
-    .bc-admin-page .bc-workspace {
-        padding: 0 16px 32px;
-        margin-top: 20px;
-    }
-    .bc-workspace-main,
-    .bc-admin-page .bc-workspace-main {
-        padding: 24px 0 0;
-    }
-    .bc-menu-identity {
-        max-width: 110px;
-        text-align: right;
-        font-size: 0.7rem;
-    }
-    .bc-menu-trigger {
-        font-size: 0.8rem;
-        gap: 8px;
-        padding: 12px;
-    }
     .bc-public-services {
         grid-template-columns: 1fr;
     }
@@ -509,3 +388,8 @@ body > footer {
 .table-responsive > .table { min-width: 620px; }
 .bc-status { white-space: nowrap; overflow-wrap: normal; }
 .bc-gallery-hint { font-size: .75rem; color: var(--bc-muted); margin: 10px 16px 0; }
+.bc-service-photo-fields { padding: 20px; background: #f7f4fb; border: 1px solid #e6dced; border-radius: 16px; }
+.bc-service-photo-fields legend { float: none; width: auto; font-size: 1.1rem; font-family: var(--bc-font-titles); margin-bottom: 12px; }
+.bc-service-photo-slot { padding: 16px; border: 1px dashed #c9b7dd; border-radius: 12px; background: white; }
+.bc-photo-previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bc-photo-previews img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-top: 12px; }

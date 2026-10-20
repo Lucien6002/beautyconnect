@@ -133,22 +133,19 @@ public class ProfessionalDashboardController {
                                  @Valid @ModelAttribute PrestationForm prestationForm,
                                  BindingResult bindingResult, Model model,
                                  RedirectAttributes redirectAttributes,
-                                 @RequestParam(required = false) MultipartFile file) {
+                                 @RequestParam(name = "file", required = false) MultipartFile file,
+                                 @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryPhotos) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         if (bindingResult.hasErrors()) {
             addPrestationsPageAttributes(profile, model);
             return "professional/prestations";
         }
-        Prestation prestation = professionalService.addPrestation(profile, prestationForm);
-
-        // Ajouter la photo si fournie
-        if (file != null && !file.isEmpty()) {
-            try {
-                professionalService.addPrestationImage(profile, prestation.getId(), file);
-            } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException e) {
-                redirectAttributes.addFlashAttribute("error", "Prestation ajoutee mais erreur lors de l'upload de la photo : " + e.getMessage());
-                return "redirect:/pro/prestations";
-            }
+        try {
+            professionalService.addPrestationWithPhotos(profile, prestationForm, file, secondaryPhotos);
+        } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+            bindingResult.reject("photos.invalid", ex.getMessage());
+            addPrestationsPageAttributes(profile, model);
+            return "professional/prestations";
         }
 
         redirectAttributes.addFlashAttribute("success", "Prestation ajoutee.");

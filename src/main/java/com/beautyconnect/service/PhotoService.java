@@ -57,6 +57,18 @@ public class PhotoService {
     }
 
     @Transactional
+    public void chooseMainPhoto(Long userId, Long id, Long photoId) {
+        var prestation = ownedPrestation(userId, id);
+        entityManager.lock(prestation, LockModeType.PESSIMISTIC_WRITE);
+        var gallery = photos.findByPrestationOrderByDisplayOrderAsc(prestation);
+        var selected = gallery.stream().filter(photo -> photo.getId().equals(photoId)).findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Photo introuvable"));
+        gallery.remove(selected);
+        gallery.addFirst(selected);
+        for (int i = 0; i < gallery.size(); i++) gallery.get(i).setDisplayOrder(i);
+    }
+
+    @Transactional
     public void profilePhoto(Long userId, boolean professional, MultipartFile file) {
         if (professional) {
             var profile = profiles.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Profil introuvable"));

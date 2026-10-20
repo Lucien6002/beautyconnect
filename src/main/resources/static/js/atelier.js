@@ -1,17 +1,5 @@
 /* Améliorations progressives : formulaires et liens restent utilisables sans ce script. */
 document.addEventListener("DOMContentLoaded", () => {
-    const menu = document.querySelector(".bc-workspace-menu");
-    if (menu) {
-        document.addEventListener("click", (event) => {
-            if (!menu.contains(event.target)) menu.open = false;
-        });
-        menu.addEventListener("keydown", (event) => {
-            if (event.key === "Escape") {
-                menu.open = false;
-                menu.querySelector("summary").focus();
-            }
-        });
-    }
     document.querySelectorAll("[data-prestation-id]").forEach((button) => {
         button.addEventListener("click", () => {
             const select = document.getElementById("prestationId");
@@ -56,4 +44,39 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+});
+
+// Création d'une prestation : couverture et réalisations dans le même formulaire.
+document.querySelectorAll('[data-service-photos]').forEach(form => {
+    const main = form.querySelector('[data-service-main-photo]');
+    const secondary = form.querySelector('[data-service-secondary-photos]');
+    const status = form.querySelector('[data-service-photo-status]');
+    let urls = [];
+    function refresh() {
+        urls.forEach(url => URL.revokeObjectURL(url));
+        urls = [];
+        main.setCustomValidity('');
+        secondary.setCustomValidity('');
+        const extra = Array.from(secondary.files);
+        const all = [...main.files, ...extra];
+        let error = '';
+        if (extra.length > 4) error = 'Sélectionnez au maximum quatre photos secondaires.';
+        else if (extra.length && !main.files.length) error = 'Ajoutez d’abord la photo principale.';
+        else if (all.some(file => !['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024)) error = 'Chaque image doit être un JPEG ou PNG de 5 Mo maximum.';
+        secondary.setCustomValidity(error);
+        status.textContent = error || (all.length ? `${all.length}/5 photos prêtes à être enregistrées avec la prestation.` : '');
+        for (const [files, selector] of [[Array.from(main.files), '[data-service-main-preview]'], [extra.slice(0, 4), '[data-service-secondary-previews]']]) {
+            const container = form.querySelector(selector);
+            container.replaceChildren();
+            files.filter(file => ['image/jpeg', 'image/png'].includes(file.type) && file.size <= 5 * 1024 * 1024).forEach(file => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                urls.push(img.src);
+                img.alt = `Aperçu : ${file.name}`;
+                container.appendChild(img);
+            });
+        }
+    }
+    main.addEventListener('change', refresh);
+    secondary.addEventListener('change', refresh);
 });

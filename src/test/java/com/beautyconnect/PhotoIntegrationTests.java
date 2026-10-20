@@ -58,6 +58,41 @@ class PhotoIntegrationTests {
         Long photoId = images.findByPrestationOrderByDisplayOrderAsc(prestation).getFirst().getId();
         assertThatThrownBy(() -> photos.deletePrestationPhoto(owner.getId(), second.getId(), photoId)).isInstanceOf(ResourceNotFoundException.class);
     }
+    @Test void createsMainAndSecondaryPhotosFromTheSameForm() throws Exception {
+        byte[] bytes = ImageStorageTests.photo().getBytes();
+        mvc.perform(multipart("/pro/prestations")
+                .file(new org.springframework.mock.web.MockMultipartFile("file", "main.png", "image/png", bytes))
+                .file(new org.springframework.mock.web.MockMultipartFile("secondaryPhotos", "detail1.png", "image/png", bytes))
+                .file(new org.springframework.mock.web.MockMultipartFile("secondaryPhotos", "detail2.png", "image/png", bytes))
+                .with(user(new CustomUserDetails(owner))).with(csrf())
+                .param("name", "Avec trois photos").param("type", "COIFFURE").param("price", "25").param("durationMinutes", "30"))
+                .andExpect(status().is3xxRedirection());
+        var created = prestations.findByProfessional(prestation.getProfessional()).stream()
+                .filter(p -> p.getName().equals("Avec trois photos")).findFirst().orElseThrow();
+        assertThat(images.findByPrestationOrderByDisplayOrderAsc(created)).hasSize(3)
+                .extracting(PrestationPhoto::getDisplayOrder).containsExactly(0, 1, 2);
+    }
+
+    @Test void secondaryPhotosRequireAMainPhoto() throws Exception {
+        long before = prestations.count();
+        mvc.perform(multipart("/pro/prestations")
+                .file(new org.springframework.mock.web.MockMultipartFile("secondaryPhotos", "detail.png", "image/png", ImageStorageTests.photo().getBytes()))
+                .with(user(new CustomUserDetails(owner))).with(csrf())
+                .param("name", "Sans principale").param("type", "COIFFURE").param("price", "25").param("durationMinutes", "30"))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("prestationForm"));
+        assertThat(prestations.count()).isEqualTo(before);
+    }
+
+    @Test void choosesAnExistingSecondaryPhotoAsMain() throws Exception {
+        photos.addPrestationPhoto(owner.getId(), prestation.getId(), ImageStorageTests.photo());
+        photos.addPrestationPhoto(owner.getId(), prestation.getId(), ImageStorageTests.photo());
+        var previous = images.findByPrestationOrderByDisplayOrderAsc(prestation);
+        Long selected = previous.getLast().getId();
+        photos.chooseMainPhoto(owner.getId(), prestation.getId(), selected);
+        entityManager.flush(); entityManager.clear();
+        assertThat(photos.ownedPrestation(owner.getId(), prestation.getId()).getPhotos().getFirst().getId()).isEqualTo(selected);
+    }
+
     @Test void deletionIsPersistedEvenWhenParentGalleryWasAlreadyLoaded() throws Exception {
         photos.addPrestationPhoto(owner.getId(), prestation.getId(), ImageStorageTests.photo());
         entityManager.flush(); entityManager.clear();

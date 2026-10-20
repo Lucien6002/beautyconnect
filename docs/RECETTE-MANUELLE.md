@@ -46,7 +46,7 @@ Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le je
 | [ ] C1 | S'inscrire avec une nouvelle adresse, ouvrir le message Mailpit et le lien d'activation. | Compte activé ; connexion possible. Avant activation, l'accès connecté est refusé. |
 | [ ] C2 | Réutiliser le lien ; demander un renvoi depuis la page prévue. | Réponse contrôlée, aucune page 500 ; activation du compte inchangée. |
 | [ ] C3 | Tester un mauvais mot de passe puis le bon. | Erreur compréhensible puis accès à l'espace client. |
-| [ ] C4 | Ouvrir « Explorer mon espace », naviguer entre carnet, favoris, rendez-vous et compte. | Menu replié à l'arrivée, rubrique courante indiquée à l'ouverture, identité Client visible. |
+| [ ] C4 | Utiliser la navigation latérale pour passer entre carnet, favoris, rendez-vous et compte. | Navigation visible, rubrique courante indiquée, identité Client visible. |
 | [ ] C5 | Ajouter puis retirer un favori sur une fiche ; consulter les favoris. | État cohérent sur la fiche et dans la liste, aucun doublon. |
 | [ ] C6 | Choisir une prestation puis un créneau futur, réserver. | Prestation sélectionnée correcte, confirmation immédiate, rendez-vous dans le carnet et mail Mailpit. |
 | [ ] C7 | Avec deux clients dans deux navigateurs, réserver simultanément le même créneau. | Un seul rendez-vous actif accepté ; l'autre reçoit un refus contrôlé. |
@@ -65,9 +65,9 @@ Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le je
 |---|---|---|
 | [ ] P1 | S'inscrire comme pro et activer l'email ; chercher son établissement avant validation admin. | Espace pro accessible, établissement non publié tant que l'admin n'a pas validé. |
 | [ ] P2 | Après validation admin, renseigner nom, présentation, ville et clientèle. | Informations sauvegardées et visibles sur la vitrine publique. |
-| [ ] P3 | Ajouter une prestation nommée « Recette — à retirer », prix, durée, description et première photo. | Création réussie ; photo dans la galerie de cette prestation et sur la vitrine. |
+| [ ] P3 | Ajouter une prestation nommée « Recette — à retirer », prix, durée, description, photo principale et plusieurs photos secondaires dans le même formulaire. | Création réussie en une fois ; principale affichée en premier et secondaires présentes dans la galerie publique. |
 | [ ] P4 | Modifier cette prestation ; soumettre aussi nom vide, prix négatif et durée inférieure à 5 min. | Valeurs valides sauvegardées ; champs invalides signalés sans perte des autres saisies. |
-| [ ] P5 | Cliquer Photos, ajouter des JPEG/PNG jusqu'à cinq, essayer une sixième. | Aperçu correct, galerie publique alimentée, limite de cinq respectée. |
+| [ ] P5 | Cliquer Photos, ajouter des JPEG/PNG jusqu'à cinq, essayer une sixième. | Couverture changée sur la vitrine, aperçu correct, limite de cinq respectée. |
 | [ ] P6 | Envoyer le faux JPEG, puis une image dépassant 5 Mo. | Fichiers refusés ; aucun ajout en galerie ; message indique le format ou la limite. |
 | [ ] P7 | Supprimer une photo, ajouter une autre ; recharger la galerie puis la fiche publique. | Bonne photo supprimée, nouvelle photo présente, place disponible récupérée. |
 | [ ] P8 | Remplacer puis supprimer la photo de l'établissement. | Image mise à jour dans la recherche et sur la vitrine ; état sans photo propre après suppression. |
@@ -111,7 +111,7 @@ Ces cases restent vides si les identifiants réels ne sont pas renseignés. Les 
 ## G — Navigation, carte et accessibilité
 
 - [ ] G1 — Refaire accueil, connexion, recherche, vitrine, catalogue pro et tableau admin en 390 px puis 1440 px : pas de débordement horizontal global, textes et actions lisibles. Les tables peuvent défiler dans leur propre conteneur.
-- [ ] G2 — Sur 320 px et 768 px, ouvrir/fermer le menu principal et le panneau d'espace. Cliquer hors du panneau et utiliser Échap : fermeture correcte ; focus rendu à la commande avec Échap.
+- [ ] G2 — Sur 320 px et 768 px, ouvrir/fermer le menu principal ; vérifier que les rubriques de l'espace restent accessibles dans la navigation adaptée au mobile.
 - [ ] G3 — Parcourir au clavier : lien « Aller au contenu », champs, boutons, menu et modales ; focus visible, fermeture des modales et retour au déclencheur.
 - [ ] G4 — Activer « réduire les animations » dans le système/navigateur : transitions discrètes, diaporama initialement en pause.
 - [ ] G5 — Refuser la géolocalisation puis rechercher par ville : liste utilisable. Accepter ensuite sur localhost/HTTPS : position ponctuelle et mesures indiquées sans enregistrement dans le compte.

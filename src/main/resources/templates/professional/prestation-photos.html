@@ -58,7 +58,7 @@
                         >
                             <div
                                 class="col-lg-4 col-sm-6"
-                                th:each="photo : ${prestation.photos}"
+                                th:each="photo, state : ${prestation.photos}"
                             >
                                 <div class="card">
                                     <img
@@ -68,6 +68,8 @@
                                         style="height: 200px; object-fit: cover"
                                     />
                                     <div class="card-body p-2 text-center">
+                                        <p class="small fw-bold mb-2" th:text="${state.first ? 'Photo principale' : 'Photo secondaire ' + state.index}"></p>
+                                        <form th:if="${!state.first}" th:action="@{/pro/prestations/{id}/photos/{photoId}/principale(id=${prestation.id}, photoId=${photo.id})}" method="post" class="mb-2"><button type="submit" class="btn btn-sm btn-outline-primary">Définir comme principale</button></form>
                                         <form
                                             th:action="@{'/pro/prestations/' + ${prestation.id} + '/photos/' + ${photo.id} + '/delete'}"
                                             method="post"
@@ -91,7 +93,7 @@
                     th:if="${#lists.size(prestation.photos) < 5}"
                 >
                     <div class="card-header bg-white">
-                        <h5 class="mb-0">Ajouter une photo</h5>
+                        <h5 class="mb-0" th:text="${#lists.isEmpty(prestation.photos) ? 'Ajouter la photo principale' : 'Ajouter une photo secondaire'}">Ajouter une photo</h5>
                     </div>
                     <div class="card-body">
                         <form

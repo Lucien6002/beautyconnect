@@ -19,7 +19,7 @@ Photos de compte et d'établissement, galerie de prestations, affichage des réa
 | Deux configurations concurrentes de `/uploads/**` et mauvais chemin pour les images statiques. | Une configuration utilisant le dossier paramétré ; ressources de Joyce servies depuis `static/`. |
 | Formulaires de suppression créés en JavaScript sans jeton CSRF. | Formulaires POST Thymeleaf, jeton CSRF généré côté serveur. |
 | Plusieurs tests d'intégration supprimés lors de la contribution. | Conservation des tests antérieurs et ajout de contrôles ciblés sur les médias. |
-| Galeries et pages de compte hors de la navigation commune. | Menu repliable, aperçu avant publication, messages précis et galeries publiques utilisant les images réellement ajoutées. |
+| Galeries et pages de compte hors de la navigation commune. | Navigation latérale visible, aperçu avant publication, messages précis et galeries publiques utilisant les images réellement ajoutées. |
 
 La migration V8 ajoute les identifiants de stockage sans modifier les migrations V1 à V7 ni effacer les photos locales. Les uploads personnels ne font pas partie du code à versionner. `.env` reste privé.
 
