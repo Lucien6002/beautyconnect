@@ -11,7 +11,7 @@
 <main class="bc-workspace-main" id="main-content">
     <h1 class="h4 mb-4">Modifier mon profil professionnel</h1>
 
-    <section th:replace="~{fragments/photo-upload :: editor(action=@{/pro/profil/photo/upload}, currentUrl=${professional.profilePhotoUrl}, deleteAction=@{/pro/profil/photo/delete}, label='La photo de mon établissement')}"></section>
+    <section th:replace="~{fragments/photo-upload :: editor(action=@{/pro/profil/photo/upload}, currentUrl=${professional.profilePhotoUrl}, deleteAction=@{/pro/profil/photo/delete}, label='Photo principale de mon établissement')}"></section>
 
     <form th:action="@{/pro/profil}" method="post" class="card shadow-sm p-4">
         <div class="mb-3">

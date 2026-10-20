@@ -50,6 +50,57 @@ public class FranceDemoData {
         }
     }
 
+    /** Catalogue de présentation : six établissements, comptes locaux compris.
+     * Aucun compte existant ni historique n'est supprimé par l'initialiseur.
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Result seedShowcase() throws IOException {
+        record Example(String email, String firstName, String business, String cityCode, ServiceType type, String password) {}
+        var examples = List.of(
+                new Example("sarah@beautyconnect.local", "Sarah", "Sarah Coiffure & Ongles", "75056", ServiceType.COIFFURE, "Pro12345!"),
+                new Example("chloe@beautyconnect.local", "Chloé", "Chloé Coiffure Lyon", "69123", ServiceType.COIFFURE, "Pro12345!"),
+                new Example("coiffure.59350" + DOMAIN, "Camille", "Coiffure · Lille", "59350", ServiceType.COIFFURE, PASSWORD),
+                new Example("onglerie.44109" + DOMAIN, "Lina", "Onglerie · Nantes", "44109", ServiceType.ONGLERIE, PASSWORD),
+                new Example("onglerie.33063" + DOMAIN, "Inès", "Onglerie · Bordeaux", "33063", ServiceType.ONGLERIE, PASSWORD),
+                new Example("soin.13055" + DOMAIN, "Alex", "Maquillage · Marseille", "13055", ServiceType.SOIN, PASSWORD));
+        int created = 0;
+        for (var example : examples) {
+            var owner = users.findByEmail(example.email()).orElse(null);
+            // Une réexécution ne remplace ni mot de passe, ni profil, ni catalogue personnalisé.
+            if (owner != null) continue;
+            var city = cities().stream().filter(c -> c.code().equals(example.cityCode())).findFirst().orElseThrow();
+            owner = users.save(User.builder().email(example.email()).password(passwordEncoder.encode(example.password()))
+                    .firstName(example.firstName()).lastName(city.name()).role(Role.PROFESSIONAL)
+                    .enabled(true).emailVerified(true).build());
+            var profile = profiles.save(ProfessionalProfile.builder().user(owner).businessName(example.business())
+                    .city(city.name()).targetGender(TargetGender.MIXTE).validated(true)
+                    .latitude(city.latitude()).longitude(city.longitude()).coordinatesPublic(true)
+                    .bio("Établissement fictif de présentation. Coordonnées au centre de la commune ; prestations et tarifs simulés.").build());
+            List<ServiceExample> catalog = switch (example.type()) {
+                case COIFFURE -> List.of(new ServiceExample("Coupe et brushing", "30", 45), new ServiceExample("Coloration et soin", "65", 90));
+                case ONGLERIE -> List.of(new ServiceExample("Manucure", "20", 30), new ServiceExample("Vernis semi-permanent", "38", 60));
+                case SOIN -> List.of(new ServiceExample("Maquillage de jour", "35", 45), new ServiceExample("Maquillage de soirée", "55", 60));
+            };
+            for (var service : catalog) prestations.save(Prestation.builder().professional(profile)
+                    .name(service.name()).type(example.type()).price(new BigDecimal(service.price()))
+                    .durationMinutes(service.minutes()).description("Prestation fictive de présentation.").active(true).build());
+            for (int day = 1; day <= 4; day++) for (int hour : new int[]{9, 14})
+                slots.save(TimeSlot.builder().professional(profile).startDateTime(LocalDate.now().plusDays(day).atTime(hour, 0)).available(true).build());
+            created++;
+        }
+        var hash = passwordEncoder.encode(PASSWORD);
+        for (int i = 1; i <= 3; i++) {
+            String email = "client" + i + DOMAIN;
+            if (!users.existsByEmail(email)) users.save(User.builder().email(email).password(hash)
+                    .firstName(CLIENT_FIRST_NAMES[i - 1]).lastName(CLIENT_LAST_NAMES[i - 1])
+                    .role(Role.CLIENT).enabled(true).emailVerified(true).build());
+        }
+        return new Result(6, created);
+    }
+
+    /** Ancien générateur volumineux, conservé pour vérifier les scénarios historiques.
+     * Le démarrage utilise uniquement seedShowcase().
+     */
     @Transactional(rollbackFor = Exception.class)
     public Result seed(int cityLimit) throws IOException {
         List<City> catalog = cities();

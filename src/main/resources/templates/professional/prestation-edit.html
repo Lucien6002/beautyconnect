@@ -20,6 +20,9 @@
                         th:action="@{/pro/prestations/{id}/modifier(id=${prestationId})}"
                         th:object="${prestationForm}"
                         method="post"
+                        enctype="multipart/form-data"
+                        data-service-photos data-service-photo-edit
+                        th:attr="data-existing-photo-count=${#lists.size(prestation.photos)}, data-current-main-id=${#lists.isEmpty(prestation.photos) ? '' : prestation.photos[0].id}"
                     >
                         <div class="mb-3">
                             <label class="form-label" for="name">Nom</label>
@@ -37,7 +40,7 @@
                             ></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label"
+                            <label class="form-label" for="description"
                                 >Description (optionnel)</label
                             >
                             <textarea
@@ -87,6 +90,34 @@
                                 ></div>
                             </div>
                         </div>
+                        <fieldset class="bc-service-photo-fields mt-4">
+                            <legend>Modifier les photos</legend>
+                            <p class="form-text">Les changements de photos seront appliqués avec le bouton « Enregistrer les modifications ».</p>
+                            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" role="alert"><p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-1"></p><p class="small mb-0">Vérifiez les images et sélectionnez à nouveau les nouveaux fichiers.</p></div>
+                            <div class="bc-existing-photo-grid" th:if="${!#lists.isEmpty(prestation.photos)}">
+                                <div class="bc-existing-photo" th:each="photo, state : ${prestation.photos}">
+                                    <img th:src="${photo.photoUrl}" th:alt="${prestation.name} + ' — photo ' + ${state.index + 1}" width="320" height="220"/>
+                                    <span class="small fw-bold" th:text="${state.first ? 'Photo principale actuelle' : 'Photo secondaire ' + state.index}"></span>
+                                    <label class="form-check"><input class="form-check-input" type="radio" name="mainPhotoId" th:value="${photo.id}" th:checked="${state.first}"/><span class="form-check-label">Utiliser comme principale</span></label>
+                                    <label class="form-check text-danger"><input class="form-check-input" type="checkbox" name="deletePhotoIds" th:value="${photo.id}"/><span class="form-check-label">Supprimer à l’enregistrement</span></label>
+                                </div>
+                            </div>
+                            <p th:if="${#lists.isEmpty(prestation.photos)}" class="text-muted">Aucune photo pour le moment. Vous pouvez en ajouter ci-dessous.</p>
+                            <div class="bc-service-photo-slot mt-3">
+                                <label class="form-label fw-bold" for="firstPhoto">Nouvelle photo principale</label>
+                                <p class="form-text mt-0" id="mainPhotoHelp">Laisser vide pour conserver la photo choisie ci-dessus. Un nouveau fichier remplacera la principale actuelle.</p>
+                                <input id="firstPhoto" type="file" name="file" accept="image/jpeg,image/png,image/webp" class="form-control" data-service-main-photo aria-describedby="mainPhotoHelp editPhotoLimits"/>
+                                <div class="bc-photo-previews" data-service-main-preview></div>
+                            </div>
+                            <div class="bc-service-photo-slot mt-3">
+                                <label class="form-label fw-bold" for="secondaryPhotos">Ajouter des photos secondaires</label>
+                                <p class="form-text mt-0" id="secondaryPhotoHelp">Les images conservées restent dans la galerie. Cochez celles à supprimer pour libérer des places.</p>
+                                <input id="secondaryPhotos" type="file" name="secondaryPhotos" accept="image/jpeg,image/png,image/webp" multiple class="form-control" data-service-secondary-photos aria-describedby="secondaryPhotoHelp editPhotoLimits"/>
+                                <div class="bc-photo-previews" data-service-secondary-previews></div>
+                            </div>
+                            <p class="form-text mb-0" id="editPhotoLimits">JPEG, PNG ou WebP · 5 Mo et 20 mégapixels par image · 5 photos maximum au total.</p>
+                            <p data-service-photo-status role="status" class="small mt-2 mb-0"></p>
+                        </fieldset>
                         <button
                             type="submit"
                             class="btn btn-primary w-100 mt-3"

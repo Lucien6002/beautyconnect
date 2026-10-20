@@ -61,6 +61,9 @@ class ProfessionalCatalogTests {
     @org.springframework.beans.factory.annotation.Value("${image.storage.upload-dir}")
     private String imageDirectory;
 
+    @Autowired private com.beautyconnect.service.PhotoService photoService;
+    @Autowired private com.beautyconnect.repository.PrestationPhotoRepository photoRepository;
+
     private MockMvc mockMvc;
     private ProfessionalProfile profile;
     private RequestPostProcessor asPro;
@@ -80,6 +83,10 @@ class ProfessionalCatalogTests {
                 .filter(u -> u.getEmail().endsWith("@catalog.test"))
                 .forEach(u -> profileRepository.findByUserId(u.getId()).ifPresent(p -> {
                     timeSlotRepository.deleteAll(timeSlotRepository.findByProfessionalOrderByStartDateTimeAsc(p));
+                    for (var service : prestationRepository.findByProfessional(p)) {
+                        for (var photo : photoRepository.findByPrestationOrderByDisplayOrderAsc(service))
+                            photoService.deletePrestationPhoto(u.getId(), service.getId(), photo.getId());
+                    }
                     prestationRepository.deleteAll(prestationRepository.findByProfessional(p));
                     profileRepository.delete(p);
                     userRepository.delete(u);
@@ -99,6 +106,81 @@ class ProfessionalCatalogTests {
                 .andExpect(status().isOk()).andExpect(model().attributeHasErrors("prestationForm"));
         assertThat(prestationRepository.count()).isEqualTo(before);
         assertThat(uploadedFiles()).isEqualTo(filesBefore);
+    }
+
+    @Test
+    void editFormReplacesMainDeletesSecondaryAndAddsPhotoTogether() throws Exception {
+        var service = createPrestation(profile, "Original");
+        for (int i = 0; i < 3; i++) photoService.addPrestationPhoto(profile.getUser().getId(), service.getId(), image("file"));
+        var old = photoRepository.findByPrestationOrderByDisplayOrderAsc(service);
+        mockMvc.perform(get("/pro/prestations/{id}/modifier", service.getId()).with(asPro))
+                .andExpect(status().isOk()).andExpect(content().string(containsString("deletePhotoIds")))
+                .andExpect(content().string(containsString(old.getFirst().getPhotoUrl())));
+        mockMvc.perform(edit(service).file(image("file")).file(image("secondaryPhotos"))
+                .param("deletePhotoIds", old.get(1).getId().toString()))
+                .andExpect(status().is3xxRedirection());
+        var result = photoRepository.findByPrestationOrderByDisplayOrderAsc(service);
+        assertThat(result).hasSize(3);
+        assertThat(result.getFirst().getId()).isNotIn(old.stream().map(com.beautyconnect.model.PrestationPhoto::getId).toList());
+        assertThat(result.get(1).getId()).isEqualTo(old.get(2).getId());
+        assertThat(result).extracting(com.beautyconnect.model.PrestationPhoto::getDisplayOrder).containsExactly(0, 1, 2);
+        assertThat(prestationRepository.findById(service.getId()).orElseThrow().getName()).isEqualTo("Modification");
+        for (var removed : old.subList(0, 2))
+            assertThat(java.nio.file.Files.exists(java.nio.file.Path.of(imageDirectory, removed.getPhotoUrl().substring(9)))).isFalse();
+    }
+
+    @Test
+    void invalidEditRollsBackDetailsDeletedPhotosAndUploadedFiles() throws Exception {
+        var service = createPrestation(profile, "Original");
+        photoService.addPrestationPhoto(profile.getUser().getId(), service.getId(), image("file"));
+        var original = photoRepository.findByPrestationOrderByDisplayOrderAsc(service).getFirst();
+        var before = uploadedFiles();
+        mockMvc.perform(edit(service).file(image("file"))
+                .file(new org.springframework.mock.web.MockMultipartFile("secondaryPhotos", "bad.png", "image/png", "invalid".getBytes())))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("prestationForm"));
+        assertThat(prestationRepository.findById(service.getId()).orElseThrow().getName()).isEqualTo("Original");
+        assertThat(photoRepository.findByPrestationOrderByDisplayOrderAsc(service))
+                .extracting(com.beautyconnect.model.PrestationPhoto::getId).containsExactly(original.getId());
+        assertThat(uploadedFiles()).isEqualTo(before);
+    }
+
+    @Test
+    void editCannotDeletePhotoFromAnotherServiceAndCannotExceedFive() throws Exception {
+        var service = createPrestation(profile, "Original");
+        var other = createPrestation(profile, "Autre");
+        photoService.addPrestationPhoto(profile.getUser().getId(), other.getId(), image("file"));
+        var foreign = photoRepository.findByPrestationOrderByDisplayOrderAsc(other).getFirst();
+        mockMvc.perform(edit(service).param("deletePhotoIds", foreign.getId().toString())).andExpect(status().isNotFound());
+        for (int i = 0; i < 5; i++) photoService.addPrestationPhoto(profile.getUser().getId(), service.getId(), image("file"));
+        mockMvc.perform(edit(service).file(image("secondaryPhotos")))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("prestationForm"));
+        assertThat(photoRepository.findByPrestationOrderByDisplayOrderAsc(service)).hasSize(5);
+        assertThat(prestationRepository.findById(service.getId()).orElseThrow().getName()).isEqualTo("Original");
+    }
+
+    @Test
+    void editCanChooseExistingMainAndThenDeleteAllPhotos() throws Exception {
+        var service = createPrestation(profile, "Original");
+        for (int i = 0; i < 2; i++) photoService.addPrestationPhoto(profile.getUser().getId(), service.getId(), image("file"));
+        var old = photoRepository.findByPrestationOrderByDisplayOrderAsc(service);
+        mockMvc.perform(edit(service).param("mainPhotoId", old.get(1).getId().toString()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(photoRepository.findByPrestationOrderByDisplayOrderAsc(service).getFirst().getId()).isEqualTo(old.get(1).getId());
+        mockMvc.perform(edit(service).param("deletePhotoIds", old.get(0).getId().toString(), old.get(1).getId().toString()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(photoRepository.findByPrestationOrderByDisplayOrderAsc(service)).isEmpty();
+    }
+
+    private org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder edit(Prestation service) {
+        var request = org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/pro/prestations/{id}/modifier", service.getId());
+        request.with(asPro).with(csrf()).param("name", "Modification").param("type", "COIFFURE")
+                .param("price", "25").param("durationMinutes", "30");
+        return request;
+    }
+
+    private org.springframework.mock.web.MockMultipartFile image(String name) throws Exception {
+        return new org.springframework.mock.web.MockMultipartFile(name, "photo.png", "image/png",
+                com.beautyconnect.service.storage.ImageStorageTests.photo().getBytes());
     }
 
     private java.util.List<String> uploadedFiles() throws java.io.IOException {

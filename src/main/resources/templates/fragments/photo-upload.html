@@ -40,13 +40,13 @@
                         type="file"
                         name="photo"
                         th:id="${'upload-' + #strings.replace(action, '/', '-')}"
-                        accept="image/jpeg,image/png"
+                        accept="image/jpeg,image/png,image/webp"
                         required
                         class="form-control"
                         aria-describedby="photo-format"
                     />
                     <p id="photo-format" class="form-text mb-0">
-                        JPEG ou PNG · 5 Mo maximum · 20 mégapixels maximum.
+                        JPEG, PNG ou WebP · 5 Mo maximum · 20 mégapixels maximum.
                     </p>
                     <img
                         data-photo-preview

@@ -68,6 +68,53 @@ public class PhotoService {
         for (int i = 0; i < gallery.size(); i++) gallery.get(i).setDisplayOrder(i);
     }
 
+    /** Toutes les modifications de galerie sont validées et enregistrées ensemble. */
+    @Transactional
+    public void updateGallery(Long userId, Long id, MultipartFile mainFile,
+            java.util.List<MultipartFile> secondaryFiles, java.util.List<Long> deleteIds, Long mainPhotoId) {
+        var prestation = ownedPrestation(userId, id);
+        entityManager.lock(prestation, LockModeType.PESSIMISTIC_WRITE);
+        var existing = new java.util.ArrayList<>(prestation.getPhotos());
+        var removals = deleteIds == null ? new java.util.HashSet<Long>() : new java.util.HashSet<>(deleteIds);
+        var existingIds = existing.stream().map(PrestationPhoto::getId).collect(java.util.stream.Collectors.toSet());
+        if (!existingIds.containsAll(removals) || (mainPhotoId != null && !existingIds.contains(mainPhotoId))) {
+            throw new ResourceNotFoundException("Photo introuvable pour cette prestation");
+        }
+        boolean replaceMain = mainFile != null && !mainFile.isEmpty();
+        var additions = secondaryFiles == null ? java.util.List.<MultipartFile>of()
+                : secondaryFiles.stream().filter(file -> !file.isEmpty()).toList();
+        if (replaceMain && !existing.isEmpty()) removals.add(existing.getFirst().getId());
+        int remaining = existing.size() - removals.size();
+        if (additions.size() > 4 || remaining + additions.size() + (replaceMain ? 1 : 0) > 5) {
+            throw new IllegalOperationException("Maximum 5 photos : supprimez une photo ou remplacez la principale avant d'en ajouter.");
+        }
+        if (!additions.isEmpty() && remaining == 0 && !replaceMain) {
+            throw new IllegalOperationException("Ajoutez une photo principale avant les photos secondaires.");
+        }
+        for (var photo : existing) {
+            if (removals.contains(photo.getId())) {
+                deleteAfterCommit(photo.getPublicId(), photo.getPhotoUrl());
+                prestation.getPhotos().remove(photo);
+            }
+        }
+        var ordered = new java.util.ArrayList<>(prestation.getPhotos());
+        if (replaceMain) ordered.addFirst(attachPhoto(prestation, mainFile));
+        else if (mainPhotoId != null && !removals.contains(mainPhotoId)) {
+            var selected = ordered.stream().filter(photo -> photo.getId().equals(mainPhotoId)).findFirst().orElseThrow();
+            ordered.remove(selected); ordered.addFirst(selected);
+        }
+        for (var file : additions) ordered.add(attachPhoto(prestation, file));
+        for (int i = 0; i < ordered.size(); i++) ordered.get(i).setDisplayOrder(i);
+    }
+
+    private PrestationPhoto attachPhoto(Prestation prestation, MultipartFile file) {
+        var result = upload(file);
+        var photo = photos.save(PrestationPhoto.builder().prestation(prestation).photoUrl(result.secureUrl())
+                .publicId(result.publicId()).displayOrder(prestation.getPhotos().size()).build());
+        prestation.getPhotos().add(photo);
+        return photo;
+    }
+
     @Transactional
     public void profilePhoto(Long userId, boolean professional, MultipartFile file) {
         if (professional) {

@@ -83,7 +83,7 @@ public class ProfessionalService {
     public org.springframework.data.domain.Page<ProfessionalProfile> searchPage(SearchCriteria criteria) {
         return professionalProfileRepository.searchPage(clean(criteria.getCity()), criteria.getGender(),
                 clean(criteria.getName()), criteria.getType(),
-                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 12));
+                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 6));
     }
 
     private String clean(String value) {
@@ -159,6 +159,13 @@ public class ProfessionalService {
     @Transactional
     public void addPrestationImage(ProfessionalProfile professional, Long prestationId, MultipartFile file) {
         photoService.addPrestationPhoto(professional.getUser().getId(), prestationId, file);
+    }
+
+    @Transactional
+    public void updatePrestationWithPhotos(ProfessionalProfile professional, Long id, PrestationForm form,
+            MultipartFile mainFile, List<MultipartFile> secondaryFiles, List<Long> deleteIds, Long mainPhotoId) {
+        updatePrestation(professional, id, form);
+        photoService.updateGallery(professional.getUser().getId(), id, mainFile, secondaryFiles, deleteIds, mainPhotoId);
     }
 
     @Transactional

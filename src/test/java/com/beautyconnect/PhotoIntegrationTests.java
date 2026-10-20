@@ -40,6 +40,27 @@ class PhotoIntegrationTests {
         var profile = profiles.save(ProfessionalProfile.builder().user(owner).businessName("Atelier test").city("Paris").targetGender(TargetGender.MIXTE).validated(true).build());
         prestation = prestations.save(Prestation.builder().professional(profile).name("Coupe test").type(ServiceType.COIFFURE).durationMinutes(30).price(BigDecimal.TEN).build());
     }
+    @Test void professionalCoverAndPersonalAvatarUploadSeparatelyAndRejectInvalidReplacement() throws Exception {
+        mvc.perform(multipart("/pro/profil/photo/upload").file(ImageStorageTests.webp())
+                .with(user(new CustomUserDetails(owner))).with(csrf()))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"));
+        String cover = profiles.findByUserId(owner.getId()).orElseThrow().getProfilePhotoUrl();
+        assertThat(cover).endsWith(".png");
+        assertThat(users.findById(owner.getId()).orElseThrow().getProfilePhotoUrl()).isNull();
+        mvc.perform(multipart("/compte/photo/upload").file(ImageStorageTests.webp())
+                .with(user(new CustomUserDetails(owner))).with(csrf()))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"));
+        entityManager.flush(); entityManager.clear();
+        String avatar = users.findById(owner.getId()).orElseThrow().getProfilePhotoUrl();
+        assertThat(avatar).endsWith(".png").isNotEqualTo(cover);
+        mvc.perform(multipart("/compte/photo/upload")
+                .file(new org.springframework.mock.web.MockMultipartFile("photo", "faux.webp", "image/webp", "invalid".getBytes()))
+                .with(user(new CustomUserDetails(owner))).with(csrf()))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("error"));
+        assertThat(users.findById(owner.getId()).orElseThrow().getProfilePhotoUrl()).isEqualTo(avatar);
+        assertThat(profiles.findByUserId(owner.getId()).orElseThrow().getProfilePhotoUrl()).isEqualTo(cover);
+    }
+
     @Test void uploadAndReadGalleryThroughActualMvcRoutes() throws Exception {
         mvc.perform(multipart("/pro/prestations/{id}/photos/upload", prestation.getId()).file(ImageStorageTests.photo()).with(user(new CustomUserDetails(owner))).with(csrf()))
                 .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"));

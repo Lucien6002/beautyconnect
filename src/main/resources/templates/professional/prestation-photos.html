@@ -64,8 +64,7 @@
                                     <img
                                         th:src="${photo.photoUrl}"
                                         th:alt="${prestation.name} + ' — photo ' + ${photo.displayOrder + 1}"
-                                        class="card-img-top"
-                                        style="height: 200px; object-fit: cover"
+                                        class="card-img-top bc-gallery-photo"
                                     />
                                     <div class="card-body p-2 text-center">
                                         <p class="small fw-bold mb-2" th:text="${state.first ? 'Photo principale' : 'Photo secondaire ' + state.index}"></p>
@@ -110,13 +109,13 @@
                                     type="file"
                                     name="photo"
                                     id="prestationPhoto"
-                                    accept="image/jpeg,image/png"
+                                    accept="image/jpeg,image/png,image/webp"
                                     class="form-control"
                                     required
                                 />
                                 <div class="form-text">
-                                    Maximum 5 photos par prestation. JPEG ou
-                                    PNG, 5 Mo et 20 mégapixels maximum. Les
+                                    Maximum 5 photos par prestation. JPEG, PNG ou
+                                    WebP, 5 Mo et 20 mégapixels maximum. Les
                                     photos seront publiques.
                                 </div>
                             </div>

@@ -23,6 +23,20 @@ public class ImageStorageTests {
         ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB), "png", output);
         return new MockMultipartFile("photo", "../../original.html", "application/octet-stream", output.toByteArray());
     }
+    public static MockMultipartFile webp() {
+        // WebP lossless 8×8, transparence incluse : doit être décodé réellement.
+        return new MockMultipartFile("photo", "portrait.webp", "image/webp",
+                java.util.Base64.getDecoder().decode("UklGRh4AAABXRUJQVlA4TBEAAAAvB8ABEAdQoorUrICBiOh/AAA="));
+    }
+    @Test void acceptsWebpAndStoresAReadablePngWithTransparency() throws Exception {
+        var result = local().upload(webp());
+        assertThat(result.publicId()).endsWith(".png");
+        var image = ImageIO.read(directory.resolve(result.publicId().substring(6)).toFile());
+        assertThat(image.getWidth()).isEqualTo(8);
+        assertThat(image.getColorModel().hasAlpha()).isTrue();
+        assertThat(image.getRGB(0, 0) >>> 24).isEqualTo(128);
+        local().delete(result.publicId());
+    }
     private ConfiguredImageStorageService local() { return new ConfiguredImageStorageService("local", directory.toString(), "", "", "", "beautyconnect", "dynamic"); }
     @Test void usesActualImageContentsAndGeneratedNameAndDeletesFile() throws Exception {
         var storage = local(); var result = storage.upload(photo());
@@ -63,6 +77,16 @@ public class ImageStorageTests {
                 .andExpect(content().string(containsString("public_id=beautyconnect%2Fphoto1")))
                 .andRespond(withSuccess("{\"result\":\"ok\"}", MediaType.APPLICATION_JSON));
         storage.delete(result.publicId()); server.verify();
+    }
+    @Test void cloudinaryForbiddenExplainsPermissionsWithoutExposingProviderBody() throws Exception {
+        var builder = RestClient.builder(); var server = MockRestServiceServer.bindTo(builder).build();
+        var storage = new ConfiguredImageStorageService("cloudinary", directory.toString(), "test", "key", "secret", "beautyconnect", "dynamic");
+        ReflectionTestUtils.setField(storage, "cloud", builder.build());
+        server.expect(requestTo("/upload")).andRespond(withStatus(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body("confidential-provider-response"));
+        assertThatThrownBy(() -> storage.upload(photo())).isInstanceOf(ImageUploadException.class)
+                .hasMessageContaining("autorisations").hasMessageNotContaining("confidential-provider-response");
+        server.verify();
     }
     @Test void cloudinaryOutageReturnsAnActionableError() throws Exception {
         var builder = RestClient.builder(); var server = MockRestServiceServer.bindTo(builder).build();

@@ -45,6 +45,32 @@ class FranceDemoDataTests {
     @Autowired FavoriteRepository favorites;
     @Autowired PasswordEncoder encoder;
 
+    @Test void showcaseCreatesSixEditablePublicAccountsAcrossSixCitiesAndPreservesChanges() throws Exception {
+        assertThat(data.seedShowcase().professionalsCreated()).isEqualTo(6);
+        var catalog = profiles.findAll();
+        assertThat(catalog).hasSize(6).allMatch(p -> p.isValidated() && p.isCoordinatesPublic() && p.getUser().isEnabled());
+        assertThat(catalog).extracting(ProfessionalProfile::getCity)
+                .containsExactlyInAnyOrder("Paris", "Lyon", "Lille", "Nantes", "Bordeaux", "Marseille");
+        assertThat(prestations.count()).isEqualTo(12);
+        for (var profile : catalog) {
+            assertThat(prestations.findByProfessional(profile)).hasSize(2);
+            assertThat(slots.findByProfessionalAndAvailableTrueAndStartDateTimeAfterOrderByStartDateTimeAsc(profile, java.time.LocalDateTime.now())).isNotEmpty();
+        }
+        var sarah = users.findByEmail("sarah@beautyconnect.local").orElseThrow();
+        assertThat(encoder.matches("Pro12345!", sarah.getPassword())).isTrue();
+        var profile = profiles.findByUserId(sarah.getId()).orElseThrow();
+        profile.setBusinessName("Mon salon modifié");
+        profile.setProfilePhotoUrl("https://example.test/photo.jpg");
+        profiles.save(profile);
+        long slotsBefore = slots.count();
+        assertThat(data.seedShowcase().professionalsCreated()).isZero();
+        assertThat(profiles.count()).isEqualTo(6);
+        assertThat(prestations.count()).isEqualTo(12);
+        assertThat(slots.count()).isEqualTo(slotsBefore);
+        assertThat(profiles.findByUserId(sarah.getId()).orElseThrow().getBusinessName()).isEqualTo("Mon salon modifié");
+        assertThat(profiles.findByUserId(sarah.getId()).orElseThrow().getProfilePhotoUrl()).isEqualTo("https://example.test/photo.jpg");
+    }
+
     @Test void twoCitiesProvideDistinctCatalogsPublicAndPrivateLocationsAndBookableSlots() throws Exception {
         assertThat(data.seed(2).professionalsCreated()).isEqualTo(6);
         var demoUsers = users.findAll().stream().filter(u -> u.getEmail().endsWith(FranceDemoData.DOMAIN)).toList();

@@ -7,8 +7,8 @@
 ## Préparer la session
 
 - [ ] Suivre le lancement du [README](../README.md). L'accueil répond ; Mailpit s'ouvre sur `http://localhost:8025`.
-- [ ] Activer le jeu France si nécessaire, redémarrer, puis désactiver son initialisation. Ouvrir la recherche : plusieurs villes et catégories sont proposées.
-- [ ] Préparer une photo JPEG, une PNG, un fichier texte renommé `.jpg`, un fichier dépassant 5 Mo. Utiliser des images destinées à être publiques.
+- [ ] Sur la base locale préparée, laisser le jeu France désactivé. Ouvrir la recherche sans filtres : six établissements dans six villes. Sur une base vide uniquement, initialiser les six comptes selon le README.
+- [ ] Préparer une photo JPEG, une PNG, une WebP, un fichier texte renommé `.jpg`, un fichier dépassant 5 Mo. Utiliser des images destinées à être publiques.
 - [ ] Utiliser trois profils de navigateur séparés pour client, professionnel et admin, ou se déconnecter entre les rôles. Deux onglets d'une même session partagent le même compte.
 - [ ] Créer un compte client jetable pour le changement de mot de passe et la suppression du compte ; conserver les comptes communs pour les autres membres.
 
@@ -16,13 +16,27 @@ Comptes de démarrage :
 
 | Usage | Identifiant | Mot de passe |
 |---|---|---|
-| Client avec historique Paris | `client1@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Client du rendez-vous exemple chez Sarah | `client1@demo.beautyconnect.invalid` | `DemoFrance123!` |
 | Autre client | `client2@demo.beautyconnect.invalid` | `DemoFrance123!` |
-| Pro Paris | `coiffure.75056@demo.beautyconnect.invalid` | `DemoFrance123!` |
-| Autre pro Lyon | `onglerie.69123@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Pro Paris | `sarah@beautyconnect.local` | `Pro12345!` |
+| Autre pro Lyon | `chloe@beautyconnect.local` | `Pro12345!` |
 | Admin local | `admin@beautyconnect.local` | `Admin123!` |
 
 Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le jeu France. Si les comptes ont été modifiés, utiliser leurs identifiants actuels. Ne jamais réutiliser ces secrets en production.
+
+## Parcours conseillé pour la recette de ce soir
+
+Point de départ de la base locale : **six établissements**, **un seul rendez-vous confirmé chez Sarah**, aucun ancien avis lié aux rendez-vous retirés. Ce rendez-vous est un exemple ; créer des rendez-vous supplémentaires pour les scénarios ci-dessous. Ne pas supposer qu'un compte nouvellement initialisé possède cet exemple.
+
+1. Ouvrir trois navigateurs ou profils séparés : client, professionnel, administrateur. Tester l'accueil, les six fiches, les six points de carte et les galeries Cloudinary.
+2. Avec Sarah, créer une prestation temporaire « Recette — à retirer » avec principale et secondaires, puis un créneau futur. Avec le client 2, réserver ce créneau. Vérifier le même rendez-vous côté client, côté Sarah et le mail dans Mailpit.
+3. Annuler depuis le client. Vérifier le statut côté Sarah et que le créneau redevient réservable. Le réserver à nouveau pour vérifier sa réutilisation.
+4. Pour tester un conflit, ouvrir deux comptes clients distincts et essayer le même créneau : une seule réservation doit réussir.
+5. Pour le parcours terminé → avis, suivre P15 : créer un rendez-vous de recette, le terminer depuis Sarah (le contrôle de date n’est pas encore imposé), puis déposer l'avis depuis le compte du client associé. Vérifier ensuite sa modération par l'admin.
+6. Avec un autre compte professionnel, vérifier qu'il ne peut modifier ni les photos ni les réservations de Sarah. Tester aussi l'inscription d'un pro temporaire, son activation puis sa validation par l'admin.
+7. Nettoyer uniquement les objets « Recette — à retirer ». Une prestation déjà utilisée par un rendez-vous doit être retirée du catalogue plutôt que supprimée définitivement. Conserver les preuves et noter les anomalies dans le tableau final.
+
+Les six identifiants professionnels figurent dans le [README](../README.md#catalogue-de-présentation--six-établissements). Pour les cas localisation privée, fiche vide, suspension ou attente de validation, utiliser un compte temporaire : les six comptes de présentation restent publiés pour le parcours principal.
 
 ## V — Visiteur
 
@@ -45,7 +59,7 @@ Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le je
 |---|---|---|
 | [ ] C1 | S'inscrire avec une nouvelle adresse, ouvrir le message Mailpit et le lien d'activation. | Compte activé ; connexion possible. Avant activation, l'accès connecté est refusé. |
 | [ ] C2 | Réutiliser le lien ; demander un renvoi depuis la page prévue. | Réponse contrôlée, aucune page 500 ; activation du compte inchangée. |
-| [ ] C3 | Tester un mauvais mot de passe puis le bon. | Erreur compréhensible puis accès à l'espace client. |
+| [ ] C3 | Tester un mauvais mot de passe puis le bon. | Erreur compréhensible puis retour à l’accueil en étant connecté ; le compte et les rendez-vous restent accessibles par la navigation. |
 | [ ] C4 | Utiliser la navigation latérale pour passer entre carnet, favoris, rendez-vous et compte. | Navigation visible, rubrique courante indiquée, identité Client visible. |
 | [ ] C5 | Ajouter puis retirer un favori sur une fiche ; consulter les favoris. | État cohérent sur la fiche et dans la liste, aucun doublon. |
 | [ ] C6 | Choisir une prestation puis un créneau futur, réserver. | Prestation sélectionnée correcte, confirmation immédiate, rendez-vous dans le carnet et mail Mailpit. |
@@ -67,10 +81,12 @@ Ils nécessitent le profil `dev` ; ceux du domaine `.invalid` nécessitent le je
 | [ ] P2 | Après validation admin, renseigner nom, présentation, ville et clientèle. | Informations sauvegardées et visibles sur la vitrine publique. |
 | [ ] P3 | Ajouter une prestation nommée « Recette — à retirer », prix, durée, description, photo principale et plusieurs photos secondaires dans le même formulaire. | Création réussie en une fois ; principale affichée en premier et secondaires présentes dans la galerie publique. |
 | [ ] P4 | Modifier cette prestation ; soumettre aussi nom vide, prix négatif et durée inférieure à 5 min. | Valeurs valides sauvegardées ; champs invalides signalés sans perte des autres saisies. |
+| [ ] P4a | Dans Modifier, remplacer la principale, supprimer une secondaire et en ajouter une ; enregistrer. | Galerie et fiche publique à jour, cinq photos maximum, anciennes images remplacées supprimées du stockage. |
+| [ ] P4b | Modifier le nom et envoyer une nouvelle principale valide avec une secondaire invalide. | Refus expliqué ; ancien nom et anciennes photos conservés, aucun nouveau fichier orphelin. |
 | [ ] P5 | Cliquer Photos, ajouter des JPEG/PNG jusqu'à cinq, essayer une sixième. | Couverture changée sur la vitrine, aperçu correct, limite de cinq respectée. |
 | [ ] P6 | Envoyer le faux JPEG, puis une image dépassant 5 Mo. | Fichiers refusés ; aucun ajout en galerie ; message indique le format ou la limite. |
 | [ ] P7 | Supprimer une photo, ajouter une autre ; recharger la galerie puis la fiche publique. | Bonne photo supprimée, nouvelle photo présente, place disponible récupérée. |
-| [ ] P8 | Remplacer puis supprimer la photo de l'établissement. | Image mise à jour dans la recherche et sur la vitrine ; état sans photo propre après suppression. |
+| [ ] P8 | Remplacer puis supprimer la photo principale de l'établissement, dont un essai avec un fichier WebP. | Image mise à jour dans la recherche et sur la vitrine ; état sans photo propre après suppression. |
 | [ ] P9 | Retirer la prestation, consulter les prestations supprimées, restaurer. | Disparition du catalogue public puis réapparition ; historique des rendez-vous conservé. |
 | [ ] P10 | Retirer puis supprimer définitivement la prestation de recette sans rendez-vous. | Confirmation explicite ; prestation et galerie disparaissent. |
 | [ ] P11 | Tenter la suppression définitive d'une prestation déjà utilisée dans un rendez-vous. | Refus avec explication ; historique préservé. |
@@ -99,6 +115,8 @@ Limites à observer : « Terminer » ne vérifie pas encore que la date du rende
 ## M — Cloudinary réel, après configuration
 
 Ces cases restent vides si les identifiants réels ne sont pas renseignés. Les tests automatisés simulés ne valident pas ce paragraphe.
+
+Recette du 20 octobre 2026 : le refus initial a été corrigé côté Cloudinary. Authentification, import réel des photos dans `beautyconnect`, remplacement et suppression via les formulaires professionnels confirmés. Un fichier secondaire invalide annule les modifications et conserve les anciennes informations et photos. Les six fiches publiques, les six marqueurs et le rendu mobile ont été vérifiés. Les cases ci-dessous servent à votre propre recette ; ne les cocher qu’après exécution. Aucun secret ne doit être ajouté à ce fichier.
 
 - [ ] M1 — Renseigner les clés dans `.env`, `IMAGE_STORAGE_PROVIDER=cloudinary`, `CLOUDINARY_FOLDER=beautyconnect` et le mode correct ; redémarrer sans erreur.
 - [ ] M2 — Ajouter une photo d'établissement puis une photo de prestation. Vérifier dans la Media Library le dossier `beautyconnect`, les deux fichiers et les URLs HTTPS dans l'application.

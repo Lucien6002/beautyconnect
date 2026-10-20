@@ -167,15 +167,20 @@ body {
 }
 .bc-result-photo {
     width: 100%;
-    height: 180px;
-    object-fit: cover;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    padding: 12px;
+    background: #f4f0fa;
     border-radius: 20px 20px 0 0;
 }
 .bc-profile-cover {
     display: block;
     width: 100%;
-    height: 280px;
-    object-fit: cover;
+    height: clamp(280px, 40vw, 440px);
+    object-fit: contain;
+    padding: 16px;
+    background: #f4f0fa;
     border-radius: 14px;
     margin-bottom: 24px;
 }
@@ -190,9 +195,12 @@ body {
     font-size: 1.5rem;
 }
 .bc-avatar-large {
-    width: 112px;
-    height: 112px;
-    object-fit: cover;
+    width: 144px;
+    height: 176px;
+    object-fit: contain;
+    padding: 8px;
+    background: #f4f0fa;
+    flex-shrink: 0;
     border-radius: 28px;
     border: 5px solid var(--bc-space-surface, var(--bc-primary-soft));
 }
@@ -280,8 +288,10 @@ body {
 }
 .bc-service-gallery img {
     width: 100%;
-    height: 220px;
-    object-fit: cover;
+    height: clamp(280px, 32vw, 400px);
+    object-fit: contain;
+    padding: 12px;
+    background: #f4f0fa;
 }
 .bc-service-placeholder {
     display: flex;
@@ -343,8 +353,8 @@ body > footer {
         gap: 16px;
     }
     .bc-avatar-large {
-        width: 76px;
-        height: 76px;
+        width: 96px;
+        height: 120px;
         border-radius: 20px;
     }
     .bc-photo-editor-intro h2 {
@@ -355,14 +365,16 @@ body > footer {
         box-shadow: 8px 8px 0 var(--bc-mint);
     }
     .bc-profile-cover {
-        height: 200px;
+        height: 320px;
     }
 }
 .bc-home-service-photo {
     width: calc(100% + 48px);
     max-width: none;
-    height: 180px;
-    object-fit: cover;
+    height: 260px;
+    object-fit: contain;
+    padding: 12px;
+    background: #f4f0fa;
     margin: -24px -24px 22px;
 }
 .bc-footer-layout {
@@ -392,4 +404,30 @@ body > footer {
 .bc-service-photo-fields legend { float: none; width: auto; font-size: 1.1rem; font-family: var(--bc-font-titles); margin-bottom: 12px; }
 .bc-service-photo-slot { padding: 16px; border: 1px dashed #c9b7dd; border-radius: 12px; background: white; }
 .bc-photo-previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.bc-photo-previews img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-top: 12px; }
+.bc-photo-previews img { width: 100%; height: 180px; object-fit: contain; background: #f4f0fa; padding: 8px; border-radius: 10px; margin-top: 12px; }
+.bc-existing-photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.bc-existing-photo { min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: white; border: 1px solid #e6dced; border-radius: 12px; }
+.bc-existing-photo > img { width: 100%; height: 240px; object-fit: contain; background: #f4f0fa; padding: 8px; border-radius: 8px; }
+.bc-existing-photo:has([name="deletePhotoIds"]:checked) > img { opacity: .4; }
+@media (max-width: 575px) { .bc-existing-photo-grid { grid-template-columns: 1fr; } }
+
+.bc-gallery-photo { width: 100%; height: 320px; object-fit: contain; padding: 12px; background: #f4f0fa; }
+
+/* Catalogue pro compact : partager l'espace avec le formulaire de création. */
+.table-responsive > .bc-services-table { min-width: 0; table-layout: fixed; width: 100%; font-size: .84rem; }
+.bc-services-table th:first-child { width: 50%; }
+.bc-services-table th:nth-child(2) { width: 23%; }
+.bc-services-table th:last-child { width: 27%; }
+.bc-services-table > thead > tr > th, .bc-services-table > tbody > tr > td { padding: 12px 9px; }
+.bc-service-summary { display: flex; align-items: flex-start; gap: 10px; }
+.bc-service-summary > div { min-width: 0; }
+.bc-service-summary .bc-service-thumb { flex-shrink: 0; width: 44px; height: 56px; float: none; margin: 0; object-fit: contain; background: #f4f0fa; border-radius: 7px; }
+.bc-service-type, .bc-service-rate > span { display: block; margin-top: 5px; font-size: .72rem; color: var(--bc-muted); }
+.bc-services-table .bc-photo-link { margin-top: 5px; font-size: .73rem; }
+.bc-services-table .btn { padding: 6px 8px; font-size: .75rem; border-radius: 8px; }
+@media (max-width: 575px) {
+    .bc-service-summary { flex-direction: column; gap: 6px; }
+    .bc-services-table th:first-child { width: 44%; }
+    .bc-services-table th:nth-child(2) { width: 25%; }
+    .bc-services-table th:last-child { width: 31%; }
+}

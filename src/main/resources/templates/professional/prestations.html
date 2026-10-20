@@ -17,17 +17,15 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-xl-7">
+        <div class="col-xl-6">
             <div class="card shadow-sm">
                 <div class="table-responsive">
-                    <table class="table mb-0 align-middle">
-                        <thead><tr><th>Nom</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr></thead>
+                    <table class="table bc-services-table mb-0 align-middle">
+                        <thead><tr><th>Prestation</th><th>Tarif / durée</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
                         <tbody>
                         <tr th:each="p : ${prestations}">
-                            <td><img th:if="${!#lists.isEmpty(p.photos)}" th:src="${p.photos[0].photoUrl}" alt="" class="bc-service-thumb" width="64" height="64"/><strong th:text="${p.name}"></strong><a th:href="@{/pro/prestations/{id}/photos(id=${p.id})}" class="bc-photo-link"><i class="bi bi-images" aria-hidden="true"></i> Photos <span th:text="${#lists.size(p.photos)} + '/5'"></span></a></td>
-                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
-                            <td th:text="${p.durationMinutes} + ' min'"></td>
-                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
+                            <td><div class="bc-service-summary"><img th:if="${!#lists.isEmpty(p.photos)}" th:src="${p.photos[0].photoUrl}" alt="" class="bc-service-thumb" width="44" height="56"/><div><strong th:text="${p.name}"></strong><span class="bc-service-type" th:text="${p.type}"></span><a th:href="@{/pro/prestations/{id}/photos(id=${p.id})}" class="bc-photo-link"><i class="bi bi-images" aria-hidden="true"></i> Photos <span th:text="${#lists.size(p.photos)} + '/5'"></span></a></div></div></td>
+                            <td class="bc-service-rate"><strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong><span th:text="${p.durationMinutes} + ' min'"></span></td>
                             <td><a class="btn btn-sm btn-outline-primary mb-2" th:href="@{/pro/prestations/{id}/modifier(id=${p.id})}">Modifier</a>
                                 <form th:action="@{'/pro/prestations/' + ${p.id} + '/supprimer'}" method="post"
                                       onsubmit="return confirm('Retirer cette prestation ? Vous pourrez la restaurer depuis Prestations supprimees.');">
@@ -44,7 +42,7 @@
             </div>
         </div>
 
-        <div class="col-xl-5">
+        <div class="col-xl-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-white"><h2 class="h6 mb-0">Ajouter une prestation</h2></div>
                 <div class="card-body">
@@ -86,16 +84,16 @@
                             <div class="bc-service-photo-slot">
                                 <label class="form-label fw-bold" for="firstPhoto"><i class="bi bi-image" aria-hidden="true"></i> Photo principale</label>
                                 <p class="form-text mt-0" id="mainPhotoHelp">La couverture affichée en premier sur votre vitrine et dans le catalogue.</p>
-                                <input id="firstPhoto" type="file" name="file" accept="image/jpeg,image/png" class="form-control" aria-describedby="mainPhotoHelp servicePhotoLimits" data-service-main-photo/>
+                                <input id="firstPhoto" type="file" name="file" accept="image/jpeg,image/png,image/webp" class="form-control" aria-describedby="mainPhotoHelp servicePhotoLimits" data-service-main-photo/>
                                 <div class="bc-photo-previews" data-service-main-preview></div>
                             </div>
                             <div class="bc-service-photo-slot mt-3">
                                 <label class="form-label fw-bold" for="secondaryPhotos"><i class="bi bi-images" aria-hidden="true"></i> Photos secondaires</label>
                                 <p class="form-text mt-0" id="secondaryPhotoHelp">Sélectionnez jusqu’à quatre images en une fois pour compléter la photo principale.</p>
-                                <input id="secondaryPhotos" type="file" name="secondaryPhotos" accept="image/jpeg,image/png" multiple class="form-control" aria-describedby="secondaryPhotoHelp servicePhotoLimits" data-service-secondary-photos/>
+                                <input id="secondaryPhotos" type="file" name="secondaryPhotos" accept="image/jpeg,image/png,image/webp" multiple class="form-control" aria-describedby="secondaryPhotoHelp servicePhotoLimits" data-service-secondary-photos/>
                                 <div class="bc-photo-previews" data-service-secondary-previews></div>
                             </div>
-                            <p class="form-text mb-0" id="servicePhotoLimits">JPEG ou PNG · 5 Mo et 20 mégapixels maximum par photo · 5 photos au total.</p>
+                            <p class="form-text mb-0" id="servicePhotoLimits">JPEG, PNG ou WebP · 5 Mo et 20 mégapixels maximum par photo · 5 photos au total.</p>
                             <p data-service-photo-status role="status" class="small mt-2 mb-0"></p>
                         </fieldset>
                         <button type="submit" class="btn btn-primary w-100 mt-3">Ajouter la prestation</button>

@@ -16,9 +16,15 @@ bash ./gradlew bootRun
 
 Ouvrir **http://localhost:8080**. Les messages d'activation et de réservation arrivent dans **http://localhost:8025** (Mailpit, aucun email externe en configuration locale). PostgreSQL écoute sur `localhost:5433`. Le profil par défaut est `dev` ; Flyway applique les migrations et Hibernate vérifie le schéma. Une base vide est créée automatiquement par PostgreSQL au premier démarrage du conteneur.
 
+Le diaporama d’accueil change d’image toutes les **8 secondes** ; il se met en pause au survol, pendant le focus clavier ou si l’onglet est masqué.
+
+Après connexion, un client arrive à l’accueil pour chercher une prestation ; les professionnels et administrateurs arrivent dans leur tableau de bord.
+
+La connexion expire après **2 heures d’inactivité en développement**, **30 minutes en production** (`SESSION_TIMEOUT` permet de changer cette durée). Le cookie de session porte un nom distinct par port pour éviter les collisions entre les versions sur 8080 et 8097. Un redémarrage Spring peut fermer la session ; il faut alors se reconnecter.
+
 Pour arrêter : `Ctrl+C` dans le terminal Spring, puis `docker compose stop`. Cette commande conserve les données. Éviter `docker compose down -v` : elle supprimerait la base.
 
-Le frontend utilise des polices, Bootstrap, des icônes et les tuiles de carte sur Internet. Le catalogue reste consultable si le routage ORS n'est pas configuré.
+Le frontend utilise des polices, Bootstrap, des icônes et les tuiles de carte sur Internet. Le catalogue reste consultable si le routage ORS n'est pas configuré. La recherche affiche six établissements par page ; les pages suivantes conservent les filtres.
 
 ## Comptes de développement
 
@@ -32,33 +38,36 @@ Ces comptes connus sont créés uniquement en développement. Ne jamais utiliser
 
 Les valeurs `ADMIN_EMAIL` et `ADMIN_PASSWORD`, si définies, remplacent celles de l'administrateur. Les initialiseurs ne réinitialisent pas les mots de passe des comptes existants.
 
-## Remplir le catalogue pour une présentation
+## Catalogue de présentation : six établissements
 
-Dans `.env`, ajouter :
+Le jeu de présentation contient **six établissements au total**, répartis entre Paris, Lyon, Lille, Nantes, Bordeaux et Marseille. Chaque établissement appartient à un compte professionnel utilisable : sa fiche, ses prestations, ses disponibilités et ses photos se modifient dans l'espace professionnel.
 
-```dotenv
-DEMO_FRANCE_ENABLED=true
-DEMO_FRANCE_CITY_LIMIT=30
-```
+Pour une base de développement vide, ajouter `DEMO_FRANCE_ENABLED=true` à `.env`, démarrer Spring, puis remettre la valeur à `false`. Le démarrage prépare ces six comptes et trois clients, sans envoyer de mails ni importer de photos. Il ne supprime aucun compte existant et ne remplace pas ses modifications. L'ancien réglage `DEMO_FRANCE_CITY_LIMIT` n'est plus utilisé au démarrage.
 
-Relancer Spring. Jusqu'à **90 professionnels**, sur **30 communes**, avec 180 prestations actives et des scénarios de réservation, favoris et avis sont générés. Pour une petite base, choisir par exemple `DEMO_FRANCE_CITY_LIMIT=5`. Repasser ensuite `DEMO_FRANCE_ENABLED=false` : les données enregistrées restent disponibles.
-
-| Scénario | Email | Mot de passe |
+| Établissement | Compte professionnel | Mot de passe de développement |
 |---|---|---|
-| Client avec historique, favori et avis | `client1@demo.beautyconnect.invalid` | `DemoFrance123!` |
-| Deux autres clients | `client2@demo.beautyconnect.invalid`, `client3@demo.beautyconnect.invalid` | `DemoFrance123!` |
-| Professionnel à Paris | `coiffure.75056@demo.beautyconnect.invalid` | `DemoFrance123!` |
-| Professionnel à Lyon | `onglerie.69123@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Sarah — Paris | `sarah@beautyconnect.local` | `Pro12345!` |
+| Chloé — Lyon | `chloe@beautyconnect.local` | `Pro12345!` |
+| Coiffure — Lille | `coiffure.59350@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Onglerie — Nantes | `onglerie.44109@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Onglerie — Bordeaux | `onglerie.33063@demo.beautyconnect.invalid` | `DemoFrance123!` |
+| Maquillage — Marseille | `soin.13055@demo.beautyconnect.invalid` | `DemoFrance123!` |
 
-**Les établissements, comptes, prix, rendez-vous et avis de ce jeu sont fictifs.** Les noms des établissements n'ont pas de préfixe `[DÉMO]`, mais les emails techniques et les présentations identifient la simulation. Les coordonnées correspondent au centre des communes, pas à des salons réels. Certaines localisations restent privées ; certains comptes servent à tester l'attente de validation ou la suspension. Les photos des prestations doivent être ajoutées par un professionnel : aucun faux portfolio n'est généré.
+Clients de recette : `client1@demo.beautyconnect.invalid`, `client2@demo.beautyconnect.invalid`, `client3@demo.beautyconnect.invalid` ; mot de passe commun `DemoFrance123!`. Léa et l'administrateur restent disponibles avec les identifiants ci-dessus.
 
-L'initialiseur est réexécutable sans dupliquer les comptes ni écraser leurs modifications. Il retire aussi l'ancien préfixe `[DÉMO]` des seuls noms générés restés inchangés et remplace les prénoms techniques `Démo` restés intacts par des prénoms de présentation. Il ne renouvelle pas les créneaux d'un compte déjà créé : ajouter des disponibilités depuis l'espace professionnel si elles sont passées. Il est exclu dès que `prod` est actif.
+**Les établissements, tarifs et prestations sont fictifs.** Les coordonnées indiquent le centre des communes, pas l'adresse de commerces réels. Les images fournies pour la présentation sont importées dans Cloudinary via les formulaires professionnels ; elles ne sont pas codées dans les templates et restent modifiables. Elles ne font pas partie de l'initialisation d'une base vide.
+
+La base locale a été réduite depuis l'ancien catalogue de 90 profils supplémentaires en conservant Sarah et Chloé, les prestations personnalisées et les photos existantes. Une sauvegarde locale a été réalisée avant le nettoyage. À la demande de recette, **un seul rendez-vous fictif confirmé chez Sarah est conservé**, sur un créneau futur ; les anciens avis liés aux huit autres rendez-vous ont été retirés. Une base nouvellement initialisée ne crée aucun rendez-vous ni avis automatiquement : les scénarios se font manuellement.
+
+Le jeu est exclu dès que le profil `prod` est actif. Pour conserver des essais manuels, laisser l'initialisation désactivée.
 
 ## Ajouter des photos et activer Cloudinary
 
 En local, cela fonctionne sans compte externe : **Mon profil** pour l'établissement, **Mon compte** pour l'avatar personnel et **Mes prestations → Photos** pour une galerie publique de cinq photos maximum par prestation. Le formulaire de création contient une photo principale et jusqu’à quatre photos secondaires, avec aperçu ; la prestation et ses photos sont enregistrées ensemble. La galerie permet ensuite de choisir une autre photo principale.
 
-Les fichiers acceptés sont de vraies images **JPEG ou PNG**, au maximum **5 Mo et 20 mégapixels**. Le serveur les décode puis les réencode ; le nom original n'est pas utilisé comme chemin. Les photos de profil professionnel et de prestations sont publiques, comme les avatars servis par URL. N'envoyer que des images destinées à être publiées.
+Les photos principales s’affichent en entier dans les cadres de la recherche, de l’accueil et des fiches, sans couper les portraits ou les réalisations. Les fichiers WebP sont décodés puis réencodés en PNG avant stockage.
+
+Les fichiers acceptés sont de vraies images **JPEG, PNG ou WebP**, au maximum **5 Mo et 20 mégapixels**. Le serveur les décode puis les réencode ; le nom original n'est pas utilisé comme chemin. Les photos de profil professionnel et de prestations sont publiques, comme les avatars servis par URL. N'envoyer que des images destinées à être publiées.
 
 Les champs suivants sont déjà prévus dans `.env.example` et dans le `.env` local préparé pour cette branche :
 
@@ -74,11 +83,15 @@ CLOUDINARY_FOLDER_MODE=dynamic
 
 Pour Cloudinary : renseigner les trois identifiants depuis les paramètres du compte, passer `IMAGE_STORAGE_PROVIDER=cloudinary`, puis **redémarrer Spring**. Le fichier `.env` est lu comme un fichier de propriétés : saisir les valeurs sans guillemets. Aucun upload preset n'est nécessaire : l'authentification se fait entre le serveur et Cloudinary. Le secret n'est jamais envoyé au navigateur. `.env` et `.env.local` sont ignorés par Git ; seul `.env.example` contient des valeurs vides.
 
+Si les identifiants sont valides mais que l’envoi renvoie HTTP 403 avec `missing permissions (actions=["create"])`, Cloudinary refuse la création d’actifs dans cet environnement. Vérifier dans Settings → API Keys que la clé est active et que les trois identifiants appartiennent au même environnement. Ce refus ne prouve pas à lui seul que la clé est la cause : vérifier les droits de l’environnement avec son administrateur ou le support Cloudinary si le problème persiste. Il n’existe pas nécessairement un bouton « create » dans la console. Renseigner les clés sans activer `IMAGE_STORAGE_PROVIDER=cloudinary` conserve le stockage local.
+
 Au premier envoi réussi, les images sont placées dans le dossier **`beautyconnect`** de la Media Library. `dynamic` convient aux environnements Cloudinary récents ; pour un ancien environnement utilisant les dossiers fixes, choisir `CLOUDINARY_FOLDER_MODE=fixed`. Le code utilise `asset_folder` ou `folder` selon ce mode ([référence officielle Cloudinary](https://cloudinary.com/documentation/image_upload_api_reference)).
+
+Dans **Prestations → Modifier**, vous pouvez remplacer la principale, choisir une photo existante comme couverture, ajouter des secondaires et cocher les suppressions. Les photos et les informations sont enregistrées ensemble ; si un fichier est refusé, les anciennes valeurs sont conservées. La limite reste de cinq photos.
 
 Les anciens fichiers locaux ne sont pas transférés automatiquement. Conserver `uploads/` pour qu'ils restent visibles, y compris après activation de Cloudinary. Les nouveaux fichiers enregistrent leur fournisseur et leur identifiant de suppression. Garder les identifiants Cloudinary tant que des images distantes sont utilisées. Pour le stockage local déployé, monter un volume persistant accessible en écriture et le sauvegarder ; les disques éphémères d'un hébergeur ne conviennent pas.
 
-Une suppression physique est déclenchée après validation de la transaction SQL. Si le fournisseur échoue, l'image n'est plus affichée mais un avertissement serveur identifie le nettoyage à reprendre ; aucune file de reprise automatique n'est encore implémentée. Les tests Cloudinary simulent l'API : une recette avec les vrais identifiants reste nécessaire.
+Une suppression physique est déclenchée après validation de la transaction SQL. Si le fournisseur échoue, l'image n'est plus affichée mais un avertissement serveur identifie le nettoyage à reprendre ; aucune file de reprise automatique n'est encore implémentée. La suite automatisée simule Cloudinary pour ne pas utiliser les secrets pendant les tests. La recette locale du 20 octobre 2026 a confirmé les envois, le remplacement et la suppression sur Cloudinary via les formulaires, ainsi que l’annulation des modifications sur image invalide. La recette manuelle complète de l’équipe reste à exécuter.
 
 ## Parcours disponibles
 

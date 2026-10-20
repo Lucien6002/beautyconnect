@@ -7,7 +7,6 @@
 | Priorité | Reste à faire | Responsable proposé | Preuve attendue |
 |---|---|---|---|
 | Haute | Exécuter la [recette manuelle par rôle](RECETTE-MANUELLE.md) et corriger les anomalies relevées. | Tous ; coordination Emmanuelle | Fiche remplie, navigateur/commit et captures des défauts. |
-| Haute | Configurer les vrais identifiants Cloudinary, vérifier envoi, dossier `beautyconnect`, remplacement et suppression. | Emmanuelle + Anaelle | M1–M7 remplis ; aucun secret dans Git. |
 | Haute | Valider la règle des avis : avis libres autorisés ou uniquement après rendez-vous terminé. Les deux existent actuellement. | Teddy + équipe | Règle décidée, interface explicite et tests alignés. |
 | Moyenne | Valider les formulaires de profil côté serveur : longueurs, valeurs vides et cohérence des champs ; décider si un changement sensible impose une revalidation. | Anaelle + Teddy | Saisies invalides refusées et politique documentée. |
 | Moyenne | Décider et implémenter le contrôle des chevauchements de réservations tenant compte des durées ; le doublon exact est déjà bloqué. | Manuel + Ulrich | Deux heures différentes qui se chevauchent ne créent pas de surbooking. |
@@ -27,7 +26,7 @@
 
 - Décider si le passage à « Terminé » doit attendre la fin effective du rendez-vous ; actuellement le statut et le propriétaire sont contrôlés, pas la date.
 - Ajouter des rappels de rendez-vous si l’équipe les retient ; les confirmations existent déjà.
-- Réordonner les photos dans une galerie : actuellement l'ordre est celui d'ajout.
+- Réordonner librement toutes les photos dans une galerie ; le choix d’une photo principale est déjà disponible.
 - Faire naviguer l'agenda entre plusieurs semaines : actuellement semaine courante.
 - Évaluer la pagination des grandes listes admin et les performances sur un volume réel.
 - Figer tarif et durée dans le rendez-vous si l'équipe veut préserver les conditions de réservation après modification du catalogue. Actuellement ils proviennent de la prestation référencée.

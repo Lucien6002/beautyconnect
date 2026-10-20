@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.MediaType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.util.LinkedMultiValueMap;
@@ -14,6 +15,7 @@ import java.util.*;
 
 /** Adaptateur unique : disque local par défaut, Cloudinary sur configuration explicite. */
 @Service
+@lombok.extern.slf4j.Slf4j
 public class ConfiguredImageStorageService implements ImageStorageService {
     private final Path directory;
     private final String provider;
@@ -39,10 +41,14 @@ public class ConfiguredImageStorageService implements ImageStorageService {
             if (!cloudName.matches("[a-zA-Z0-9_-]+") || apiKey.isBlank() || apiSecret.isBlank())
                 throw new IllegalStateException("Les trois variables CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY et CLOUDINARY_API_SECRET sont requises.");
             var factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(5000); factory.setReadTimeout(15000);
+            factory.setConnectTimeout(10000); factory.setReadTimeout(60000);
             cloud = RestClient.builder().baseUrl("https://api.cloudinary.com/v1_1/" + cloudName + "/image")
-                    .requestFactory(factory).defaultHeaders(h -> h.setBasicAuth(apiKey, apiSecret)).build();
+                    // Le multipart est borné à une image de 5 Mo. Le tampon permet
+                    // d'envoyer Content-Length plutôt qu'un flux HTTP chunked.
+                    .requestFactory(new BufferingClientHttpRequestFactory(factory))
+                    .defaultHeaders(h -> h.setBasicAuth(apiKey, apiSecret)).build();
         } else cloud = null;
+        log.info("Stockage des photos : {} (dossier {})", provider, provider.equals("cloudinary") ? folder : directory);
     }
 
     @Override
@@ -67,7 +73,19 @@ public class ConfiguredImageStorageService implements ImageStorageService {
             Files.write(directory.resolve(filename), image.bytes(), StandardOpenOption.CREATE_NEW);
             return new ImageUploadResult("local:" + filename, "/uploads/" + filename);
         } catch (ImageUploadException e) { throw e; }
-        catch (Exception e) { throw new ImageUploadException("La photo n'a pas pu être enregistrée. Réessayez dans un instant.", e); }
+        catch (Exception e) {
+            // Ne jamais journaliser les en-têtes, clés ou corps de réponse du fournisseur.
+            Throwable cause = e;
+            while (cause.getCause() != null) cause = cause.getCause();
+            String status = e instanceof org.springframework.web.client.RestClientResponseException response
+                    ? response.getStatusCode().toString() : "sans réponse HTTP";
+            log.warn("Envoi photo via {} refusé : {}, cause {}", provider, status, cause.getClass().getSimpleName());
+            if (e instanceof org.springframework.web.client.RestClientResponseException response
+                    && (response.getStatusCode().value() == 401 || response.getStatusCode().value() == 403)) {
+                throw new ImageUploadException("Cloudinary refuse l'envoi : vérifiez les identifiants et les autorisations de la clé API côté serveur.", e);
+            }
+            throw new ImageUploadException("La photo n'a pas pu être enregistrée. Réessayez dans un instant.", e);
+        }
     }
 
     @Override

@@ -160,21 +160,33 @@ public class ProfessionalDashboardController {
         form.setPrice(p.getPrice()); form.setDurationMinutes(p.getDurationMinutes());
         model.addAttribute("prestationForm", form);
         model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", p);
         model.addAttribute("types", ServiceType.values());
         return "professional/prestation-edit";
     }
 
     @PostMapping("/prestations/{id}/modifier")
     public String updatePrestation(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
-            @Valid @ModelAttribute PrestationForm prestationForm, BindingResult binding, Model model, RedirectAttributes flash) {
-        photoService.ownedPrestation(principal.getId(), id);
-        if (binding.hasErrors()) {
-            model.addAttribute("prestationId", id); model.addAttribute("types", ServiceType.values());
-            return "professional/prestation-edit";
+            @Valid @ModelAttribute PrestationForm prestationForm, BindingResult binding, Model model, RedirectAttributes flash,
+            @RequestParam(name = "file", required = false) MultipartFile mainFile,
+            @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryFiles,
+            @RequestParam(name = "deletePhotoIds", required = false) List<Long> deleteIds,
+            @RequestParam(name = "mainPhotoId", required = false) Long mainPhotoId) {
+        var prestation = photoService.ownedPrestation(principal.getId(), id);
+        if (!binding.hasErrors()) {
+            try {
+                professionalService.updatePrestationWithPhotos(professionalService.getProfileByUserId(principal.getId()),
+                        id, prestationForm, mainFile, secondaryFiles, deleteIds, mainPhotoId);
+                flash.addFlashAttribute("success", "La prestation et ses photos ont été mises à jour.");
+                return "redirect:/pro/prestations";
+            } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+                binding.reject("photos.invalid", ex.getMessage());
+            }
         }
-        professionalService.updatePrestation(professionalService.getProfileByUserId(principal.getId()), id, prestationForm);
-        flash.addFlashAttribute("success", "La prestation a été mise à jour.");
-        return "redirect:/pro/prestations";
+        model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", prestation);
+        model.addAttribute("types", ServiceType.values());
+        return "professional/prestation-edit";
     }
 
     @PostMapping("/prestations/{id}/supprimer")
