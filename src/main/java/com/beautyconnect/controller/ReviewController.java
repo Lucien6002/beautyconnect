@@ -27,7 +27,7 @@ public class ReviewController {
     private final ProfessionalService professionalService;
 
     @PostMapping("/avis/professionnels/{professionalId}")
-    public String addReview(@PathVariable Long professionalId,
+    public String addReview(@PathVariable("professionalId") Long professionalId,
                              @Valid @ModelAttribute ReviewForm reviewForm,
                              BindingResult bindingResult,
                              @AuthenticationPrincipal CustomUserDetails principal,

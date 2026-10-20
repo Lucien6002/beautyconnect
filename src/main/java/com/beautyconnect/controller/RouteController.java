@@ -20,7 +20,7 @@ public class RouteController {
     private final RoutingClient routingClient;
 
     @GetMapping("/professionnels/{id}")
-    public ResponseEntity<?> route(@PathVariable Long id, @RequestParam Double lat,
+    public ResponseEntity<?> route(@PathVariable("id") Long id, @RequestParam Double lat,
                                    @RequestParam Double lon, HttpSession session) {
         if (!LocationUtils.isValidPosition(lat, lon)) return error(400, "Coordonnées invalides");
         synchronized (session) {

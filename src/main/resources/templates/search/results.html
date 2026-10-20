@@ -33,23 +33,40 @@
     <noscript><p class="alert alert-info">La liste et les liens restent disponibles. Activez JavaScript pour la carte et le GPS.</p></noscript>
     <div class="row g-4">
         <div class="col-md-6 col-lg-4" th:each="pro : ${results}" th:id="'professional-' + ${pro.id}">
-            <article class="card h-100 shadow-sm"><div class="card-body">
-                <h2 class="h5 card-title" th:text="${pro.businessName}"></h2>
-                <p class="text-muted small mb-1" th:text="${pro.city}"></p>
-                <p><span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
-                    <span class="text-warning ms-2" th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)} + '/5'"></span></p>
-                <p th:if="${walking.containsKey(pro.id)}" class="small text-primary"
-                   th:text="${#numbers.formatDecimal(walking.get(pro.id).distanceKm(), 1, 1)} + ' km à pied · environ ' + ${#numbers.formatDecimal(walking.get(pro.id).durationMinutes(), 1, 0)} + ' min'"></p>
-                <p th:if="${distances.containsKey(pro.id) and !walking.containsKey(pro.id)}" class="small text-muted"
-                   th:text="${#numbers.formatDecimal(distances.get(pro.id), 1, 1)} + ' km à vol d’oiseau · trajet piéton indisponible'"></p>
-                <p th:if="${!pro.coordinatesPublic or pro.latitude == null or pro.longitude == null}" class="small text-muted">Coordonnées et distance indisponibles.</p>
-                <p class="card-text small" th:text="${pro.bio != null ? #strings.abbreviate(pro.bio, 100) : 'Aucune présentation.'}"></p>
-                <div class="d-flex flex-wrap gap-2">
-                    <a th:href="@{/professionnels/{id}(id=${pro.id})}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
-                    <button th:if="${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null}" type="button" class="btn btn-outline-secondary btn-sm show-on-map" th:attr="data-pro-id=${pro.id}">Voir sur la carte</button>
-                    <a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null ? pro.latitude + ',' + pro.longitude : pro.city},travelmode='transit')}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">Bus / transports</a>
+            <article class="card h-100 shadow-sm">
+                <div class="card-img-top position-relative" style="height: 200px; overflow: hidden; background-color: #f8f9fa;">
+                    <img th:if="${pro.profilePhotoUrl != null}" th:src="${pro.profilePhotoUrl}" alt="Photo de profil" class="w-100 h-100" style="object-fit: cover; object-position: center;"/>
+                    <div th:if="${pro.profilePhotoUrl == null}" class="w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: #f8f9fa;">
+                        <span class="text-muted small">Aucune photo</span>
+                    </div>
                 </div>
-            </div></article>
+                <div class="card-body">
+                    <h2 class="h5 card-title" th:text="${pro.businessName}"></h2>
+                    <p class="text-muted small mb-1" th:text="${pro.city}"></p>
+                    <p><span class="badge text-bg-secondary" th:text="${pro.targetGender}"></span>
+                        <span class="text-warning ms-2" th:text="${#numbers.formatDecimal(averageRatings.get(pro.id), 1, 1)} + '/5'"></span></p>
+                    <p th:if="${walking.containsKey(pro.id)}" class="small text-primary"
+                       th:text="${#numbers.formatDecimal(walking.get(pro.id).distanceKm(), 1, 1)} + ' km à pied · environ ' + ${#numbers.formatDecimal(walking.get(pro.id).durationMinutes(), 1, 0)} + ' min'"></p>
+                    <p th:if="${distances.containsKey(pro.id) and !walking.containsKey(pro.id)}" class="small text-muted"
+                       th:text="${#numbers.formatDecimal(distances.get(pro.id), 1, 1)} + ' km à vol d’oiseau · trajet piéton indisponible'"></p>
+                    <p th:if="${!pro.coordinatesPublic or pro.latitude == null or pro.longitude == null}" class="small text-muted">Coordonnées et distance indisponibles.</p>
+                    <p class="card-text small" th:text="${pro.bio != null ? #strings.abbreviate(pro.bio, 100) : 'Aucune présentation.'}"></p>
+                    <div th:if="${prestations[pro.id] != null and !#lists.isEmpty(prestations[pro.id])}" class="mb-2">
+                        <h6 class="small text-muted mb-1">Prestations:</h6>
+                        <div class="d-flex flex-wrap gap-1">
+                            <div th:each="p : ${prestations[pro.id]}" class="d-flex align-items-center bg-light rounded p-1" style="font-size: 0.8rem;">
+                                <img th:if="${p.photos != null and !#lists.isEmpty(p.photos)}" th:src="${p.photos[0].photoUrl}" alt="" style="width: 30px; height: 30px; object-fit: cover; margin-right: 5px;"/>
+                                <span th:text="${p.name}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a th:href="@{/professionnels/{id}(id=${pro.id})}" class="btn btn-outline-primary btn-sm">Voir le profil</a>
+                        <button th:if="${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null}" type="button" class="btn btn-outline-secondary btn-sm show-on-map" th:attr="data-pro-id=${pro.id}">Voir sur la carte</button>
+                        <a th:href="@{https://www.google.com/maps/dir/(api=1,destination=${pro.coordinatesPublic and pro.latitude != null and pro.longitude != null ? pro.latitude + ',' + pro.longitude : pro.city},travelmode='transit')}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm">Bus / transports</a>
+                    </div>
+                </div>
+            </article>
         </div>
     </div>
     <p th:if="${#lists.isEmpty(results)}" class="alert alert-info mt-4">Aucun professionnel ne correspond à votre recherche.</p>

@@ -60,7 +60,7 @@ public class AdminController {
     // Fiche detaillee d'un professionnel : l'admin examine le profil
     // (coordonnees, bio, prestations) avant de le valider.
     @GetMapping("/professionnels/{id}")
-    public String professionalDetail(@PathVariable Long id, Model model) {
+    public String professionalDetail(@PathVariable("id") Long id, Model model) {
         ProfessionalProfile professional = adminService.getProfessionalForReview(id);
         model.addAttribute("professional", professional);
         model.addAttribute("prestations", adminService.getPrestationsForReview(professional));
@@ -71,7 +71,7 @@ public class AdminController {
     // AdminService : on les transforme ici en message flash plutot qu'en page
     // d'erreur 400, l'admin reste sur la page d'ou il vient.
     @PostMapping("/professionnels/{id}/valider")
-    public String validateProfessional(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String validateProfessional(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         try {
             ProfessionalProfile profile = adminService.validateProfessional(id);
             redirectAttributes.addFlashAttribute("success",
@@ -83,7 +83,7 @@ public class AdminController {
     }
 
     @PostMapping("/professionnels/{id}/retirer-validation")
-    public String revokeValidation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String revokeValidation(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         try {
             ProfessionalProfile profile = adminService.revokeValidation(id);
             redirectAttributes.addFlashAttribute("success",
@@ -95,7 +95,7 @@ public class AdminController {
     }
 
     @PostMapping("/utilisateurs/{id}/desactiver")
-    public String disableUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String disableUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         try {
             User user = adminService.setUserEnabled(id, false);
             redirectAttributes.addFlashAttribute("success", "Compte de " + user.getFullName()
@@ -107,7 +107,7 @@ public class AdminController {
     }
 
     @PostMapping("/utilisateurs/{id}/activer")
-    public String enableUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String enableUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         User user = adminService.setUserEnabled(id, true);
         redirectAttributes.addFlashAttribute("success", "Compte de " + user.getFullName() + " reactive.");
         return "redirect:/admin/professionnels";
@@ -122,7 +122,7 @@ public class AdminController {
     }
 
     @PostMapping("/avis/{id}/masquer")
-    public String hideReview(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String hideReview(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         reviewService.hide(id);
         redirectAttributes.addFlashAttribute("success", "Avis masque.");
         return "redirect:/admin/avis";
@@ -142,21 +142,21 @@ public class AdminController {
     // de cible, cible disparue) deviennent un message flash.
 
     @PostMapping("/signalements/{id}/traiter")
-    public String treatReport(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
+    public String treatReport(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
                               RedirectAttributes redirectAttributes) {
         return decide(id, principal, ReportDecision.TRAITER, "Signalement #" + id + " cloture sans action.",
                 redirectAttributes);
     }
 
     @PostMapping("/signalements/{id}/masquer-avis")
-    public String hideReportedReview(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
+    public String hideReportedReview(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
                               RedirectAttributes redirectAttributes) {
         return decide(id, principal, ReportDecision.MASQUER_AVIS,
                 "Avis masque : les signalements en attente sur cet avis sont clotures.", redirectAttributes);
     }
 
     @PostMapping("/signalements/{id}/desactiver-profil")
-    public String disableReportedProfile(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
+    public String disableReportedProfile(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
                               RedirectAttributes redirectAttributes) {
         return decide(id, principal, ReportDecision.DESACTIVER_PROFIL,
                 "Compte desactive : le profil n'est plus visible et les signalements en attente sont clotures.",
@@ -164,7 +164,7 @@ public class AdminController {
     }
 
     @PostMapping("/signalements/{id}/rejeter")
-    public String rejectReport(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
+    public String rejectReport(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
                               RedirectAttributes redirectAttributes) {
         return decide(id, principal, ReportDecision.REJETER, "Signalement #" + id + " rejete.", redirectAttributes);
     }

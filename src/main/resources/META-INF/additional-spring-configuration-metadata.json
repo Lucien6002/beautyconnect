@@ -1,0 +1,71 @@
+{
+  "properties": [
+    {
+      "name": "app.mail.from",
+      "type": "java.lang.String",
+      "description": "Default sender email address for outgoing emails."
+    },
+    {
+      "name": "app.mail.fail-silently",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether to silently ignore email sending failures instead of throwing exceptions."
+    },
+    {
+      "name": "app.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "http://localhost:8080",
+      "description": "Base URL of the application, used for generating links in emails."
+    },
+    {
+      "name": "app.security.token-expiration-minutes",
+      "type": "java.lang.Integer",
+      "description": "Expiration time in minutes for authentication tokens."
+    },
+    {
+      "name": "app.admin.email",
+      "type": "java.lang.String",
+      "description": "Email address of the default admin account."
+    },
+    {
+      "name": "app.admin.password",
+      "type": "java.lang.String",
+      "description": "Password of the default admin account."
+    },
+    {
+      "name": "app.routing.api-key",
+      "type": "java.lang.String",
+      "description": "API key for the routing service (OpenRouteService)."
+    },
+    {
+      "name": "app.routing.base-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://api.openrouteservice.org",
+      "description": "Base URL for the routing service API."
+    },
+    {
+      "name": "app.routing.timeout-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 5000,
+      "description": "Timeout in milliseconds for routing service HTTP requests."
+    },
+    {
+      "name": "app.routing.requests-per-minute",
+      "type": "java.lang.Integer",
+      "defaultValue": 30,
+      "description": "Maximum number of requests per minute allowed to the routing service."
+    },
+    {
+      "name": "app.routing.cache-seconds",
+      "type": "java.lang.Integer",
+      "defaultValue": 300,
+      "description": "Cache duration in seconds for routing service responses."
+    },
+    {
+      "name": "app.map.tile-url",
+      "type": "java.lang.String",
+      "defaultValue": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "description": "URL template for map tiles."
+    }
+  ]
+}

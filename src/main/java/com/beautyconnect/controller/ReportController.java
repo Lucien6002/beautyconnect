@@ -26,7 +26,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @PostMapping("/signalements/avis/{reviewId}")
-    public String reportReview(@PathVariable Long reviewId,
+    public String reportReview(@PathVariable("reviewId") Long reviewId,
                                 @Valid @ModelAttribute ReportForm reportForm,
                                 BindingResult bindingResult,
                                 @AuthenticationPrincipal CustomUserDetails principal,
@@ -35,7 +35,7 @@ public class ReportController {
     }
 
     @PostMapping("/signalements/profils/{professionalId}")
-    public String reportProfile(@PathVariable Long professionalId,
+    public String reportProfile(@PathVariable("professionalId") Long professionalId,
                                  @Valid @ModelAttribute ReportForm reportForm,
                                  BindingResult bindingResult,
                                  @AuthenticationPrincipal CustomUserDetails principal,

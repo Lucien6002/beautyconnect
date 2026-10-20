@@ -2,6 +2,7 @@ package com.beautyconnect.controller;
 
 import com.beautyconnect.dto.SearchCriteria;
 import com.beautyconnect.model.*;
+import com.beautyconnect.repository.PrestationPhotoRepository;
 import com.beautyconnect.repository.ReviewRepository;
 import com.beautyconnect.service.*;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ public class SearchController {
     private final ProfessionalService professionalService;
     private final NearestProfessionalService nearestService;
     private final ReviewRepository reviewRepository;
+    private final PrestationPhotoRepository photoRepository;
     @org.springframework.beans.factory.annotation.Value("${app.map.tile-url:https://tile.openstreetmap.org/{z}/{x}/{y}.png}")
     private String mapTileUrl;
 
@@ -40,14 +42,23 @@ public class SearchController {
         }
         Map<Long, Double> ratings = new LinkedHashMap<>();
         results.forEach(pro -> ratings.put(pro.getId(), 0.0));
-        if (!results.isEmpty()) reviewRepository.averageRatings(results.stream().map(ProfessionalProfile::getId).toList())
+        if (!results.isEmpty()) reviewRepository.averageRatings(results.stream().map(p -> p.getId()).toList())
                 .forEach(r -> ratings.put(r.getProfessionalId(), r.getAverage()));
+        
+        // Charger les prestations avec photos pour chaque professionnel
+        Map<Long, List<com.beautyconnect.model.Prestation>> prestations = new LinkedHashMap<>();
+        for (var pro : results) {
+            var proPrestations = professionalService.getActivePrestations(pro);
+            prestations.put(pro.getId(), proPrestations);
+        }
+        
         model.addAttribute("results", results);
         model.addAttribute("resultPage", page);
         model.addAttribute("averageRatings", ratings);
         model.addAttribute("distances", air);
         model.addAttribute("walking", walking);
         model.addAttribute("routingNotice", notice);
+        model.addAttribute("prestations", prestations);
         model.addAttribute("genders", TargetGender.values());
         model.addAttribute("types", ServiceType.values());
         if (errors.hasErrors()) {

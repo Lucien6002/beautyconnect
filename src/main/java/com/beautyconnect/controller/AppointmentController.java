@@ -29,7 +29,7 @@ public class AppointmentController {
     private final ProfessionalService professionalService;
 
     @PostMapping("/rendez-vous/reserver/{professionalId}")
-    public String book(@PathVariable Long professionalId,
+    public String book(@PathVariable("professionalId") Long professionalId,
                         @Valid @ModelAttribute AppointmentForm appointmentForm,
                         BindingResult bindingResult,
                         @AuthenticationPrincipal CustomUserDetails principal,
@@ -59,7 +59,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/rendez-vous/{id}/annuler")
-    public String cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal,
+    public String cancel(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
                           RedirectAttributes redirectAttributes) {
         try {
             appointmentService.cancelByClient(principal.getUser(), id);

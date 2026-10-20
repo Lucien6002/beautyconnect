@@ -182,7 +182,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public List<ReportView> getAllForModeration() {
         return reportRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(this::toView)
+                .map(r -> toView(r))
                 .toList();
     }
 
