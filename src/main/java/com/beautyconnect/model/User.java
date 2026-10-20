@@ -77,8 +77,11 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "profile_photo_url")
+    @Column(name = "profile_photo_url", length = 500)
     private String profilePhotoUrl;
+
+    @Column(length = 500)
+    private String profilePhotoPublicId;
 
     // @PrePersist : methode appelee automatiquement par Hibernate juste avant
     // le tout premier INSERT en base pour cette entite. Ici, on en profite pour

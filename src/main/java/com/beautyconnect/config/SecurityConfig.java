@@ -53,7 +53,7 @@ public class SecurityConfig {
                     .map(a -> a.getAuthority()).toList();
             String redirect = authorities.contains("ROLE_ADMIN") ? "/admin/tableau-bord"
                     : authorities.contains("ROLE_PROFESSIONAL") ? "/pro/tableau-bord"
-                    : authorities.contains("ROLE_CLIENT") ? "/client/tableau-bord" : "/";
+                    : "/";
             response.sendRedirect(redirect);
         };
     }

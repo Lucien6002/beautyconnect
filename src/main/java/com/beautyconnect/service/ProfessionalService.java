@@ -6,17 +6,11 @@ import com.beautyconnect.dto.TimeSlotForm;
 import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.exception.ResourceNotFoundException;
 import com.beautyconnect.model.Prestation;
-import com.beautyconnect.model.PrestationImage;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.TimeSlot;
-import com.beautyconnect.repository.PrestationImageRepository;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
-import com.beautyconnect.service.storage.ImageDeleteException;
-import com.beautyconnect.service.storage.ImageStorageService;
-import com.beautyconnect.service.storage.ImageUploadException;
-import com.beautyconnect.service.storage.ImageUploadResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,8 +36,23 @@ public class ProfessionalService {
     private final TimeSlotRepository timeSlotRepository;
     private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
     private final com.beautyconnect.repository.PrestationPhotoRepository photoRepository;
-    private final com.beautyconnect.repository.PrestationImageRepository prestationImageRepository;
-    private final ImageStorageService imageStorageService;
+    private final PhotoService photoService;
+
+    @Transactional(readOnly = true)
+    public List<Prestation> getPublicPrestationPreviews() {
+        var previews = new java.util.ArrayList<Prestation>();
+        for (var type : com.beautyconnect.model.ServiceType.values()) {
+            previews.addAll(prestationRepository.findPublicPreviewsByType(type, org.springframework.data.domain.PageRequest.of(0, 2)));
+        }
+        if (previews.size() < 6) {
+            for (var candidate : prestationRepository.findPublicPreviews(org.springframework.data.domain.PageRequest.of(0, 6))) {
+                if (previews.size() == 6) break;
+                if (previews.stream().noneMatch(p -> p.getId().equals(candidate.getId()))) previews.add(candidate);
+            }
+        }
+        previews.forEach(p -> p.getPhotos().size());
+        return previews;
+    }
 
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
     // une exception metier personnalisee plutot que de retourner null (ce qui
@@ -74,7 +83,7 @@ public class ProfessionalService {
     public org.springframework.data.domain.Page<ProfessionalProfile> searchPage(SearchCriteria criteria) {
         return professionalProfileRepository.searchPage(clean(criteria.getCity()), criteria.getGender(),
                 clean(criteria.getName()), criteria.getType(),
-                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 12));
+                org.springframework.data.domain.PageRequest.of(criteria.getPage(), 6));
     }
 
     private String clean(String value) {
@@ -107,12 +116,7 @@ public class ProfessionalService {
     }
 
     public List<Prestation> getActivePrestations(ProfessionalProfile professional) {
-        var prestations = prestationRepository.findByProfessionalAndActiveTrue(professional);
-        prestations.forEach(p -> {
-            var photos = photoRepository.findByPrestationOrderByDisplayOrderAsc(p);
-            p.setPhotos(photos != null ? photos : new java.util.ArrayList<>());
-        });
-        return prestations;
+        return prestationRepository.findByProfessionalAndActiveTrue(professional);
     }
 
     public List<Prestation> getRemovedPrestations(ProfessionalProfile professional) {
@@ -137,30 +141,42 @@ public class ProfessionalService {
         return prestationRepository.save(prestation);
     }
 
+    /** Une création et toutes ses photos dans la même transaction. */
+    @Transactional
+    public Prestation addPrestationWithPhotos(ProfessionalProfile professional, PrestationForm form,
+            MultipartFile mainPhoto, List<MultipartFile> secondaryPhotos) {
+        var secondary = secondaryPhotos == null ? List.<MultipartFile>of()
+                : secondaryPhotos.stream().filter(file -> !file.isEmpty()).toList();
+        boolean hasMain = mainPhoto != null && !mainPhoto.isEmpty();
+        if (secondary.size() > 4) throw new IllegalOperationException("Choisissez au maximum quatre photos secondaires.");
+        if (!secondary.isEmpty() && !hasMain) throw new IllegalOperationException("Ajoutez une photo principale avant les photos secondaires.");
+        var prestation = addPrestation(professional, form);
+        if (hasMain) photoService.addPrestationPhoto(professional.getUser().getId(), prestation.getId(), mainPhoto);
+        for (var photo : secondary) photoService.addPrestationPhoto(professional.getUser().getId(), prestation.getId(), photo);
+        return prestation;
+    }
+
     @Transactional
     public void addPrestationImage(ProfessionalProfile professional, Long prestationId, MultipartFile file) {
-        Prestation prestation = prestationRepository.findById(prestationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
+        photoService.addPrestationPhoto(professional.getUser().getId(), prestationId, file);
+    }
+
+    @Transactional
+    public void updatePrestationWithPhotos(ProfessionalProfile professional, Long id, PrestationForm form,
+            MultipartFile mainFile, List<MultipartFile> secondaryFiles, List<Long> deleteIds, Long mainPhotoId) {
+        updatePrestation(professional, id, form);
+        photoService.updateGallery(professional.getUser().getId(), id, mainFile, secondaryFiles, deleteIds, mainPhotoId);
+    }
+
+    @Transactional
+    public void updatePrestation(ProfessionalProfile professional, Long id, PrestationForm form) {
+        var prestation = prestationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable"));
         assertOwnership(professional, prestation.getProfessional());
-
-        // Vérifier la limite de 5 images
-        long currentCount = prestationImageRepository.countByPrestation(prestation);
-        if (currentCount >= 5) {
-            throw new IllegalOperationException("Maximum 5 images par prestation");
-        }
-
-        try {
-            ImageUploadResult result = imageStorageService.upload(file);
-            PrestationImage image = PrestationImage.builder()
-                    .prestation(prestation)
-                    .publicId(result.publicId())
-                    .secureUrl(result.secureUrl())
-                    .displayOrder((int) currentCount + 1)
-                    .build();
-            prestationImageRepository.save(image);
-        } catch (ImageUploadException e) {
-            throw new IllegalOperationException("Erreur lors de l'upload : " + e.getMessage());
-        }
+        prestation.setName(form.getName().trim());
+        prestation.setDescription(form.getDescription());
+        prestation.setType(form.getType());
+        prestation.setPrice(form.getPrice());
+        prestation.setDurationMinutes(form.getDurationMinutes());
     }
 
     @Transactional
@@ -189,16 +205,9 @@ public class ProfessionalService {
             throw new IllegalOperationException("Impossible de supprimer définitivement : des rendez-vous existent sur cette prestation.");
         }
 
-        // Supprimer les images associées
-        List<com.beautyconnect.model.PrestationImage> images = prestationImageRepository.findByPrestationOrderByDisplayOrderAsc(prestation);
-        for (com.beautyconnect.model.PrestationImage image : images) {
-            try {
-                imageStorageService.delete(image.getPublicId());
-            } catch (ImageDeleteException e) {
-                System.err.println("Erreur suppression image : " + e.getMessage());
-            }
-        }
-        prestationImageRepository.deleteAll(images);
+        if (prestation.isActive()) throw new IllegalOperationException("Retirez d'abord la prestation avant de la supprimer définitivement.");
+        photoRepository.findByPrestationOrderByDisplayOrderAsc(prestation).forEach(photo ->
+                photoService.deleteAfterCommit(photo.getPublicId(), photo.getPhotoUrl()));
 
         // Supprimer la prestation définitivement
         prestationRepository.delete(prestation);

@@ -6,7 +6,9 @@
 <nav th:replace="~{fragments/navbar :: navbar}"></nav>
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-<main class="flex-grow-1 container my-5">
+<div class="container bc-workspace" data-role="professional">
+<aside th:replace="~{fragments/workspace :: navigation(role='professional', active='services')}"></aside>
+<main class="bc-workspace-main" id="main-content">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <h1 class="h4 mb-0">Mes prestations</h1>
         <a th:href="@{/pro/prestations/supprimees}" class="btn btn-sm btn-outline-secondary">
@@ -15,29 +17,20 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-7">
+        <div class="col-xl-6">
             <div class="card shadow-sm">
                 <div class="table-responsive">
-                    <table class="table mb-0 align-middle">
-                        <thead><tr><th>Nom</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr></thead>
+                    <table class="table bc-services-table mb-0 align-middle">
+                        <thead><tr><th>Prestation</th><th>Tarif / durée</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
                         <tbody>
                         <tr th:each="p : ${prestations}">
-                            <td>
-                                <div th:text="${p.name}"></div>
-                                <div th:if="${!#lists.isEmpty(p.photos)}" class="mt-1">
-                                    <img th:src="${p.photos[0].photoUrl}" alt="Photo" class="img-thumbnail" style="max-width: 50px; max-height: 50px;"/>
-                                    <span class="badge text-bg-info" th:text="${#lists.size(p.photos)} + ' photo(s)'"></span>
-                                </div>
-                            </td>
-                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
-                            <td th:text="${p.durationMinutes} + ' min'"></td>
-                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
-                            <td>
-                                <a th:href="@{'/pro/prestations/' + ${p.id} + '/photos'}" class="btn btn-sm btn-outline-info me-1">Photos</a>
-                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                        th:attr="data-bs-id=${p.id}, data-bs-name=${p.name}">
-                                    Supprimer
-                                </button>
+                            <td><div class="bc-service-summary"><img th:if="${!#lists.isEmpty(p.photos)}" th:src="${p.photos[0].photoUrl}" alt="" class="bc-service-thumb" width="44" height="56"/><div><strong th:text="${p.name}"></strong><span class="bc-service-type" th:text="${p.type}"></span><a th:href="@{/pro/prestations/{id}/photos(id=${p.id})}" class="bc-photo-link"><i class="bi bi-images" aria-hidden="true"></i> Photos <span th:text="${#lists.size(p.photos)} + '/5'"></span></a></div></div></td>
+                            <td class="bc-service-rate"><strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong><span th:text="${p.durationMinutes} + ' min'"></span></td>
+                            <td><a class="btn btn-sm btn-outline-primary mb-2" th:href="@{/pro/prestations/{id}/modifier(id=${p.id})}">Modifier</a>
+                                <form th:action="@{'/pro/prestations/' + ${p.id} + '/supprimer'}" method="post"
+                                      onsubmit="return confirm('Retirer cette prestation ? Vous pourrez la restaurer depuis Prestations supprimees.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
                             </td>
                         </tr>
                         </tbody>
@@ -49,117 +42,69 @@
             </div>
         </div>
 
-        <div class="col-lg-5">
+        <div class="col-xl-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-white"><h2 class="h6 mb-0">Ajouter une prestation</h2></div>
                 <div class="card-body">
-                    <form th:action="@{/pro/prestations}" th:object="${prestationForm}" method="post" enctype="multipart/form-data">
+                    <form th:action="@{/pro/prestations}" th:object="${prestationForm}" method="post" enctype="multipart/form-data" data-service-photos>
                         <div class="mb-3">
-                            <label class="form-label">Nom</label>
+                            <label class="form-label" for="name">Nom</label>
                             <input type="text" class="form-control" th:field="*{name}" placeholder="Ex : Balayage"
                                    th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"/>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Description (optionnel)</label>
+                            <label class="form-label" for="description">Description (optionnel)</label>
                             <textarea class="form-control" th:field="*{description}"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Type</label>
+                            <label class="form-label" for="type">Type</label>
                             <select class="form-select" th:field="*{type}">
                                 <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
                             </select>
                         </div>
                         <div class="row g-2">
                             <div class="col-6">
-                                <label class="form-label">Duree (min)</label>
+                                <label class="form-label" for="durationMinutes">Duree (min)</label>
                                 <input type="number" class="form-control" th:field="*{durationMinutes}" min="5"
                                        th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid'"/>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></div>
                             </div>
                             <div class="col-6">
-                                <label class="form-label">Tarif (€)</label>
+                                <label class="form-label" for="price">Tarif (€)</label>
                                 <input type="number" step="0.01" class="form-control" th:field="*{price}"
                                        th:classappend="${#fields.hasErrors('price')} ? 'is-invalid'"/>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Photo (optionnel)</label>
-                            <input type="file" name="file" accept="image/*" class="form-control"/>
-                            <div class="form-text">Vous pourrez ajouter d'autres photos apres la creation (max 5)</div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Ajouter</button>
+                        <fieldset class="bc-service-photo-fields mt-4">
+                            <legend>Les images de votre prestation</legend>
+                            <p class="form-text">Une photo principale pour présenter votre prestation, puis jusqu’à quatre photos pour montrer les détails et vos réalisations. Les images sont facultatives et seront publiques.</p>
+                            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" role="alert"><p th:each="error : ${#fields.globalErrors()}" th:text="${error}" class="mb-1"></p><p class="small mb-0">Vérifiez les images puis sélectionnez-les à nouveau avant d’enregistrer.</p></div>
+                            <div class="bc-service-photo-slot">
+                                <label class="form-label fw-bold" for="firstPhoto"><i class="bi bi-image" aria-hidden="true"></i> Photo principale</label>
+                                <p class="form-text mt-0" id="mainPhotoHelp">La couverture affichée en premier sur votre vitrine et dans le catalogue.</p>
+                                <input id="firstPhoto" type="file" name="file" accept="image/jpeg,image/png,image/webp" class="form-control" aria-describedby="mainPhotoHelp servicePhotoLimits" data-service-main-photo/>
+                                <div class="bc-photo-previews" data-service-main-preview></div>
+                            </div>
+                            <div class="bc-service-photo-slot mt-3">
+                                <label class="form-label fw-bold" for="secondaryPhotos"><i class="bi bi-images" aria-hidden="true"></i> Photos secondaires</label>
+                                <p class="form-text mt-0" id="secondaryPhotoHelp">Sélectionnez jusqu’à quatre images en une fois pour compléter la photo principale.</p>
+                                <input id="secondaryPhotos" type="file" name="secondaryPhotos" accept="image/jpeg,image/png,image/webp" multiple class="form-control" aria-describedby="secondaryPhotoHelp servicePhotoLimits" data-service-secondary-photos/>
+                                <div class="bc-photo-previews" data-service-secondary-previews></div>
+                            </div>
+                            <p class="form-text mb-0" id="servicePhotoLimits">JPEG, PNG ou WebP · 5 Mo et 20 mégapixels maximum par photo · 5 photos au total.</p>
+                            <p data-service-photo-status role="status" class="small mt-2 mb-0"></p>
+                        </fieldset>
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Ajouter la prestation</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </main>
-
-<footer th:replace="~{fragments/footer :: footer}"></footer>
-
-<!-- Modal de suppression -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Supprimer la prestation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Comment voulez-vous supprimer <strong id="deletePrestationName"></strong> ?</p>
-                <div class="form-check form-check-option">
-                    <input class="form-check-input" type="radio" name="deleteType" id="deleteTemporary" value="temporary" checked>
-                    <label class="form-check-label" for="deleteTemporary">
-                        <strong>Temporairement</strong> - La prestation sera masquée mais vous pourrez la restaurer plus tard. Les rendez-vous existants sont conservés.
-                    </label>
-                </div>
-                <div class="form-check form-check-option">
-                    <input class="form-check-input" type="radio" name="deleteType" id="deletePermanent" value="permanent">
-                    <label class="form-check-label" for="deletePermanent">
-                        <strong>Définitivement</strong> - La prestation sera supprimée de la base de données. Cette action est irréversible et nécessite qu'il n'y ait aucun rendez-vous.
-                    </label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Confirmer</button>
-            </div>
-        </div>
-    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const deleteModal = document.getElementById('deleteModal');
-    const deletePrestationName = document.getElementById('deletePrestationName');
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    let currentPrestationId = null;
-
-    deleteModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        currentPrestationId = button.getAttribute('data-bs-id');
-        deletePrestationName.textContent = button.getAttribute('data-bs-name');
-    });
-
-    confirmDeleteBtn.addEventListener('click', function() {
-        const deleteType = document.querySelector('input[name="deleteType"]:checked').value;
-        
-        if (deleteType === 'temporary') {
-            const form = document.createElement('form');
-            form.method = 'post';
-            form.action = '/pro/prestations/' + currentPrestationId + '/supprimer';
-            document.body.appendChild(form);
-            form.submit();
-        } else {
-            const form = document.createElement('form');
-            form.method = 'post';
-            form.action = '/pro/prestations/' + currentPrestationId + '/supprimer-definitivement';
-            document.body.appendChild(form);
-            form.submit();
-        }
-    });
-</script>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 </html>

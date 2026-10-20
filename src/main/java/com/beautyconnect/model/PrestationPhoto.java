@@ -30,8 +30,11 @@ public class PrestationPhoto {
     @JoinColumn(name = "prestation_id", nullable = false)
     private Prestation prestation;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String photoUrl;
+
+    @Column(length = 500)
+    private String publicId;
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;

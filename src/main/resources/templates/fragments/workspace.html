@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+    <body>
+        <aside
+            th:fragment="navigation(role, active)"
+            class="bc-sidebar"
+            aria-label="Navigation de votre espace"
+        >
+            <div class="bc-sidebar-label">
+                <span class="bc-role-icon"
+                    ><i
+                        th:class="${role == 'client' ? 'bi bi-heart' : role == 'professional' ? 'bi bi-shop' : 'bi bi-shield-check'}"
+                        aria-hidden="true"
+                    ></i
+                ></span>
+                <div>
+                    <strong
+                        th:text="${role == 'client' ? 'Mon carnet' : role == 'professional' ? 'Mon activité' : 'Administration'}"
+                    ></strong
+                    ><span
+                        th:text="${role == 'client' ? 'Espace client' : role == 'professional' ? 'Espace professionnel' : 'Espace administrateur'}"
+                    ></span>
+                </div>
+            </div>
+            <nav
+                class="bc-sidebar-links"
+                aria-label="Rubriques de votre espace"
+            >
+                <a
+                    th:href="${role == 'client' ? '/client/tableau-bord' : role == 'professional' ? '/pro/tableau-bord' : '/admin/tableau-bord'}"
+                    th:attr="aria-current=${active == 'dashboard' ? 'page' : null}"
+                    ><i class="bi bi-grid-1x2" aria-hidden="true"></i> Vue
+                    d’ensemble</a
+                >
+                <th:block th:if="${role == 'client'}"
+                    ><a
+                        href="/client/favoris"
+                        th:attr="aria-current=${active == 'favorites' ? 'page' : null}"
+                        ><i class="bi bi-heart" aria-hidden="true"></i> Mes favoris</a
+                    >
+                    <a
+                        href="/client/rendez-vous"
+                        th:attr="aria-current=${active == 'appointments' ? 'page' : null}"
+                        ><i class="bi bi-calendar2-week" aria-hidden="true"></i>
+                        Mes rendez-vous</a
+                    >
+                    <a href="/recherche"
+                        ><i class="bi bi-search" aria-hidden="true"></i> Trouver
+                        un professionnel</a
+                    >
+                </th:block>
+                <th:block th:if="${role == 'professional'}"
+                    ><a
+                        href="/pro/agenda"
+                        th:attr="aria-current=${active == 'agenda' ? 'page' : null}"
+                        ><i class="bi bi-calendar3" aria-hidden="true"></i> Mon
+                        agenda</a
+                    >
+                    <a
+                        href="/pro/rendez-vous"
+                        th:attr="aria-current=${active == 'appointments' ? 'page' : null}"
+                        ><i class="bi bi-calendar2-week" aria-hidden="true"></i>
+                        Rendez-vous</a
+                    >
+                    <a
+                        href="/pro/creneaux"
+                        th:attr="aria-current=${active == 'slots' ? 'page' : null}"
+                        ><i class="bi bi-clock" aria-hidden="true"></i> Mes
+                        disponibilités</a
+                    >
+                    <a
+                        href="/pro/prestations"
+                        th:attr="aria-current=${active == 'services' ? 'page' : null}"
+                        ><i class="bi bi-scissors" aria-hidden="true"></i> Mes
+                        prestations</a
+                    >
+                    <a
+                        href="/pro/profil"
+                        th:attr="aria-current=${active == 'profile' ? 'page' : null}"
+                        ><i class="bi bi-shop-window" aria-hidden="true"></i>
+                        Mon profil</a
+                    >
+                    <a
+                        href="/pro/localisation"
+                        th:attr="aria-current=${active == 'location' ? 'page' : null}"
+                        ><i class="bi bi-geo-alt" aria-hidden="true"></i> Ma
+                        localisation</a
+                    >
+                </th:block>
+                <th:block th:if="${role == 'admin'}">
+                    <a
+                        href="/admin/professionnels"
+                        th:attr="aria-current=${active == 'professionals' ? 'page' : null}"
+                        ><i class="bi bi-person-check" aria-hidden="true"></i>
+                        Professionnels</a
+                    >
+                    <a
+                        href="/admin/avis"
+                        th:attr="aria-current=${active == 'reviews' ? 'page' : null}"
+                        ><i
+                            class="bi bi-chat-square-text"
+                            aria-hidden="true"
+                        ></i>
+                        Modération des avis</a
+                    >
+                    <a
+                        href="/admin/signalements"
+                        th:attr="aria-current=${active == 'reports' ? 'page' : null}"
+                        ><i class="bi bi-flag" aria-hidden="true"></i>
+                        Signalements</a
+                    >
+                </th:block>
+                <a
+                    href="/compte"
+                    th:attr="aria-current=${active == 'account' ? 'page' : null}"
+                    ><i class="bi bi-person-gear" aria-hidden="true"></i> Mes
+                    informations</a
+                >
+            </nav>
+            <div class="bc-sidebar-note">
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                <p
+                    th:text="${role == 'client' ? 'Vos bonnes adresses, à portée de main.' : role == 'professional' ? 'Votre savoir-faire fait vivre le quartier.' : 'Un réseau de confiance se construit ensemble.'}"
+                ></p>
+            </div>
+        </aside>
+        <span
+            th:fragment="status(status)"
+            class="bc-status"
+            th:classappend="${status.name() == 'CONFIRME' or status.name() == 'TERMINE' ? 'bc-status-success' : status.name() == 'EN_ATTENTE' ? 'bc-status-waiting' : 'bc-status-neutral'}"
+            th:switch="${status.name()}"
+        >
+            <span th:case="'EN_ATTENTE'">En attente</span
+            ><span th:case="'CONFIRME'">Confirmé</span
+            ><span th:case="'REFUSE'">Refusé</span
+            ><span th:case="'ANNULE'">Annulé</span
+            ><span th:case="'TERMINE'">Terminé</span>
+        </span>
+    </body>
+</html>

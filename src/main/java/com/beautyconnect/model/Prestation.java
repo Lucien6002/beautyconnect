@@ -65,8 +65,9 @@ public class Prestation {
     // Photos associées à la prestation (maximum 5)
     @OneToMany(mappedBy = "prestation", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder ASC")
+    @org.hibernate.annotations.BatchSize(size = 30)
     private List<PrestationPhoto> photos;
-    
+
     public List<PrestationPhoto> getPhotos() {
         return photos != null ? photos : new java.util.ArrayList<>();
     }

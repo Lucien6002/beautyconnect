@@ -44,14 +44,14 @@ public class SearchController {
         results.forEach(pro -> ratings.put(pro.getId(), 0.0));
         if (!results.isEmpty()) reviewRepository.averageRatings(results.stream().map(p -> p.getId()).toList())
                 .forEach(r -> ratings.put(r.getProfessionalId(), r.getAverage()));
-        
+
         // Charger les prestations avec photos pour chaque professionnel
         Map<Long, List<com.beautyconnect.model.Prestation>> prestations = new LinkedHashMap<>();
         for (var pro : results) {
             var proPrestations = professionalService.getActivePrestations(pro);
             prestations.put(pro.getId(), proPrestations);
         }
-        
+
         model.addAttribute("results", results);
         model.addAttribute("resultPage", page);
         model.addAttribute("averageRatings", ratings);

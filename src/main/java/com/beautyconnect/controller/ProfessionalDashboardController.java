@@ -50,6 +50,7 @@ public class ProfessionalDashboardController {
 
     private final ProfessionalService professionalService;
     private final AppointmentService appointmentService;
+    private final com.beautyconnect.service.PhotoService photoService;
 
     @GetMapping("/tableau-bord")
     public String dashboard(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
@@ -57,6 +58,7 @@ public class ProfessionalDashboardController {
         // ProfessionalProfile associe (relation 1-1, voir ProfessionalService.getProfileByUserId).
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         model.addAttribute("professional", profile);
+        model.addAttribute("prestationsCount", professionalService.getActivePrestations(profile).size());
         model.addAttribute("upcomingSlots", professionalService.getAvailableTimeSlots(profile).size());
 
         List<Appointment> all = appointmentService.getAppointmentsForProfessional(profile);
@@ -131,26 +133,60 @@ public class ProfessionalDashboardController {
                                  @Valid @ModelAttribute PrestationForm prestationForm,
                                  BindingResult bindingResult, Model model,
                                  RedirectAttributes redirectAttributes,
-                                 @RequestParam(required = false) MultipartFile file) {
+                                 @RequestParam(name = "file", required = false) MultipartFile file,
+                                 @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryPhotos) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         if (bindingResult.hasErrors()) {
             addPrestationsPageAttributes(profile, model);
             return "professional/prestations";
         }
-        Prestation prestation = professionalService.addPrestation(profile, prestationForm);
-        
-        // Ajouter la photo si fournie
-        if (file != null && !file.isEmpty()) {
-            try {
-                professionalService.addPrestationImage(profile, prestation.getId(), file);
-            } catch (Exception e) {
-                redirectAttributes.addFlashAttribute("error", "Prestation ajoutee mais erreur lors de l'upload de la photo : " + e.getMessage());
-                return "redirect:/pro/prestations";
-            }
+        try {
+            professionalService.addPrestationWithPhotos(profile, prestationForm, file, secondaryPhotos);
+        } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+            bindingResult.reject("photos.invalid", ex.getMessage());
+            addPrestationsPageAttributes(profile, model);
+            return "professional/prestations";
         }
-        
+
         redirectAttributes.addFlashAttribute("success", "Prestation ajoutee.");
         return "redirect:/pro/prestations";
+    }
+
+    @GetMapping("/prestations/{id}/modifier")
+    public String editPrestation(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        var p = photoService.ownedPrestation(principal.getId(), id);
+        var form = new PrestationForm();
+        form.setName(p.getName()); form.setDescription(p.getDescription()); form.setType(p.getType());
+        form.setPrice(p.getPrice()); form.setDurationMinutes(p.getDurationMinutes());
+        model.addAttribute("prestationForm", form);
+        model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", p);
+        model.addAttribute("types", ServiceType.values());
+        return "professional/prestation-edit";
+    }
+
+    @PostMapping("/prestations/{id}/modifier")
+    public String updatePrestation(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
+            @Valid @ModelAttribute PrestationForm prestationForm, BindingResult binding, Model model, RedirectAttributes flash,
+            @RequestParam(name = "file", required = false) MultipartFile mainFile,
+            @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryFiles,
+            @RequestParam(name = "deletePhotoIds", required = false) List<Long> deleteIds,
+            @RequestParam(name = "mainPhotoId", required = false) Long mainPhotoId) {
+        var prestation = photoService.ownedPrestation(principal.getId(), id);
+        if (!binding.hasErrors()) {
+            try {
+                professionalService.updatePrestationWithPhotos(professionalService.getProfileByUserId(principal.getId()),
+                        id, prestationForm, mainFile, secondaryFiles, deleteIds, mainPhotoId);
+                flash.addFlashAttribute("success", "La prestation et ses photos ont été mises à jour.");
+                return "redirect:/pro/prestations";
+            } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+                binding.reject("photos.invalid", ex.getMessage());
+            }
+        }
+        model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", prestation);
+        model.addAttribute("types", ServiceType.values());
+        return "professional/prestation-edit";
     }
 
     @PostMapping("/prestations/{id}/supprimer")

@@ -81,3 +81,39 @@ Le Dockerfile est la configuration choisie ; aucun Blueprint `render.yaml` n’i
 Vérifier accueil, recherche par nom/ville/type/clientèle, pagination, carte sans GPS, refus GPS, professionnels sans coordonnées et consentement de publication. Vérifier un vrai trajet avec ORS, un fournisseur indisponible et les liens Google Maps. Vérifier inscription/activation, lien expiré et renvoi, réservation/confirmation/refus/annulation/nouvelle réservation, espace client et accès admin. Vérifier les images avec Anaelle et Emmanuelle ; leur stockage ne fait pas partie de ce lot.
 
 Pour redéployer : choisir le commit validé dans Render et relancer le déploiement. Pour revenir à une version précédente : utiliser le déploiement correspondant, après vérification de sa compatibilité avec le schéma actuel. Une migration n’est pas annulée par un rollback de l’image. La version antérieure au changement de réservation suppose une unicité historique différente : ne pas la redéployer sur la nouvelle base sans plan de retour validé. Si une restauration est nécessaire, restaurer la sauvegarde dans une nouvelle base, contrôler les données puis basculer le service ; tenir compte des écritures intervenues depuis la sauvegarde.
+
+## Démonstration multi-villes (développement uniquement)
+
+Pour remplir la base locale avec un jeu fictif, lancer une fois :
+
+```bash
+DEMO_FRANCE_ENABLED=true bash gradlew bootRun
+```
+
+Puis utiliser le démarrage habituel. La désactivation du drapeau ne supprime pas les données déjà créées.
+`DEMO_FRANCE_CITY_LIMIT` permet de limiter le jeu à 1–30 villes (30 par défaut).
+Aucun appel réseau n'est effectué au démarrage : `demo/france-cities.json` contient les noms et centres de 30 communes récupérés via l'API officielle `geo.api.gouv.fr`, dont Saint-Denis (La Réunion) et Fort-de-France.
+
+Le jeu comprend 90 professionnels fictifs sans préfixe dans leur nom, répartis entre coiffure, onglerie et soins ; 180 prestations actives et 90 retirées ; huit créneaux futurs par professionnel, plus des créneaux historiques pour les scénarios. Un profil est en attente de validation et un autre compte est désactivé. Les clientèles ciblées et les tarifs d'exemple varient.
+
+Trois clients possèdent chacun un rendez-vous confirmé, un terminé, un annulé, un favori et un avis fictif lié au rendez-vous terminé. Les premiers scénarios concernent Paris, Lyon et Marseille. Les points publics représentent les centres des communes, jamais de vraies adresses de professionnels ; d'autres profils ont un point privé ou aucune coordonnée pour tester les replis. Aucun email n'est envoyé par cet initialiseur.
+
+Comptes de test : `client1@demo.beautyconnect.invalid`, `client2@demo.beautyconnect.invalid`, `client3@demo.beautyconnect.invalid`. Pour un professionnel : `coiffure.75056@demo.beautyconnect.invalid` (Paris), ou `onglerie.69123@demo.beautyconnect.invalid` (Lyon). Mot de passe commun : `DemoFrance123!`.
+
+`FranceDemoData` et `FranceDemoInitializer` sont exclus dès que le profil `prod` est actif. Utiliser une base de développement distincte de la production. Relancer l'initialisation ne recrée pas les comptes existants et ne remplace pas les modifications faites pendant la démonstration. Les créneaux sont datés lors de la première création du compte ; ils ne sont pas renouvelés automatiquement.
+
+Ce jeu ne fournit pas de photos de réalisations : le véritable upload et le portfolio restent les lots Anaelle/Emmanuelle.
+
+## Points ouverts au 20 octobre 2026
+
+Le README et les anciennes feuilles de route décrivent parfois un état antérieur : Flyway, la carte, les favoris, l'agenda et le changement des informations personnelles sont déjà présents. Les réservations sont maintenant confirmées directement. Le portfolio ne doit pas être remplacé par des images de réalisations statiques.
+
+| Sujet | Responsable prévu | État constaté dans cette branche |
+|---|---|---|
+| Recette des médias réels | Anaelle + Emmanuelle | Formulaires, galerie et adaptateur livrés ; renseigner Cloudinary et exécuter M1–M7 de la recette. |
+| Chevauchements selon les durées | Manuel M3 | Les départs identiques sont refusés ; la compatibilité des intervalles selon la durée reste à traiter. |
+| Validation serveur renforcée du profil | Anaelle A4 | Compléter les contrôles sur nom, ville et bio dans le formulaire de modification. |
+| Rappels de rendez-vous | Évolution mail à coordonner | Confirmation et validation pro présentes ; rappels planifiés absents. |
+| Mise en ligne et recette réelle | Ulrich + Emmanuelle | Docker et CI présents ; confirmer avec l'équipe Render, SMTP réel, trajet ORS réel et restauration des sauvegardes. |
+
+Les images de Joyce sont utilisées pour la présentation de l'accueil et de la connexion. Elles ne représentent pas les réalisations des professionnels.

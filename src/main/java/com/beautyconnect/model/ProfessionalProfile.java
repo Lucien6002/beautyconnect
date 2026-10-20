@@ -63,8 +63,11 @@ public class ProfessionalProfile {
     @Builder.Default
     private boolean coordinatesPublic = false;
 
-    @Column(name = "profile_photo_url")
+    @Column(name = "profile_photo_url", length = 500)
     private String profilePhotoUrl;
+
+    @Column(length = 500)
+    private String profilePhotoPublicId;
 
     /** Filtre de recherche selon le sexe de la clientele visee par le professionnel. */
     @Enumerated(EnumType.STRING)
