@@ -53,7 +53,10 @@ public class ProfessionalProfile {
 
     private String address;
 
+    @Column(name = "latitude")
     private Double latitude;
+
+    @Column(name = "longitude")
     private Double longitude;
 
     @Column(name = "coordinates_public", nullable = false)

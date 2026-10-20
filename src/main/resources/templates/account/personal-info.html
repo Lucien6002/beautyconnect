@@ -14,6 +14,22 @@
     <div class="col" style="max-width: 640px;">
     <h1 class="h4 mb-4">Mes informations personnelles</h1>
 
+    <div class="card shadow-sm p-4 mb-4">
+        <div class="mb-3">
+            <label class="form-label">Photo de profil</label>
+            <div class="mb-2">
+                <img th:src="${profilePhotoUrl != null ? profilePhotoUrl : '/images/no-profile.svg'}" alt="Photo de profil" class="img-thumbnail" style="max-width: 150px; max-height: 150px;"/>
+                <form th:if="${profilePhotoUrl != null}" th:action="@{/compte/photo/delete}" method="post" class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer la photo</button>
+                </form>
+            </div>
+            <form th:action="@{/compte/photo/upload}" method="post" enctype="multipart/form-data">
+                <input type="file" name="photo" accept="image/*" class="form-control"/>
+                <button type="submit" class="btn btn-sm btn-primary mt-2">Changer la photo</button>
+            </form>
+        </div>
+    </div>
+
     <form th:action="@{/compte}" th:object="${personalInfoForm}" method="post" class="card shadow-sm p-4">
         <div class="mb-3">
             <label class="form-label">Prenom</label>

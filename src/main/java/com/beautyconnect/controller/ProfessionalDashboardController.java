@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -67,7 +68,7 @@ public class ProfessionalDashboardController {
         BigDecimal monthlyRevenue = completed.stream()
                 .filter(a -> YearMonth.from(a.getTimeSlot().getStartDateTime()).equals(currentMonth))
                 .map(a -> a.getPrestation().getPrice())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
         model.addAttribute("monthlyRevenue", monthlyRevenue);
         model.addAttribute("currentMonth", currentMonth.atDay(1));
 
@@ -129,29 +130,50 @@ public class ProfessionalDashboardController {
     public String addPrestation(@AuthenticationPrincipal CustomUserDetails principal,
                                  @Valid @ModelAttribute PrestationForm prestationForm,
                                  BindingResult bindingResult, Model model,
-                                 RedirectAttributes redirectAttributes) {
+                                 RedirectAttributes redirectAttributes,
+                                 @RequestParam(required = false) MultipartFile file) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         if (bindingResult.hasErrors()) {
-            // En cas d'erreur de validation, on REAFFICHE le meme formulaire
-            // (pas de redirect) pour que Thymeleaf puisse montrer les messages
-            // d'erreur a cote des champs invalides ; il faut donc repeupler
-            // manuellement les autres attributs necessaires a la vue.
             addPrestationsPageAttributes(profile, model);
             return "professional/prestations";
         }
-        professionalService.addPrestation(profile, prestationForm);
+        Prestation prestation = professionalService.addPrestation(profile, prestationForm);
+        
+        // Ajouter la photo si fournie
+        if (file != null && !file.isEmpty()) {
+            try {
+                professionalService.addPrestationImage(profile, prestation.getId(), file);
+            } catch (Exception e) {
+                redirectAttributes.addFlashAttribute("error", "Prestation ajoutee mais erreur lors de l'upload de la photo : " + e.getMessage());
+                return "redirect:/pro/prestations";
+            }
+        }
+        
         redirectAttributes.addFlashAttribute("success", "Prestation ajoutee.");
         return "redirect:/pro/prestations";
     }
 
     @PostMapping("/prestations/{id}/supprimer")
-    public String removePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String removePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                     RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         professionalService.removePrestation(profile, id);
         redirectAttributes.addFlashAttribute("success",
                 "Prestation retiree. Vous pouvez la restaurer depuis \"Prestations supprimees\".");
         return "redirect:/pro/prestations";
+    }
+
+    @PostMapping("/prestations/{id}/supprimer-definitivement")
+    public String permanentlyDeletePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
+                                             RedirectAttributes redirectAttributes) {
+        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
+        try {
+            professionalService.permanentlyDeletePrestation(profile, id);
+            redirectAttributes.addFlashAttribute("success", "Prestation supprimee definitivement.");
+        } catch (IllegalOperationException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/pro/prestations/supprimees";
     }
 
     // Prestations retirees par le pro, avec un bouton pour les restaurer.
@@ -163,7 +185,7 @@ public class ProfessionalDashboardController {
     }
 
     @PostMapping("/prestations/{id}/restaurer")
-    public String restorePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String restorePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                      RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         try {
@@ -218,7 +240,7 @@ public class ProfessionalDashboardController {
     }
 
     @PostMapping("/creneaux/{id}/supprimer")
-    public String removeTimeSlot(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String removeTimeSlot(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                   RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         try {
@@ -273,7 +295,7 @@ public class ProfessionalDashboardController {
     // le rendez-vous appartient bien a ce professionnel), puis rediriger avec
     // un message flash de confirmation.
     @PostMapping("/rendez-vous/{id}/terminer")
-    public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                        RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         appointmentService.markCompleted(profile, id);

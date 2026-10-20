@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Prestation proposee par un professionnel (coiffure, onglerie, soin...).
@@ -60,4 +61,13 @@ public class Prestation {
     @Column(nullable = false)
     @Builder.Default
     private boolean active = true;
+
+    // Photos associées à la prestation (maximum 5)
+    @OneToMany(mappedBy = "prestation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
+    private List<PrestationPhoto> photos;
+    
+    public List<PrestationPhoto> getPhotos() {
+        return photos != null ? photos : new java.util.ArrayList<>();
+    }
 }

@@ -6,15 +6,21 @@ import com.beautyconnect.dto.TimeSlotForm;
 import com.beautyconnect.exception.IllegalOperationException;
 import com.beautyconnect.exception.ResourceNotFoundException;
 import com.beautyconnect.model.Prestation;
+import com.beautyconnect.model.PrestationImage;
 import com.beautyconnect.model.ProfessionalProfile;
 import com.beautyconnect.model.TimeSlot;
+import com.beautyconnect.repository.PrestationImageRepository;
 import com.beautyconnect.repository.PrestationRepository;
 import com.beautyconnect.repository.ProfessionalProfileRepository;
 import com.beautyconnect.repository.TimeSlotRepository;
-import com.beautyconnect.utils.LocationUtils;
+import com.beautyconnect.service.storage.ImageDeleteException;
+import com.beautyconnect.service.storage.ImageStorageService;
+import com.beautyconnect.service.storage.ImageUploadException;
+import com.beautyconnect.service.storage.ImageUploadResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +41,9 @@ public class ProfessionalService {
     private final PrestationRepository prestationRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final com.beautyconnect.repository.AppointmentRepository appointmentRepository;
+    private final com.beautyconnect.repository.PrestationPhotoRepository photoRepository;
+    private final com.beautyconnect.repository.PrestationImageRepository prestationImageRepository;
+    private final ImageStorageService imageStorageService;
 
     // orElseThrow(...) : si findById ne trouve rien (Optional vide), on leve
     // une exception metier personnalisee plutot que de retourner null (ce qui
@@ -88,12 +97,22 @@ public class ProfessionalService {
         return professionalProfileRepository.save(profile);
     }
 
+    @Transactional
+    public ProfessionalProfile updateProfile(ProfessionalProfile profile) {
+        return professionalProfileRepository.save(profile);
+    }
+
     public List<Prestation> getPrestations(ProfessionalProfile professional) {
         return prestationRepository.findByProfessional(professional);
     }
 
     public List<Prestation> getActivePrestations(ProfessionalProfile professional) {
-        return prestationRepository.findByProfessionalAndActiveTrue(professional);
+        var prestations = prestationRepository.findByProfessionalAndActiveTrue(professional);
+        prestations.forEach(p -> {
+            var photos = photoRepository.findByPrestationOrderByDisplayOrderAsc(p);
+            p.setPhotos(photos != null ? photos : new java.util.ArrayList<>());
+        });
+        return prestations;
     }
 
     public List<Prestation> getRemovedPrestations(ProfessionalProfile professional) {
@@ -119,6 +138,32 @@ public class ProfessionalService {
     }
 
     @Transactional
+    public void addPrestationImage(ProfessionalProfile professional, Long prestationId, MultipartFile file) {
+        Prestation prestation = prestationRepository.findById(prestationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
+        assertOwnership(professional, prestation.getProfessional());
+
+        // Vérifier la limite de 5 images
+        long currentCount = prestationImageRepository.countByPrestation(prestation);
+        if (currentCount >= 5) {
+            throw new IllegalOperationException("Maximum 5 images par prestation");
+        }
+
+        try {
+            ImageUploadResult result = imageStorageService.upload(file);
+            PrestationImage image = PrestationImage.builder()
+                    .prestation(prestation)
+                    .publicId(result.publicId())
+                    .secureUrl(result.secureUrl())
+                    .displayOrder((int) currentCount + 1)
+                    .build();
+            prestationImageRepository.save(image);
+        } catch (ImageUploadException e) {
+            throw new IllegalOperationException("Erreur lors de l'upload : " + e.getMessage());
+        }
+    }
+
+    @Transactional
     public void removePrestation(ProfessionalProfile professional, Long prestationId) {
         Prestation prestation = prestationRepository.findById(prestationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
@@ -131,6 +176,32 @@ public class ProfessionalService {
         // deja pris sur cette prestation (qui referencent son ID).
         prestation.setActive(false);
         prestationRepository.save(prestation);
+    }
+
+    @Transactional
+    public void permanentlyDeletePrestation(ProfessionalProfile professional, Long prestationId) {
+        Prestation prestation = prestationRepository.findById(prestationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prestation introuvable : " + prestationId));
+        assertOwnership(professional, prestation.getProfessional());
+
+        // Vérifier qu'il n'y a pas de rendez-vous sur cette prestation
+        if (appointmentRepository.existsByPrestationId(prestationId)) {
+            throw new IllegalOperationException("Impossible de supprimer définitivement : des rendez-vous existent sur cette prestation.");
+        }
+
+        // Supprimer les images associées
+        List<com.beautyconnect.model.PrestationImage> images = prestationImageRepository.findByPrestationOrderByDisplayOrderAsc(prestation);
+        for (com.beautyconnect.model.PrestationImage image : images) {
+            try {
+                imageStorageService.delete(image.getPublicId());
+            } catch (ImageDeleteException e) {
+                System.err.println("Erreur suppression image : " + e.getMessage());
+            }
+        }
+        prestationImageRepository.deleteAll(images);
+
+        // Supprimer la prestation définitivement
+        prestationRepository.delete(prestation);
     }
 
     // Inverse de removePrestation : la prestation retiree redevient visible

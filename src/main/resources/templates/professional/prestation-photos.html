@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Photos de la prestation')}"></head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav th:replace="~{fragments/navbar :: navbar}"></nav>
+<div th:replace="~{fragments/alerts :: alerts}"></div>
+
+<main class="flex-grow-1 container my-5" style="max-width: 800px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">Photos de la prestation</h1>
+        <a th:href="@{/pro/prestations}" class="btn btn-outline-secondary">Retour aux prestations</a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title" th:text="${prestation.name}"></h5>
+            <p class="card-text text-muted" th:text="${prestation.description}"></p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Photos actuelles (<span th:text="${#lists.size(prestation.photos)}"></span>/5)</h5>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(prestation.photos)}" class="text-muted text-center py-4">
+                Aucune photo pour cette prestation.
+            </div>
+            <div class="row g-3" th:if="${!#lists.isEmpty(prestation.photos)}">
+                <div class="col-md-4 col-sm-6" th:each="photo : ${prestation.photos}">
+                    <div class="card">
+                        <img th:src="${photo.photoUrl}" alt="Photo" class="card-img-top" style="height: 200px; object-fit: cover;"/>
+                        <div class="card-body p-2 text-center">
+                            <form th:action="@{'/pro/prestations/' + ${prestation.id} + '/photos/' + ${photo.id} + '/delete'}" method="post">
+                                <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm" th:if="${#lists.size(prestation.photos) < 5}">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Ajouter une photo</h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{'/pro/prestations/' + ${prestation.id} + '/photos/upload'}" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Sélectionner une image</label>
+                    <input type="file" name="photo" accept="image/*" class="form-control" required/>
+                    <div class="form-text">Maximum 5 photos par prestation. Formats acceptés: JPG, PNG, GIF. Taille max: 10MB.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Ajouter la photo</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-warning mt-4" th:if="${#lists.size(prestation.photos) >= 5}">
+        Maximum de 5 photos atteint. Supprimez une photo avant d'en ajouter une nouvelle.
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

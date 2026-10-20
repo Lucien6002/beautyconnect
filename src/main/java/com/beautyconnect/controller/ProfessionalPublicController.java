@@ -29,7 +29,7 @@ public class ProfessionalPublicController {
     // @PathVariable Long id : recupere le segment {id} de l'URL
     // (ex: /professionnels/42 -> id = 42) et le convertit automatiquement en Long.
     @GetMapping("/professionnels/{id}")
-    public String viewProfile(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
+    public String viewProfile(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
         ProfessionalProfile professional = professionalService.getPublicProfileOrThrow(id);
 
         model.addAttribute("professional", professional);

@@ -77,6 +77,9 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "profile_photo_url")
+    private String profilePhotoUrl;
+
     // @PrePersist : methode appelee automatiquement par Hibernate juste avant
     // le tout premier INSERT en base pour cette entite. Ici, on en profite pour
     // fixer la date de creation sans avoir a y penser a chaque appel de service.

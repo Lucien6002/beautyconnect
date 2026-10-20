@@ -47,30 +47,54 @@
 
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white"><h2 class="h5 mb-0">Prestations proposees</h2></div>
-                <div class="table-responsive">
-                    <table class="table mb-0 align-middle">
-                        <thead>
-                        <tr><th>Prestation</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="p : ${prestations}">
-                            <td>
-                                <strong th:text="${p.name}"></strong>
-                                <div class="small text-muted" th:text="${p.description}"></div>
-                            </td>
-                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
-                            <td th:text="${p.durationMinutes} + ' min'"></td>
-                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
-                            <td sec:authorize="hasRole('CLIENT')">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reserverModal"
-                                        th:attr="onclick='document.getElementById(\'prestationId\').value=' + ${p.id} + ';'">
-                                    Reserver
-                                </button>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(prestations)}">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-4" th:each="p : ${prestations}">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-img-top position-relative" style="height: 200px; overflow: hidden; background-color: #f8f9fa;">
+                                    <div th:if="${p.photos != null and #lists.size(p.photos) > 1}" th:id="'carousel-' + ${p.id}" class="carousel slide" data-bs-ride="carousel">
+                                        <div class="carousel-inner h-100">
+                                            <div th:each="photo, iterStat : ${p.photos}"
+                                                 th:class="${iterStat.index == 0 ? 'carousel-item active' : 'carousel-item'}"
+                                                 class="carousel-item h-100">
+                                                <img th:src="${photo.photoUrl}" th:alt="${p.name}" class="d-block w-100 h-100" style="object-fit: cover; object-position: center;"/>
+                                            </div>
+                                        </div>
+                                        <button class="carousel-control-prev" type="button" th:data-bs-target="'#carousel-' + ${p.id}" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" th:data-bs-target="'#carousel-' + ${p.id}" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon"></span>
+                                        </button>
+                                    </div>
+                                    <div th:if="${p.photos == null or #lists.isEmpty(p.photos)}" class="w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: #f8f9fa;">
+                                        <span class="text-muted small">Aucune photo</span>
+                                    </div>
+                                    <img th:if="${p.photos != null and #lists.size(p.photos) == 1}"
+                                         th:src="${p.photos[0].photoUrl}"
+                                         th:alt="${p.name}"
+                                         class="w-100 h-100" style="object-fit: cover; object-position: center;"/>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title" th:text="${p.name}"></h5>
+                                    <p class="card-text small text-muted" th:text="${p.description}"></p>
+                                    <span class="badge text-bg-light border" th:text="${p.type}"></span>
+                                    <div class="mt-2">
+                                        <strong th:text="${p.durationMinutes} + ' min'"></strong>
+                                        <span class="text-muted"> | </span>
+                                        <strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white" sec:authorize="hasRole('CLIENT')">
+                                    <button class="btn btn-sm btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reserverModal"
+                                            th:attr="onclick='document.getElementById(\'prestationId\').value=' + ${p.id} + ';'">
+                                        Reserver
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3" th:if="${#lists.isEmpty(prestations)}">
                         Aucune prestation renseignee pour le moment. Pour toute demande specifique, contactez directement le professionnel.
                     </p>
                 </div>

@@ -43,6 +43,7 @@ public class AccountController {
         form.setPhone(user.getPhone());
         model.addAttribute("personalInfoForm", form);
         model.addAttribute("email", user.getEmail());
+        model.addAttribute("profilePhotoUrl", user.getProfilePhotoUrl());
         return "account/personal-info";
     }
 
