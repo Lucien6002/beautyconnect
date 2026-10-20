@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -49,6 +50,7 @@ public class ProfessionalDashboardController {
 
     private final ProfessionalService professionalService;
     private final AppointmentService appointmentService;
+    private final com.beautyconnect.service.PhotoService photoService;
 
     @GetMapping("/tableau-bord")
     public String dashboard(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
@@ -56,6 +58,7 @@ public class ProfessionalDashboardController {
         // ProfessionalProfile associe (relation 1-1, voir ProfessionalService.getProfileByUserId).
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         model.addAttribute("professional", profile);
+        model.addAttribute("prestationsCount", professionalService.getActivePrestations(profile).size());
         model.addAttribute("upcomingSlots", professionalService.getAvailableTimeSlots(profile).size());
 
         List<Appointment> all = appointmentService.getAppointmentsForProfessional(profile);
@@ -67,7 +70,7 @@ public class ProfessionalDashboardController {
         BigDecimal monthlyRevenue = completed.stream()
                 .filter(a -> YearMonth.from(a.getTimeSlot().getStartDateTime()).equals(currentMonth))
                 .map(a -> a.getPrestation().getPrice())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
         model.addAttribute("monthlyRevenue", monthlyRevenue);
         model.addAttribute("currentMonth", currentMonth.atDay(1));
 
@@ -129,29 +132,84 @@ public class ProfessionalDashboardController {
     public String addPrestation(@AuthenticationPrincipal CustomUserDetails principal,
                                  @Valid @ModelAttribute PrestationForm prestationForm,
                                  BindingResult bindingResult, Model model,
-                                 RedirectAttributes redirectAttributes) {
+                                 RedirectAttributes redirectAttributes,
+                                 @RequestParam(name = "file", required = false) MultipartFile file,
+                                 @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryPhotos) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         if (bindingResult.hasErrors()) {
-            // En cas d'erreur de validation, on REAFFICHE le meme formulaire
-            // (pas de redirect) pour que Thymeleaf puisse montrer les messages
-            // d'erreur a cote des champs invalides ; il faut donc repeupler
-            // manuellement les autres attributs necessaires a la vue.
             addPrestationsPageAttributes(profile, model);
             return "professional/prestations";
         }
-        professionalService.addPrestation(profile, prestationForm);
+        try {
+            professionalService.addPrestationWithPhotos(profile, prestationForm, file, secondaryPhotos);
+        } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+            bindingResult.reject("photos.invalid", ex.getMessage());
+            addPrestationsPageAttributes(profile, model);
+            return "professional/prestations";
+        }
+
         redirectAttributes.addFlashAttribute("success", "Prestation ajoutee.");
         return "redirect:/pro/prestations";
     }
 
+    @GetMapping("/prestations/{id}/modifier")
+    public String editPrestation(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        var p = photoService.ownedPrestation(principal.getId(), id);
+        var form = new PrestationForm();
+        form.setName(p.getName()); form.setDescription(p.getDescription()); form.setType(p.getType());
+        form.setPrice(p.getPrice()); form.setDurationMinutes(p.getDurationMinutes());
+        model.addAttribute("prestationForm", form);
+        model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", p);
+        model.addAttribute("types", ServiceType.values());
+        return "professional/prestation-edit";
+    }
+
+    @PostMapping("/prestations/{id}/modifier")
+    public String updatePrestation(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails principal,
+            @Valid @ModelAttribute PrestationForm prestationForm, BindingResult binding, Model model, RedirectAttributes flash,
+            @RequestParam(name = "file", required = false) MultipartFile mainFile,
+            @RequestParam(name = "secondaryPhotos", required = false) List<MultipartFile> secondaryFiles,
+            @RequestParam(name = "deletePhotoIds", required = false) List<Long> deleteIds,
+            @RequestParam(name = "mainPhotoId", required = false) Long mainPhotoId) {
+        var prestation = photoService.ownedPrestation(principal.getId(), id);
+        if (!binding.hasErrors()) {
+            try {
+                professionalService.updatePrestationWithPhotos(professionalService.getProfileByUserId(principal.getId()),
+                        id, prestationForm, mainFile, secondaryFiles, deleteIds, mainPhotoId);
+                flash.addFlashAttribute("success", "La prestation et ses photos ont été mises à jour.");
+                return "redirect:/pro/prestations";
+            } catch (com.beautyconnect.service.storage.ImageUploadException | IllegalOperationException ex) {
+                binding.reject("photos.invalid", ex.getMessage());
+            }
+        }
+        model.addAttribute("prestationId", id);
+        model.addAttribute("prestation", prestation);
+        model.addAttribute("types", ServiceType.values());
+        return "professional/prestation-edit";
+    }
+
     @PostMapping("/prestations/{id}/supprimer")
-    public String removePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String removePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                     RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         professionalService.removePrestation(profile, id);
         redirectAttributes.addFlashAttribute("success",
                 "Prestation retiree. Vous pouvez la restaurer depuis \"Prestations supprimees\".");
         return "redirect:/pro/prestations";
+    }
+
+    @PostMapping("/prestations/{id}/supprimer-definitivement")
+    public String permanentlyDeletePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
+                                             RedirectAttributes redirectAttributes) {
+        ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
+        try {
+            professionalService.permanentlyDeletePrestation(profile, id);
+            redirectAttributes.addFlashAttribute("success", "Prestation supprimee definitivement.");
+        } catch (IllegalOperationException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/pro/prestations/supprimees";
     }
 
     // Prestations retirees par le pro, avec un bouton pour les restaurer.
@@ -163,7 +221,7 @@ public class ProfessionalDashboardController {
     }
 
     @PostMapping("/prestations/{id}/restaurer")
-    public String restorePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String restorePrestation(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                      RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         try {
@@ -218,7 +276,7 @@ public class ProfessionalDashboardController {
     }
 
     @PostMapping("/creneaux/{id}/supprimer")
-    public String removeTimeSlot(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String removeTimeSlot(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                   RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         try {
@@ -273,7 +331,7 @@ public class ProfessionalDashboardController {
     // le rendez-vous appartient bien a ce professionnel), puis rediriger avec
     // un message flash de confirmation.
     @PostMapping("/rendez-vous/{id}/terminer")
-    public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable Long id,
+    public String completeAppointment(@AuthenticationPrincipal CustomUserDetails principal, @PathVariable("id") Long id,
                                        RedirectAttributes redirectAttributes) {
         ProfessionalProfile profile = professionalService.getProfileByUserId(principal.getId());
         appointmentService.markCompleted(profile, id);

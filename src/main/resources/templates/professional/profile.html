@@ -6,11 +6,14 @@
 <nav th:replace="~{fragments/navbar :: navbar}"></nav>
 <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-<main class="flex-grow-1 container my-5">
+<main id="main-content" class="flex-grow-1 container my-5">
+    <nav class="bc-breadcrumb" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span aria-hidden="true">/</span><a href="/recherche" data-back-to-search><i class="bi bi-arrow-left" aria-hidden="true"></i> Retour aux résultats</a></nav>
+    <div class="bc-profile-intro"><span class="bc-eyebrow">Votre prochaine bonne adresse</span><p>Choisissez une prestation, puis un créneau pour réserver votre rendez-vous.</p></div>
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
+                    <img th:if="${professional.profilePhotoUrl != null}" th:src="${professional.profilePhotoUrl}" th:alt="${professional.businessName}" class="bc-profile-cover" width="960" height="360"/>
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h1 class="h3 mb-1" th:text="${professional.businessName}"></h1>
@@ -46,34 +49,20 @@
             </div>
 
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white"><h2 class="h5 mb-0">Prestations proposees</h2></div>
-                <div class="table-responsive">
-                    <table class="table mb-0 align-middle">
-                        <thead>
-                        <tr><th>Prestation</th><th>Type</th><th>Duree</th><th>Tarif</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="p : ${prestations}">
-                            <td>
-                                <strong th:text="${p.name}"></strong>
-                                <div class="small text-muted" th:text="${p.description}"></div>
-                            </td>
-                            <td><span class="badge text-bg-light border" th:text="${p.type}"></span></td>
-                            <td th:text="${p.durationMinutes} + ' min'"></td>
-                            <td th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></td>
-                            <td sec:authorize="hasRole('CLIENT')">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reserverModal"
-                                        th:attr="onclick='document.getElementById(\'prestationId\').value=' + ${p.id} + ';'">
-                                    Reserver
-                                </button>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <p class="p-3 text-muted small mb-0" th:if="${#lists.isEmpty(prestations)}">
-                        Aucune prestation renseignee pour le moment. Pour toute demande specifique, contactez directement le professionnel.
-                    </p>
-                </div>
+                <div class="card-header bg-white" id="prestations"><h2 class="h5 mb-0">Prestations proposées</h2></div>
+                <div class="card-body"><div class="bc-public-services">
+                    <article class="bc-public-service" th:each="p : ${prestations}">
+                        <div class="bc-service-gallery" th:if="${!#lists.isEmpty(p.photos)}" aria-label="Photos de la prestation">
+                            <a th:each="photo, state : ${p.photos}" th:href="${photo.photoUrl}" target="_blank" rel="noopener" th:aria-label="${'Ouvrir la photo ' + (state.index + 1) + ' de ' + p.name}"><img th:src="${photo.photoUrl}" th:alt="${p.name} + ' — exemple de réalisation'" loading="lazy" width="480" height="320"/></a>
+                        </div>
+                        <div class="bc-service-placeholder" th:if="${#lists.isEmpty(p.photos)}"><i th:class="${p.type.name() == 'COIFFURE' ? 'bi bi-scissors' : p.type.name() == 'ONGLERIE' ? 'bi bi-flower1' : 'bi bi-droplet'}" aria-hidden="true"></i><span>Les photos arrivent bientôt</span></div>
+                        <p class="bc-gallery-hint" th:if="${#lists.size(p.photos) > 1}"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> Faites défiler les photos · <span th:text="${#lists.size(p.photos)}"></span> réalisations</p><div class="bc-public-service-body"><span class="bc-eyebrow" th:text="${p.type}"></span><h3 th:text="${p.name}"></h3><p class="text-muted" th:text="${p.description}"></p>
+                            <div class="bc-service-price"><span th:text="${p.durationMinutes} + ' min'"></span><strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong></div>
+                            <button sec:authorize="hasRole('CLIENT')" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reserverModal" th:disabled="${#lists.isEmpty(timeSlots)}" th:attr="data-prestation-id=${p.id}">Réserver</button>
+                            <a sec:authorize="isAnonymous()" class="btn btn-outline-primary w-100" href="/connexion">Se connecter pour réserver</a>
+                        </div>
+                    </article>
+                </div><p class="text-muted my-3" th:if="${#lists.isEmpty(prestations)}">Aucune prestation renseignée pour le moment.</p></div>
             </div>
 
             <div class="card shadow-sm">
@@ -86,7 +75,7 @@
                 <div class="list-group list-group-flush">
                     <div class="list-group-item" th:each="r : ${reviews}">
                         <div class="d-flex justify-content-between">
-                            <strong th:text="${r.client.firstName}"></strong>
+                            <div><strong th:text="${r.client.firstName}"></strong><span th:if="${r.appointment != null}" class="bc-status bc-status-success ms-2">Rendez-vous vérifié</span><span th:if="${r.appointment == null}" class="bc-meta ms-2">Avis libre</span></div>
                             <span class="text-warning"><i class="bi bi-star-fill"></i> <span th:text="${r.rating}"></span>/5</span>
                         </div>
                         <p class="mb-1" th:text="${r.comment}"></p>
@@ -119,8 +108,9 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white"><h2 class="h5 mb-0">Prochains creneaux</h2></div>
+            <div class="card bc-booking-guide"><div class="card-body"><span class="bc-eyebrow">Votre réservation</span><h2>Un moment pour vous.</h2><p>Choisissez votre prestation et une disponibilité. Votre réservation sera confirmée directement.</p><a href="#prestations" class="btn btn-primary w-100">Voir les prestations</a><a sec:authorize="hasRole('CLIENT')" href="/client/rendez-vous" class="bc-text-link">Suivre mes réservations <i class="bi bi-arrow-right" aria-hidden="true"></i></a><div sec:authorize="isAnonymous()" class="mt-3"><a href="/connexion">Se connecter</a> ou <a href="/inscription/client">créer un compte client</a>.</div></div></div>
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-white"><h2 class="h5 mb-0">Prochains créneaux</h2></div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item" th:each="slot : ${timeSlots}"
                         th:text="${#temporals.format(slot.startDateTime, 'dd/MM/yyyy HH:mm')}"></li>
@@ -161,13 +151,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Precisions (optionnel)</label>
-                        <textarea class="form-control" th:field="*{notes}" maxlength="1000" placeholder="Toute specificite a communiquer au professionnel"></textarea>
+                        <label for="notes" class="form-label">Message au professionnel (facultatif)</label>
+                        <textarea class="form-control" th:field="*{notes}" maxlength="1000" placeholder="Ex. : précisions sur la coupe souhaitée" aria-describedby="booking-message-help"></textarea><p id="booking-message-help" class="form-text">Ce message accompagne la réservation. Vous pourrez donner une note sur 5 après le rendez-vous.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary" th:disabled="${#lists.isEmpty(timeSlots) or #lists.isEmpty(prestations)}">
-                        Confirmer la demande
+                        Confirmer le rendez-vous
                     </button>
                 </div>
             </form>
@@ -187,7 +177,8 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Note (1 a 5)</label>
-                        <select class="form-select" th:field="*{rating}">
+                        <select class="form-select" th:field="*{rating}" required>
+                            <option value="">Choisir une note</option>
                             <option value="5">5 - Excellent</option>
                             <option value="4">4 - Tres bien</option>
                             <option value="3">3 - Correct</option>
@@ -197,7 +188,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Commentaire</label>
-                        <textarea class="form-control" th:field="*{comment}"></textarea>
+                        <textarea class="form-control" th:field="*{comment}" maxlength="1000"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -230,6 +221,5 @@
 </div>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

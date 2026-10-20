@@ -300,6 +300,24 @@ class ClientJourneyTests {
                 .andExpect(status().isNotFound());
     }
 
+    @Test void nearbyProfessionalInLimogesIsFoundBeforePaginationAndPrivateCoordinatesStayExcluded() {
+        for (int i = 0; i < 6; i++) professional("a-far" + i + "@journey.test", true);
+        var local = professional("zz-limoges@journey.test", true);
+        local.setCity("Limoges"); local.setLatitude(45.8336); local.setLongitude(1.2611); profiles.save(local);
+        var privateProfile = professional("a-private@journey.test", true);
+        privateProfile.setLatitude(45.8336); privateProfile.setLongitude(1.2611);
+        privateProfile.setCoordinatesPublic(false); profiles.save(privateProfile);
+        var criteria = new SearchCriteria(); criteria.setClientLatitude(45.8336); criteria.setClientLongitude(1.2611);
+        var first = professionals.searchPage(criteria);
+        assertThat(first.getContent()).hasSize(6);
+        assertThat(first.getContent().getFirst().getId()).isEqualTo(local.getId());
+        assertThat(first.getContent()).noneMatch(p -> p.getId().equals(privateProfile.getId()));
+        criteria.setPage(1);
+        assertThat(professionals.searchPage(criteria).getContent()).extracting(ProfessionalProfile::getId).contains(privateProfile.getId());
+        criteria.setPage(0); criteria.setCity("Paris");
+        assertThat(professionals.searchPage(criteria).getContent()).noneMatch(p -> p.getId().equals(local.getId()));
+    }
+
     @Test void matrixReordersByWalkingDistanceAndFallsBackWithoutInventingARoute() {
         var b = professional("b@journey.test", true); b.setLatitude(48.87); profiles.save(b);
         var criteria = new SearchCriteria(); criteria.setClientLatitude(48.85); criteria.setClientLongitude(2.35);
@@ -334,6 +352,11 @@ class ClientJourneyTests {
         for (int i = 0; i < 13; i++) professional("page" + i + "@journey.test", true);
         mvc.perform(get("/recherche").param("city", "Paris"))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Suivante")))
+                .andExpect(model().attribute("results", org.hamcrest.Matchers.hasSize(6)))
+                .andExpect(content().string(containsString("city=Paris")));
+        mvc.perform(get("/recherche").param("city", "Paris").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("results", org.hamcrest.Matchers.hasSize(6)))
                 .andExpect(content().string(containsString("city=Paris")));
         when(routing.getWalkingRoute(anyDouble(), anyDouble(), anyDouble(), anyDouble())).thenThrow(new RoutingUnavailableException());
         mvc.perform(get("/itineraire/professionnels/{id}", pro.getId()).param("lat", "48").param("lon", "2"))
@@ -360,12 +383,12 @@ class ClientJourneyTests {
     }
 
     @ParameterizedTest @EnumSource(Role.class)
-    void realLoginRedirectsToTheRoleDashboard(Role role) throws Exception {
+    void realLoginRedirectsClientsHomeAndStaffToTheirDashboard(Role role) throws Exception {
         var account = role == Role.CLIENT ? client : role == Role.PROFESSIONAL ? pro.getUser()
                 : users.save(account("admin@journey.test", Role.ADMIN));
         account.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("LoginTest123!"));
         users.save(account);
-        String destination = role == Role.CLIENT ? "/client/tableau-bord"
+        String destination = role == Role.CLIENT ? "/"
                 : role == Role.PROFESSIONAL ? "/pro/tableau-bord" : "/admin/tableau-bord";
         mvc.perform(post("/connexion").with(csrf()).param("username", account.getEmail()).param("password", "LoginTest123!"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(destination));

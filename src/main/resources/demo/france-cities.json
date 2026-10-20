@@ -1,0 +1,187 @@
+{
+  "source": "https://geo.api.gouv.fr/decoupage-administratif/communes",
+  "retrievedAt": "2026-10-19",
+  "coordinateMeaning": "Centres de communes réels ; les professionnels créés par le jeu de démonstration sont fictifs.",
+  "cities": [
+    {
+      "code": "75056",
+      "name": "Paris",
+      "latitude": 48.8589,
+      "longitude": 2.347
+    },
+    {
+      "code": "69123",
+      "name": "Lyon",
+      "latitude": 45.758,
+      "longitude": 4.8351
+    },
+    {
+      "code": "13055",
+      "name": "Marseille",
+      "latitude": 43.2803,
+      "longitude": 5.3806
+    },
+    {
+      "code": "31555",
+      "name": "Toulouse",
+      "latitude": 43.6007,
+      "longitude": 1.4328
+    },
+    {
+      "code": "33063",
+      "name": "Bordeaux",
+      "latitude": 44.8624,
+      "longitude": -0.5848
+    },
+    {
+      "code": "59350",
+      "name": "Lille",
+      "latitude": 50.6311,
+      "longitude": 3.0468
+    },
+    {
+      "code": "44109",
+      "name": "Nantes",
+      "latitude": 47.2382,
+      "longitude": -1.5603
+    },
+    {
+      "code": "67482",
+      "name": "Strasbourg",
+      "latitude": 48.5691,
+      "longitude": 7.7621
+    },
+    {
+      "code": "34172",
+      "name": "Montpellier",
+      "latitude": 43.61,
+      "longitude": 3.8742
+    },
+    {
+      "code": "35238",
+      "name": "Rennes",
+      "latitude": 48.1159,
+      "longitude": -1.6884
+    },
+    {
+      "code": "06088",
+      "name": "Nice",
+      "latitude": 43.7032,
+      "longitude": 7.2528
+    },
+    {
+      "code": "38185",
+      "name": "Grenoble",
+      "latitude": 45.1842,
+      "longitude": 5.7155
+    },
+    {
+      "code": "21166",
+      "name": "Chenôve",
+      "latitude": 47.2911,
+      "longitude": 5.0001
+    },
+    {
+      "code": "51454",
+      "name": "Reims",
+      "latitude": 49.2535,
+      "longitude": 4.0551
+    },
+    {
+      "code": "45234",
+      "name": "Orléans",
+      "latitude": 47.8734,
+      "longitude": 1.9122
+    },
+    {
+      "code": "37261",
+      "name": "Tours",
+      "latitude": 47.3943,
+      "longitude": 0.6949
+    },
+    {
+      "code": "14118",
+      "name": "Caen",
+      "latitude": 49.1846,
+      "longitude": -0.3722
+    },
+    {
+      "code": "76540",
+      "name": "Rouen",
+      "latitude": 49.4412,
+      "longitude": 1.0912
+    },
+    {
+      "code": "87085",
+      "name": "Limoges",
+      "latitude": 45.8567,
+      "longitude": 1.226
+    },
+    {
+      "code": "63113",
+      "name": "Clermont-Ferrand",
+      "latitude": 45.787,
+      "longitude": 3.1127
+    },
+    {
+      "code": "49007",
+      "name": "Angers",
+      "latitude": 47.4819,
+      "longitude": -0.5629
+    },
+    {
+      "code": "80021",
+      "name": "Amiens",
+      "latitude": 49.8987,
+      "longitude": 2.2847
+    },
+    {
+      "code": "29019",
+      "name": "Brest",
+      "latitude": 48.4085,
+      "longitude": -4.4996
+    },
+    {
+      "code": "64445",
+      "name": "Pau",
+      "latitude": 43.3219,
+      "longitude": -0.3435
+    },
+    {
+      "code": "25056",
+      "name": "Besançon",
+      "latitude": 47.2602,
+      "longitude": 6.0123
+    },
+    {
+      "code": "42218",
+      "name": "Saint-Étienne",
+      "latitude": 45.4241,
+      "longitude": 4.3665
+    },
+    {
+      "code": "83137",
+      "name": "Toulon",
+      "latitude": 43.1364,
+      "longitude": 5.9334
+    },
+    {
+      "code": "2A004",
+      "name": "Ajaccio",
+      "latitude": 41.9228,
+      "longitude": 8.7058
+    },
+    {
+      "code": "97411",
+      "name": "Saint-Denis",
+      "latitude": -20.9434,
+      "longitude": 55.4444
+    },
+    {
+      "code": "97209",
+      "name": "Fort-de-France",
+      "latitude": 14.6492,
+      "longitude": -61.0686
+    }
+  ]
+}

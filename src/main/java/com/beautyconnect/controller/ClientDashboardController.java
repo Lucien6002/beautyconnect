@@ -24,11 +24,19 @@ import java.util.List;
 public class ClientDashboardController {
 
     private final AppointmentService appointmentService;
+    private final com.beautyconnect.repository.ReviewRepository reviews;
 
     // @AuthenticationPrincipal CustomUserDetails principal : Spring Security
-    // injecte directement l'utilisateur actuellement connecte. Les deux URL
-    // affichent la meme page : /client/tableau-bord est la destination apres connexion.
-    @GetMapping({"/client/tableau-bord", "/client/rendez-vous"})
+    // injecte directement l'utilisateur actuellement connecte.
+    @GetMapping("/client/tableau-bord")
+    public String dashboard(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
+        List<Appointment> all = appointmentService.getAppointmentsForClient(principal.getUser());
+        model.addAttribute("appointments", all.stream().limit(5).toList());
+        model.addAttribute("totalAppointments", all.size());
+        return "client/dashboard";
+    }
+
+    @GetMapping("/client/rendez-vous")
     public String appointments(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
         List<Appointment> all = appointmentService.getAppointmentsForClient(principal.getUser());
         LocalDateTime now = LocalDateTime.now();
@@ -39,6 +47,7 @@ public class ClientDashboardController {
         List<Appointment> history = all.stream().filter(a -> !isUpcoming(a, now)).toList();
         model.addAttribute("upcoming", upcoming);
         model.addAttribute("history", history);
+        model.addAttribute("reviewedAppointmentIds", reviews.reviewedAppointmentIds(principal.getUser()));
         return "client/appointments";
     }
 

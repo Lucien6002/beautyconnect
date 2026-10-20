@@ -129,6 +129,18 @@ class ReviewVerificationTests {
     // ---- Avis libre (sans rendez-vous) ----
 
     @Test
+    void publicProfileRendersReviewAuthorsWithoutAnOpenHibernateSession() throws Exception {
+        reviewRepository.save(Review.builder().client(client).professional(pro).rating(4)
+                .comment("Avis public visible sur la fiche").hidden(false).build());
+        reviewRepository.save(Review.builder().client(otherClient).professional(pro).rating(1)
+                .comment("Avis masque a ne jamais afficher").hidden(true).build());
+        mockMvc.perform(get("/professionnels/{id}", pro.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Avis public visible sur la fiche")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Avis masque a ne jamais afficher"))));
+    }
+
+    @Test
     void freeReview_isAccepted_andNotVerified() throws Exception {
         submit(client, pro, 4, "Tres bon accueil", null)
                 .andExpect(redirectedUrl("/professionnels/" + pro.getId()))
@@ -291,6 +303,20 @@ class ReviewVerificationTests {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Verifie")))
                 .andExpect(content().string(containsString("Libre")));
+    }
+
+    @Test
+    void completedAppointmentOffersVerifiedReviewAndAlreadyReviewedVisitDoesNotOfferADuplicate() throws Exception {
+        Appointment done = appointment(client, pro, AppointmentStatus.TERMINE);
+        mockMvc.perform(get("/client/rendez-vous").with(user(new CustomUserDetails(client))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Noter ce rendez-vous")))
+                .andExpect(content().string(containsString("name=\"appointmentId\" value=\"" + done.getId() + "\"")));
+        submit(client, pro, 4, "Avis après ma visite", done.getId()).andExpect(flash().attributeExists("success"));
+        mockMvc.perform(get("/client/rendez-vous").with(user(new CustomUserDetails(client))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Avis déjà envoyé")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Noter ce rendez-vous"))));
     }
 
     // ---- Outils ----

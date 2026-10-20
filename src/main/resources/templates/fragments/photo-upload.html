@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+    <body>
+        <section
+            th:fragment="editor(action, currentUrl, deleteAction, label)"
+            class="bc-photo-editor card p-4 mb-4"
+        >
+            <div class="bc-photo-editor-intro">
+                <img
+                    th:src="${currentUrl != null ? currentUrl : '/images/no-profile.svg'}"
+                    alt="Photo actuelle"
+                    class="bc-avatar-large"
+                    width="112"
+                    height="112"
+                />
+                <div>
+                    <span class="bc-eyebrow">Votre image</span>
+                    <h2 th:text="${label}"></h2>
+                    <p class="text-muted mb-0">
+                        Une photo pour reconnaître votre profil au premier
+                        regard.
+                    </p>
+                </div>
+            </div>
+            <form
+                th:action="${action}"
+                method="post"
+                enctype="multipart/form-data"
+                class="bc-upload-form"
+                data-photo-upload
+            >
+                <label
+                    class="form-label"
+                    th:for="${'upload-' + #strings.replace(action, '/', '-')}"
+                    >Choisir une nouvelle photo</label
+                >
+                <div class="bc-upload-zone">
+                    <i class="bi bi-image" aria-hidden="true"></i
+                    ><input
+                        type="file"
+                        name="photo"
+                        th:id="${'upload-' + #strings.replace(action, '/', '-')}"
+                        accept="image/jpeg,image/png,image/webp"
+                        required
+                        class="form-control"
+                        aria-describedby="photo-format"
+                    />
+                    <p id="photo-format" class="form-text mb-0">
+                        JPEG, PNG ou WebP · 5 Mo maximum · 20 mégapixels maximum.
+                    </p>
+                    <img
+                        data-photo-preview
+                        hidden
+                        alt="Aperçu avant enregistrement"
+                        class="bc-upload-preview"
+                    />
+                    <p data-photo-status role="status" class="small mb-0"></p>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="bi bi-upload" aria-hidden="true"></i> Enregistrer
+                    la photo
+                </button>
+            </form>
+            <form
+                th:if="${currentUrl != null}"
+                th:action="${deleteAction}"
+                method="post"
+                class="mt-3"
+            >
+                <button class="btn btn-sm btn-outline-danger" type="submit">
+                    Supprimer la photo actuelle
+                </button>
+            </form>
+        </section>
+    </body>
+</html>

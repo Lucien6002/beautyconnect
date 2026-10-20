@@ -21,7 +21,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // Avis publics d'un professionnel : on exclut ceux masques par un admin
     // suite a un signalement (hidden = true), voir AdminService.
-    List<Review> findByProfessionalAndHiddenFalseOrderByCreatedAtDesc(ProfessionalProfile professional);
+    // La fiche lit r.client.firstName après fermeture de la session Hibernate.
+    @Query("SELECT r FROM Review r JOIN FETCH r.client WHERE r.professional = :professional AND r.hidden = false ORDER BY r.createdAt DESC")
+    List<Review> findByProfessionalAndHiddenFalseOrderByCreatedAtDesc(
+            @org.springframework.data.repository.query.Param("professional") ProfessionalProfile professional);
 
     // Tous les avis, y compris masques : utilise dans l'espace de moderation admin.
     // JOIN FETCH charge le client et le professionnel dans la meme requete :
@@ -29,6 +32,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // ne pourrait pas les lire apres la fermeture de la session Hibernate.
     @Query("SELECT r FROM Review r JOIN FETCH r.client JOIN FETCH r.professional ORDER BY r.createdAt DESC")
     List<Review> findAllByOrderByCreatedAtDesc();
+
+    @Query("SELECT r.appointment.id FROM Review r WHERE r.client = :client AND r.appointment IS NOT NULL")
+    java.util.Set<Long> reviewedAppointmentIds(@org.springframework.data.repository.query.Param("client") User client);
 
     // Un avis existe-t-il deja pour ce rendez-vous ? (un seul avis par rendez-vous)
     boolean existsByAppointmentId(Long appointmentId);

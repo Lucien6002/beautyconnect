@@ -1,73 +1,141 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
-<body>
-  <nav th:fragment="navbar" class="navbar navbar-expand-lg sticky-top"
-    style="background-color: var(--bc-surface); border-bottom: 1px solid rgba(40, 31, 53, 0.08);">
-    <div class="container">
-      <!-- Logo & Titre avec police Fraunces et couleur ink -->
-      <a class="navbar-brand fw-bold" th:href="@{/}" style="font-family: var(--bc-font-titles); color: var(--bc-ink);">
-        <i class="bi bi-scissors text-primary"></i> BeautyConnect
-      </a>
-
-      <!-- Bouton burger accessible sur mobile -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
-        aria-controls="navMenu" aria-expanded="false" aria-label="Ouvrir le menu de navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navMenu">
-        <!-- Liens principaux -->
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" th:href="@{/}">Accueil</a>
-          </li>
-          <li class="nav-item" sec:authorize="!hasRole('PROFESSIONAL')">
-            <a class="nav-link" th:href="@{/recherche}">Trouver un pro</a>
-          </li>
-          <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
-            <a class="nav-link" th:href="@{/pro/agenda}">Mon agenda</a>
-          </li>
-          <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
-            <a class="nav-link" th:href="@{/pro/tableau-bord}">Mon espace pro</a>
-          </li>
-          <li class="nav-item" sec:authorize="hasRole('CLIENT')">
-            <a class="nav-link" th:href="@{/client/rendez-vous}">Mon compte</a>
-          </li>
-          <li class="nav-item" sec:authorize="hasRole('PROFESSIONAL')">
-            <a class="nav-link" th:href="@{/compte}">Mon compte</a>
-          </li>
-          <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-            <a class="nav-link" th:href="@{/admin/tableau-bord}">Administration</a>
-          </li>
-        </ul>
-
-        <!-- Zone de connexion / profil -->
-        <ul class="navbar-nav align-items-lg-center gap-2">
-          <!-- Connecté -->
-          <li class="nav-item" sec:authorize="isAuthenticated()">
-            <span class="navbar-text me-2 small text-muted">
-              <i class="bi bi-person-circle me-1"></i>
-              <span sec:authentication="name">Utilisateur</span>
-            </span>
-          </li>
-          <li class="nav-item" sec:authorize="isAuthenticated()">
-            <form th:action="@{/deconnexion}" method="post" class="d-inline">
-              <button type="submit" class="btn btn-outline-primary btn-sm">Déconnexion</button>
-            </form>
-          </li>
-
-          <!-- Visiteur anonyme -->
-          <li class="nav-item" sec:authorize="isAnonymous()">
-            <a class="btn btn-outline-primary" th:href="@{/connexion}">Connexion</a>
-          </li>
-          <li class="nav-item" sec:authorize="isAnonymous()">
-            <a class="btn btn-primary" th:href="@{/inscription/client}">Inscription</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-</body>
-
+<!doctype html>
+<html
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <body>
+        <nav
+            th:fragment="navbar"
+            class="navbar navbar-expand-lg sticky-top bc-navbar"
+            aria-label="Navigation principale"
+        >
+            <a class="bc-skip-link" href="#main-content">Aller au contenu</a>
+            <div class="container">
+                <a class="navbar-brand" th:href="@{/}"
+                    ><span class="bc-brand-icon"
+                        ><i class="bi bi-scissors" aria-hidden="true"></i></span
+                    >BeautyConnect<span class="bc-brand-dot">.</span></a
+                >
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navMenu"
+                    aria-controls="navMenu"
+                    aria-expanded="false"
+                    aria-label="Ouvrir le menu de navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navMenu">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/recherche}"
+                                >Les professionnels</a
+                            >
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('CLIENT')">
+                            <a class="nav-link" href="/client/rendez-vous"
+                                >Mes réservations</a
+                            >
+                        </li>
+                        <li
+                            class="nav-item"
+                            sec:authorize="hasRole('PROFESSIONAL')"
+                        >
+                            <a class="nav-link" href="/pro/tableau-bord"
+                                >Mon activité</a
+                            >
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                            <a class="nav-link" href="/admin/tableau-bord"
+                                >Administration</a
+                            >
+                        </li>
+                        <li
+                            class="nav-item"
+                            sec:authorize="hasRole('PROFESSIONAL')"
+                        >
+                            <a class="nav-link" href="/pro/agenda"
+                                >Mon agenda</a
+                            >
+                        </li>
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
+                            <a class="nav-link" href="/compte">Mon compte</a>
+                        </li>
+                    </ul>
+                    <div
+                        class="bc-account-nav"
+                        sec:authorize="isAuthenticated()"
+                    >
+                        <a
+                            sec:authorize="hasRole('CLIENT')"
+                            class="bc-account-link"
+                            href="/client/tableau-bord"
+                            ><span class="bc-role-pill bc-role-client"
+                                ><i class="bi bi-heart" aria-hidden="true"></i>
+                                Client</span
+                            ></a
+                        >
+                        <a
+                            sec:authorize="hasRole('PROFESSIONAL')"
+                            class="bc-account-link"
+                            href="/pro/tableau-bord"
+                            ><span class="bc-role-pill bc-role-professional"
+                                ><i class="bi bi-shop" aria-hidden="true"></i>
+                                Professionnel</span
+                            ></a
+                        >
+                        <a
+                            sec:authorize="hasRole('ADMIN')"
+                            class="bc-account-link"
+                            href="/admin/tableau-bord"
+                            ><span class="bc-role-pill bc-role-admin"
+                                ><i
+                                    class="bi bi-shield-check"
+                                    aria-hidden="true"
+                                ></i>
+                                Administrateur</span
+                            ></a
+                        >
+                        <span
+                            class="bc-account-name"
+                            th:text="${#authentication.principal instanceof T(com.beautyconnect.security.CustomUserDetails) ? #authentication.principal.fullName : #authentication.name}"
+                        ></span>
+                        <form th:action="@{/deconnexion}" method="post">
+                            <button
+                                type="submit"
+                                class="btn btn-outline-primary btn-sm"
+                                aria-label="Se déconnecter"
+                            >
+                                <i
+                                    class="bi bi-box-arrow-right"
+                                    aria-hidden="true"
+                                ></i
+                                ><span class="d-lg-none">Déconnexion</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="bc-account-nav" sec:authorize="isAnonymous()">
+                        <a
+                            class="bc-text-link"
+                            th:href="@{/inscription/professionnel}"
+                            >Vous êtes pro ?</a
+                        ><a
+                            class="btn btn-outline-primary"
+                            th:href="@{/connexion}"
+                            >Connexion</a
+                        ><a
+                            class="btn btn-primary"
+                            th:href="@{/inscription/client}"
+                            >Créer un compte</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </body>
 </html>

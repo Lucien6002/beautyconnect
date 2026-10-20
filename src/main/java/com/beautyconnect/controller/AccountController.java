@@ -34,6 +34,14 @@ public class AccountController {
     private final UserService userService;
     private final AccountService accountService;
 
+    @ModelAttribute("accountRole")
+    public String accountRole(Authentication authentication) {
+        var authorities = authentication.getAuthorities().stream()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority).toList();
+        return authorities.contains("ROLE_CLIENT") ? "client"
+                : authorities.contains("ROLE_PROFESSIONAL") ? "professional" : "admin";
+    }
+
     @GetMapping("/compte")
     public String form(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
         User user = userService.getById(principal.getId());
@@ -43,6 +51,7 @@ public class AccountController {
         form.setPhone(user.getPhone());
         model.addAttribute("personalInfoForm", form);
         model.addAttribute("email", user.getEmail());
+        model.addAttribute("profilePhotoUrl", user.getProfilePhotoUrl());
         return "account/personal-info";
     }
 
@@ -103,7 +112,9 @@ public class AccountController {
                          BindingResult bindingResult, Model model,
                          RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("email", userService.getById(principal.getId()).getEmail());
+            User current = userService.getById(principal.getId());
+            model.addAttribute("email", current.getEmail());
+            model.addAttribute("profilePhotoUrl", current.getProfilePhotoUrl());
             return "account/personal-info";
         }
         userService.updatePersonalInfo(principal.getId(), personalInfoForm);

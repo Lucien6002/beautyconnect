@@ -13,6 +13,9 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.add("-parameters")
+    }
 }
 
 repositories {
@@ -38,6 +41,9 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+
+    // Décodage WebP, puis réencodage PNG avant stockage comme les autres photos.
+    runtimeOnly 'com.twelvemonkeys.imageio:imageio-webp:3.15.3'
 
     // Security (auth par session, 3 roles)
     implementation 'org.springframework.boot:spring-boot-starter-security'

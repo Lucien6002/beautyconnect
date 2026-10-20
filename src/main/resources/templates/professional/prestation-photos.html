@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+    <head
+        th:replace="~{fragments/head :: head(title='Photos de la prestation')}"
+    ></head>
+    <body class="d-flex flex-column min-vh-100">
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="container bc-workspace" data-role="professional">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role='professional', active='services')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <div
+                    class="d-flex justify-content-between align-items-center mb-4"
+                >
+                    <h1 class="h4 mb-0">La galerie de votre prestation</h1>
+                    <a
+                        th:href="@{/pro/prestations}"
+                        class="btn btn-outline-secondary"
+                        >Retour aux prestations</a
+                    >
+                </div>
+
+                <div class="card shadow-sm mb-4 bc-gallery-section">
+                    <div class="card-body">
+                        <h5
+                            class="card-title"
+                            th:text="${prestation.name}"
+                        ></h5>
+                        <p
+                            class="card-text text-muted"
+                            th:text="${prestation.description}"
+                        ></p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4 bc-gallery-section">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            Photos actuelles (<span
+                                th:text="${#lists.size(prestation.photos)}"
+                            ></span
+                            >/5)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div
+                            th:if="${#lists.isEmpty(prestation.photos)}"
+                            class="text-muted text-center py-4"
+                        >
+                            Aucune photo pour cette prestation.
+                        </div>
+                        <div
+                            class="row g-3"
+                            th:if="${!#lists.isEmpty(prestation.photos)}"
+                        >
+                            <div
+                                class="col-lg-4 col-sm-6"
+                                th:each="photo, state : ${prestation.photos}"
+                            >
+                                <div class="card">
+                                    <img
+                                        th:src="${photo.photoUrl}"
+                                        th:alt="${prestation.name} + ' — photo ' + ${photo.displayOrder + 1}"
+                                        class="card-img-top bc-gallery-photo"
+                                    />
+                                    <div class="card-body p-2 text-center">
+                                        <p class="small fw-bold mb-2" th:text="${state.first ? 'Photo principale' : 'Photo secondaire ' + state.index}"></p>
+                                        <form th:if="${!state.first}" th:action="@{/pro/prestations/{id}/photos/{photoId}/principale(id=${prestation.id}, photoId=${photo.id})}" method="post" class="mb-2"><button type="submit" class="btn btn-sm btn-outline-primary">Définir comme principale</button></form>
+                                        <form
+                                            th:action="@{'/pro/prestations/' + ${prestation.id} + '/photos/' + ${photo.id} + '/delete'}"
+                                            method="post"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-danger"
+                                            >
+                                                Supprimer
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="card shadow-sm"
+                    th:if="${#lists.size(prestation.photos) < 5}"
+                >
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0" th:text="${#lists.isEmpty(prestation.photos) ? 'Ajouter la photo principale' : 'Ajouter une photo secondaire'}">Ajouter une photo</h5>
+                    </div>
+                    <div class="card-body">
+                        <form
+                            th:action="@{'/pro/prestations/' + ${prestation.id} + '/photos/upload'}"
+                            method="post"
+                            enctype="multipart/form-data"
+                            data-photo-upload
+                        >
+                            <div class="mb-3">
+                                <label class="form-label" for="prestationPhoto"
+                                    >Sélectionner une image</label
+                                >
+                                <input
+                                    type="file"
+                                    name="photo"
+                                    id="prestationPhoto"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="form-control"
+                                    required
+                                />
+                                <div class="form-text">
+                                    Maximum 5 photos par prestation. JPEG, PNG ou
+                                    WebP, 5 Mo et 20 mégapixels maximum. Les
+                                    photos seront publiques.
+                                </div>
+                            </div>
+                            <img
+                                data-photo-preview
+                                hidden
+                                alt="Aperçu avant enregistrement"
+                                class="bc-upload-preview"
+                            />
+                            <p
+                                data-photo-status
+                                role="status"
+                                class="small"
+                            ></p>
+                            <button type="submit" class="btn btn-primary">
+                                Publier la photo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div
+                    class="alert alert-warning mt-4"
+                    th:if="${#lists.size(prestation.photos) >= 5}"
+                >
+                    Maximum de 5 photos atteint. Supprimez une photo avant d'en
+                    ajouter une nouvelle.
+                </div>
+            </main>
+        </div>
+
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
+</html>

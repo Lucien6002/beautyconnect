@@ -24,6 +24,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     boolean existsByTimeSlotId(Long id);
 
+    boolean existsByPrestationId(Long prestationId);
+
     // Historique des rendez-vous d'un client, du plus recent au plus ancien.
     @Query("""
             SELECT a FROM Appointment a

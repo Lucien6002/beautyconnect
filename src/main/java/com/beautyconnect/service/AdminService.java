@@ -12,7 +12,6 @@ import com.beautyconnect.repository.UserRepository;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -130,7 +129,7 @@ public class AdminService {
         sessionRegistry.getAllPrincipals().stream()
                 .filter(principal -> principal instanceof UserDetails details && details.getUsername().equals(email))
                 .flatMap(principal -> sessionRegistry.getAllSessions(principal, false).stream())
-                .forEach(SessionInformation::expireNow);
+                .forEach(session -> session.expireNow());
     }
 
     // Statistiques affichees sur le tableau de bord administrateur.

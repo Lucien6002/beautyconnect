@@ -1,68 +1,140 @@
-<!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/head :: head(title='Mon compte')}"></head>
-<body class="d-flex flex-column min-vh-100">
+<!doctype html>
+<html
+    lang="fr"
+    xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+    <head th:replace="~{fragments/head :: head(title='Mon compte')}"></head>
+    <body class="d-flex flex-column min-vh-100">
+        <nav th:replace="~{fragments/navbar :: navbar}"></nav>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
 
-<nav th:replace="~{fragments/navbar :: navbar}"></nav>
-<div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="container bc-workspace" th:attr="data-role=${accountRole}">
+            <aside
+                th:replace="~{fragments/workspace :: navigation(role=${accountRole}, active='account')}"
+            ></aside>
+            <main class="bc-workspace-main" id="main-content">
+                <h1 class="h4 mb-4">Mes informations personnelles</h1>
 
-<main class="flex-grow-1 container my-5">
-    <div class="row g-4">
-    <div class="col-lg-4" sec:authorize="hasRole('CLIENT')">
-        <aside th:replace="~{fragments/client-account :: sidebar('infos')}"></aside>
-    </div>
-    <div class="col" style="max-width: 640px;">
-    <h1 class="h4 mb-4">Mes informations personnelles</h1>
+                <section th:replace="~{fragments/photo-upload :: editor(action=@{/compte/photo/upload}, currentUrl=${profilePhotoUrl}, deleteAction=@{/compte/photo/delete}, label='Ma photo de profil')}"></section>
+                <form
+                    th:action="@{/compte}"
+                    th:object="${personalInfoForm}"
+                    method="post"
+                    class="card shadow-sm p-4"
+                >
+                    <div class="mb-3">
+                        <label class="form-label">Prenom</label>
+                        <input
+                            type="text"
+                            th:field="*{firstName}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'"
+                            maxlength="100"
+                            required
+                        />
+                        <div
+                            class="invalid-feedback"
+                            th:if="${#fields.hasErrors('firstName')}"
+                            th:errors="*{firstName}"
+                        ></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input
+                            type="text"
+                            th:field="*{lastName}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'"
+                            maxlength="100"
+                            required
+                        />
+                        <div
+                            class="invalid-feedback"
+                            th:if="${#fields.hasErrors('lastName')}"
+                            th:errors="*{lastName}"
+                        ></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"
+                            >Telephone
+                            <span class="text-muted small"
+                                >(optionnel)</span
+                            ></label
+                        >
+                        <input
+                            type="tel"
+                            th:field="*{phone}"
+                            class="form-control"
+                            th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid'"
+                            maxlength="20"
+                        />
+                        <div
+                            class="invalid-feedback"
+                            th:if="${#fields.hasErrors('phone')}"
+                            th:errors="*{phone}"
+                        ></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input
+                            type="email"
+                            class="form-control"
+                            th:value="${email}"
+                            disabled
+                        />
+                        <div class="form-text">
+                            L'email est votre identifiant de connexion et ne
+                            peut pas etre modifie ici.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Enregistrer
+                    </button>
+                    <a
+                        th:href="@{/compte/mot-de-passe}"
+                        class="btn btn-outline-secondary w-100 mt-2"
+                        >Changer mon mot de passe</a
+                    >
+                </form>
 
-    <form th:action="@{/compte}" th:object="${personalInfoForm}" method="post" class="card shadow-sm p-4">
-        <div class="mb-3">
-            <label class="form-label">Prenom</label>
-            <input type="text" th:field="*{firstName}" class="form-control"
-                   th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'" maxlength="100" required/>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+                <!-- Suppression du compte : reservee aux clients -->
+                <div
+                    class="card border-danger shadow-sm p-4 mt-4"
+                    sec:authorize="hasRole('CLIENT')"
+                >
+                    <h2 class="h5 text-danger">Supprimer mon compte</h2>
+                    <p class="small text-muted">
+                        Cette action est definitive. Vos rendez-vous a venir
+                        seront annules, vos favoris supprimes et vos
+                        informations personnelles effacees. Vous ne pourrez plus
+                        vous connecter avec ce compte.
+                    </p>
+                    <form
+                        th:action="@{/client/compte/supprimer}"
+                        method="post"
+                        onsubmit="return confirm('Supprimer definitivement votre compte ?');"
+                    >
+                        <div class="mb-3">
+                            <label class="form-label"
+                                >Confirmez avec votre mot de passe</label
+                            >
+                            <input
+                                type="password"
+                                name="password"
+                                class="form-control"
+                                autocomplete="current-password"
+                                required
+                            />
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">
+                            Supprimer mon compte
+                        </button>
+                    </form>
+                </div>
+            </main>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" th:field="*{lastName}" class="form-control"
-                   th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'" maxlength="100" required/>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Telephone <span class="text-muted small">(optionnel)</span></label>
-            <input type="tel" th:field="*{phone}" class="form-control"
-                   th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid'" maxlength="20"/>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" th:value="${email}" disabled/>
-            <div class="form-text">L'email est votre identifiant de connexion et ne peut pas etre modifie ici.</div>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Enregistrer</button>
-        <a th:href="@{/compte/mot-de-passe}" class="btn btn-outline-secondary w-100 mt-2">Changer mon mot de passe</a>
-    </form>
 
-    <!-- Suppression du compte : reservee aux clients -->
-    <div class="card border-danger shadow-sm p-4 mt-4" sec:authorize="hasRole('CLIENT')">
-        <h2 class="h5 text-danger">Supprimer mon compte</h2>
-        <p class="small text-muted">
-            Cette action est definitive. Vos rendez-vous a venir seront annules, vos favoris supprimes et vos
-            informations personnelles effacees. Vous ne pourrez plus vous connecter avec ce compte.
-        </p>
-        <form th:action="@{/client/compte/supprimer}" method="post"
-              onsubmit="return confirm('Supprimer definitivement votre compte ?');">
-            <div class="mb-3">
-                <label class="form-label">Confirmez avec votre mot de passe</label>
-                <input type="password" name="password" class="form-control" autocomplete="current-password" required/>
-            </div>
-            <button type="submit" class="btn btn-outline-danger">Supprimer mon compte</button>
-        </form>
-    </div>
-    </div>
-    </div>
-</main>
-
-<footer th:replace="~{fragments/footer :: footer}"></footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </body>
 </html>
