@@ -28,7 +28,7 @@
                             <td class="bc-service-rate"><strong th:text="${#numbers.formatDecimal(p.price, 1, 2)} + ' €'"></strong><span th:text="${p.durationMinutes} + ' min'"></span></td>
                             <td><a class="btn btn-sm btn-outline-primary mb-2" th:href="@{/pro/prestations/{id}/modifier(id=${p.id})}">Modifier</a>
                                 <form th:action="@{'/pro/prestations/' + ${p.id} + '/supprimer'}" method="post"
-                                      onsubmit="return confirm('Retirer cette prestation ? Vous pourrez la restaurer depuis Prestations supprimees.');">
+                                      data-confirm="Retirer cette prestation ? Vous pourrez la restaurer depuis Prestations supprimees.">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
                                 </form>
                             </td>

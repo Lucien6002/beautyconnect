@@ -13,27 +13,17 @@
     const hasOrigin = validPosition(config.latitude, config.longitude);
     const gps = document.getElementById("btn-autour-de-moi");
     gps.addEventListener("click", () => {
-        if (!navigator.geolocation) {
-            status.textContent = "GPS indisponible : utilisez le filtre ville.";
-            return;
-        }
         gps.disabled = true;
         status.textContent = "Recherche de votre position…";
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                document.getElementById("clientLatitude").value =
-                    position.coords.latitude;
-                document.getElementById("clientLongitude").value =
-                    position.coords.longitude;
-                gps.closest("form").requestSubmit();
-            },
-            () => {
-                gps.disabled = false;
-                status.textContent =
-                    "Position indisponible ou autorisation refusée : utilisez le filtre ville.";
-            },
-            { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false },
-        );
+        window.beautyGeolocation.locate(position => {
+            document.getElementById("clientLatitude").value = position.coords.latitude;
+            document.getElementById("clientLongitude").value = position.coords.longitude;
+            // Une nouvelle origine doit repartir de la première page de résultats.
+            gps.closest("form").requestSubmit();
+        }, message => {
+            gps.disabled = false;
+            status.textContent = message;
+        });
     });
     document
         .getElementById("clear-position")
@@ -86,6 +76,7 @@
     let routeLayer = null;
     let routeRequest = null;
     if (hasOrigin) {
+        status.textContent = `Position reçue : ${config.latitude.toFixed(5)}, ${config.longitude.toFixed(5)}. Vérifiez le point bleu : la position de votre appareil peut être approximative.`;
         L.circleMarker([config.latitude, config.longitude], { radius: 8 })
             .addTo(map)
             .bindPopup("Vous êtes ici");
@@ -225,7 +216,7 @@
             document.getElementById("map").scrollIntoView({ block: "center" });
         });
     });
-    if (points.length)
+    if (points.length && !hasOrigin)
         map.fitBounds(points, { padding: [30, 30], maxZoom: 14 });
     document.getElementById("map-reset")?.addEventListener("click", () => {
         if (points.length)

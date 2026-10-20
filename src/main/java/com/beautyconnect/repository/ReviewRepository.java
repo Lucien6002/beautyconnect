@@ -33,6 +33,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r JOIN FETCH r.client JOIN FETCH r.professional ORDER BY r.createdAt DESC")
     List<Review> findAllByOrderByCreatedAtDesc();
 
+    @Query("SELECT r.appointment.id FROM Review r WHERE r.client = :client AND r.appointment IS NOT NULL")
+    java.util.Set<Long> reviewedAppointmentIds(@org.springframework.data.repository.query.Param("client") User client);
+
     // Un avis existe-t-il deja pour ce rendez-vous ? (un seul avis par rendez-vous)
     boolean existsByAppointmentId(Long appointmentId);
 

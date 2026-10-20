@@ -300,6 +300,24 @@ class ClientJourneyTests {
                 .andExpect(status().isNotFound());
     }
 
+    @Test void nearbyProfessionalInLimogesIsFoundBeforePaginationAndPrivateCoordinatesStayExcluded() {
+        for (int i = 0; i < 6; i++) professional("a-far" + i + "@journey.test", true);
+        var local = professional("zz-limoges@journey.test", true);
+        local.setCity("Limoges"); local.setLatitude(45.8336); local.setLongitude(1.2611); profiles.save(local);
+        var privateProfile = professional("a-private@journey.test", true);
+        privateProfile.setLatitude(45.8336); privateProfile.setLongitude(1.2611);
+        privateProfile.setCoordinatesPublic(false); profiles.save(privateProfile);
+        var criteria = new SearchCriteria(); criteria.setClientLatitude(45.8336); criteria.setClientLongitude(1.2611);
+        var first = professionals.searchPage(criteria);
+        assertThat(first.getContent()).hasSize(6);
+        assertThat(first.getContent().getFirst().getId()).isEqualTo(local.getId());
+        assertThat(first.getContent()).noneMatch(p -> p.getId().equals(privateProfile.getId()));
+        criteria.setPage(1);
+        assertThat(professionals.searchPage(criteria).getContent()).extracting(ProfessionalProfile::getId).contains(privateProfile.getId());
+        criteria.setPage(0); criteria.setCity("Paris");
+        assertThat(professionals.searchPage(criteria).getContent()).noneMatch(p -> p.getId().equals(local.getId()));
+    }
+
     @Test void matrixReordersByWalkingDistanceAndFallsBackWithoutInventingARoute() {
         var b = professional("b@journey.test", true); b.setLatitude(48.87); profiles.save(b);
         var criteria = new SearchCriteria(); criteria.setClientLatitude(48.85); criteria.setClientLongitude(2.35);

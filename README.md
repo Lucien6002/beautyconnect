@@ -16,7 +16,7 @@ bash ./gradlew bootRun
 
 Ouvrir **http://localhost:8080**. Les messages d'activation et de réservation arrivent dans **http://localhost:8025** (Mailpit, aucun email externe en configuration locale). PostgreSQL écoute sur `localhost:5433`. Le profil par défaut est `dev` ; Flyway applique les migrations et Hibernate vérifie le schéma. Une base vide est créée automatiquement par PostgreSQL au premier démarrage du conteneur.
 
-Le diaporama d’accueil change d’image toutes les **8 secondes** ; il se met en pause au survol, pendant le focus clavier ou si l’onglet est masqué.
+Le fond de connexion utilise une version WebP optimisée de l’image de Joyce (environ 100 Ko). Le diaporama d’accueil change d’image toutes les **8 secondes** ; il se met en pause au survol, pendant le focus clavier ou si l’onglet est masqué.
 
 Après connexion, un client arrive à l’accueil pour chercher une prestation ; les professionnels et administrateurs arrivent dans leur tableau de bord.
 
@@ -106,7 +106,9 @@ Pour une photo personnelle, une suppression physique est déclenchée après val
 - **Professionnel** : profil et photo, catalogue avec édition/retrait/restauration, galerie, disponibilités, agenda et rendez-vous terminés. La suppression définitive est refusée si la prestation appartient à un rendez-vous.
 - **Administrateur** : validation des professionnels, suspension, modération des avis et décisions de signalement avec auteur/date/motif.
 
-La publication d'une localisation exige l'accord du professionnel. Sans `ORS_API_KEY`, les liens Google Maps restent disponibles. Avec une clé ORS côté serveur, la recherche propose des mesures à pied sur les candidats de la page et un itinéraire ; ce classement n'est pas une comparaison exhaustive de tous les professionnels de France.
+La publication d'une localisation exige l'accord du professionnel. « Utiliser ma position » demande une position récente en haute précision ; la précision réelle dépend du navigateur et de l’appareil. Sur localhost ou HTTPS, autoriser la localisation dans le navigateur et le système. Le professionnel voit la précision annoncée et peut corriger le point avant de publier. La localisation reste utilisable si le fond de carte ne charge pas. Sans `ORS_API_KEY`, les liens Google Maps restent disponibles. Avec une position client, les établissements correspondant aux filtres sont triés à vol d’oiseau avant pagination, en plaçant les coordonnées privées ou manquantes en dernier. La carte se centre sur la position reçue ; Le bouton « Afficher tous les points sur la carte » permet de revoir les points. Le rayon de 100 km limite le calcul piéton, sans masquer les établissements plus éloignés. Avec une clé ORS côté serveur, la recherche propose des mesures à pied sur les candidats de la page et un itinéraire ; ce classement piéton n'est pas une comparaison exhaustive de tous les professionnels de France.
+
+Le message facultatif saisi lors d’une réservation est affiché comme « Message du client » chez le professionnel ; ce n’est pas une évaluation. Après passage du rendez-vous à « Terminé », le client peut choisir « Noter ce rendez-vous » dans son historique pour donner une note sur 5 et un commentaire facultatif. Un avis déjà envoyé n’est plus proposé à nouveau, même s’il a été masqué. La modération masque l’avis public et l’exclut de la moyenne, tout en conservant sa trace en base.
 
 Les avis libres et les avis rattachés à un rendez-vous terminé coexistent actuellement. Un avis libre n'est pas une preuve de prestation réalisée. La règle finale doit être validée par l'équipe.
 

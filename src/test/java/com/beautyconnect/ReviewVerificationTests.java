@@ -305,6 +305,20 @@ class ReviewVerificationTests {
                 .andExpect(content().string(containsString("Libre")));
     }
 
+    @Test
+    void completedAppointmentOffersVerifiedReviewAndAlreadyReviewedVisitDoesNotOfferADuplicate() throws Exception {
+        Appointment done = appointment(client, pro, AppointmentStatus.TERMINE);
+        mockMvc.perform(get("/client/rendez-vous").with(user(new CustomUserDetails(client))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Noter ce rendez-vous")))
+                .andExpect(content().string(containsString("name=\"appointmentId\" value=\"" + done.getId() + "\"")));
+        submit(client, pro, 4, "Avis après ma visite", done.getId()).andExpect(flash().attributeExists("success"));
+        mockMvc.perform(get("/client/rendez-vous").with(user(new CustomUserDetails(client))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Avis déjà envoyé")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Noter ce rendez-vous"))));
+    }
+
     // ---- Outils ----
 
     private ResultActions submit(User author, ProfessionalProfile target, int rating, String comment,

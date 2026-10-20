@@ -57,3 +57,38 @@ document.addEventListener("DOMContentLoaded", () => {
     )
         services.value = selected;
 });
+
+// Confirmation accessible dans l’application, sans boîte de dialogue du navigateur.
+document.addEventListener("DOMContentLoaded", () => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "bc-confirm-dialog";
+    dialog.setAttribute("aria-labelledby", "bc-confirm-title");
+    dialog.setAttribute("aria-describedby", "bc-confirm-message");
+    dialog.innerHTML = '<h2 id="bc-confirm-title">Confirmer cette action</h2><p id="bc-confirm-message"></p><div class="d-flex gap-2 justify-content-end"><button type="button" class="btn btn-outline-secondary" data-cancel autofocus>Annuler</button><button type="button" class="btn btn-danger" data-accept>Confirmer</button></div>';
+    document.body.append(dialog);
+    let pending = null;
+    let submitter = null;
+    dialog.querySelector("[data-cancel]").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => { pending = null; submitter = null; });
+    dialog.querySelector("[data-accept]").addEventListener("click", () => {
+        const form = pending;
+        const button = submitter;
+        pending = null;
+        dialog.close();
+        if (form) {
+            form.dataset.confirmed = "true";
+            try { if (button) form.requestSubmit(button); else form.requestSubmit(); }
+            finally { delete form.dataset.confirmed; }
+        }
+    });
+    document.querySelectorAll("form[data-confirm]").forEach(form => {
+        form.addEventListener("submit", event => {
+            if (form.dataset.confirmed) return;
+            event.preventDefault();
+            pending = form;
+            submitter = event.submitter;
+            dialog.querySelector("#bc-confirm-message").textContent = form.dataset.confirm;
+            dialog.showModal();
+        });
+    });
+});

@@ -15,7 +15,7 @@
         <div class="table-responsive">
             <table class="table mb-0 align-middle">
                 <thead>
-                <tr><th>Client</th><th>Prestation</th><th>Date</th><th>Notes</th><th>Statut</th><th>Actions</th></tr>
+                <tr><th>Client</th><th>Prestation</th><th>Date</th><th>Message du client</th><th>Statut</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                 <tr th:each="a : ${appointments}">
@@ -25,7 +25,7 @@
                     </td>
                     <td th:text="${a.prestation.name}"></td>
                     <td th:text="${#temporals.format(a.timeSlot.startDateTime, 'dd/MM/yyyy HH:mm')}"></td>
-                    <td class="small" th:text="${a.notes}"></td>
+                    <td class="small" th:text="${#strings.isEmpty(a.notes) ? 'Aucun message' : a.notes}"></td>
                     <td><span class="badge text-bg-secondary" th:text="${a.status}"></span></td>
                     <td>
                         <form th:if="${a.status.name() == 'CONFIRME'}" th:action="@{'/pro/rendez-vous/' + ${a.id} + '/terminer'}" method="post">

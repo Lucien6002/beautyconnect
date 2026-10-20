@@ -24,6 +24,7 @@ import java.util.List;
 public class ClientDashboardController {
 
     private final AppointmentService appointmentService;
+    private final com.beautyconnect.repository.ReviewRepository reviews;
 
     // @AuthenticationPrincipal CustomUserDetails principal : Spring Security
     // injecte directement l'utilisateur actuellement connecte.
@@ -46,6 +47,7 @@ public class ClientDashboardController {
         List<Appointment> history = all.stream().filter(a -> !isUpcoming(a, now)).toList();
         model.addAttribute("upcoming", upcoming);
         model.addAttribute("history", history);
+        model.addAttribute("reviewedAppointmentIds", reviews.reviewedAppointmentIds(principal.getUser()));
         return "client/appointments";
     }
 

@@ -121,4 +121,25 @@ public interface ProfessionalProfileRepository extends JpaRepository<Professiona
             @Param("city") String city, @Param("gender") TargetGender gender,
             @Param("name") String name, @Param("type") com.beautyconnect.model.ServiceType type,
             org.springframework.data.domain.Pageable pageable);
+    // Ordre géographique avant pagination : un voisin ne doit pas rester caché en page suivante.
+    // Le produit scalaire sphérique décroît avec la distance, sans calcul d'ACOS sensible aux arrondis.
+    @Query("""
+            SELECT p FROM ProfessionalProfile p
+            WHERE p.validated = true AND p.user.enabled = true
+              AND (:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', CAST(:city AS string), '%')))
+              AND (:gender IS NULL OR p.targetGender = :gender OR p.targetGender = com.beautyconnect.model.TargetGender.MIXTE)
+              AND (:name IS NULL OR LOWER(p.businessName) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%')))
+              AND (:type IS NULL OR EXISTS (SELECT pr.id FROM Prestation pr WHERE pr.professional = p AND pr.active = true AND pr.type = :type))
+            ORDER BY CASE WHEN p.coordinatesPublic = true AND p.latitude BETWEEN -90 AND 90 AND p.longitude BETWEEN -180 AND 180
+                THEN SIN(:originLatitude) * SIN(p.latitude * 0.017453292519943295)
+                   + COS(:originLatitude) * COS(p.latitude * 0.017453292519943295)
+                   * COS((p.longitude - :originLongitude) * 0.017453292519943295)
+                ELSE -2.0 END DESC, p.businessName, p.id
+            """)
+    org.springframework.data.domain.Page<ProfessionalProfile> searchPageNear(
+            @Param("city") String city, @Param("gender") TargetGender gender,
+            @Param("name") String name, @Param("type") com.beautyconnect.model.ServiceType type,
+            @Param("originLatitude") double originLatitudeRadians, @Param("originLongitude") double originLongitude,
+            org.springframework.data.domain.Pageable pageable);
+
 }

@@ -28,7 +28,7 @@ public class NearestProfessionalService {
         ordered.sort(Comparator.comparingDouble(pro -> air.getOrDefault(pro.getId(), Double.MAX_VALUE)));
         List<ProfessionalProfile> candidates = ordered.stream()
                 .filter(pro -> air.containsKey(pro.getId()) && air.get(pro.getId()) <= 100).limit(12).toList();
-        if (candidates.isEmpty()) return new Result(ordered, air, walking, "Aucun professionnel géolocalisé à moins de 100 km parmi ces résultats.");
+        if (candidates.isEmpty()) return new Result(ordered, air, walking, "Aucun professionnel avec une position publique à moins de 100 km parmi ces résultats. Les établissements plus éloignés restent affichés ; essayez une autre ville ou vérifiez votre position.");
         try {
             var metrics = routingClient.matrixWalking(criteria.getClientLatitude(), criteria.getClientLongitude(),
                     candidates.stream().map(pro -> new double[]{pro.getLatitude(), pro.getLongitude()}).toList());

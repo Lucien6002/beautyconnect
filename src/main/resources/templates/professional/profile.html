@@ -151,8 +151,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Precisions (optionnel)</label>
-                        <textarea class="form-control" th:field="*{notes}" maxlength="1000" placeholder="Toute specificite a communiquer au professionnel"></textarea>
+                        <label for="notes" class="form-label">Message au professionnel (facultatif)</label>
+                        <textarea class="form-control" th:field="*{notes}" maxlength="1000" placeholder="Ex. : précisions sur la coupe souhaitée" aria-describedby="booking-message-help"></textarea><p id="booking-message-help" class="form-text">Ce message accompagne la réservation. Vous pourrez donner une note sur 5 après le rendez-vous.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -177,7 +177,8 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Note (1 a 5)</label>
-                        <select class="form-select" th:field="*{rating}">
+                        <select class="form-select" th:field="*{rating}" required>
+                            <option value="">Choisir une note</option>
                             <option value="5">5 - Excellent</option>
                             <option value="4">4 - Tres bien</option>
                             <option value="3">3 - Correct</option>
@@ -187,7 +188,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Commentaire</label>
-                        <textarea class="form-control" th:field="*{comment}"></textarea>
+                        <textarea class="form-control" th:field="*{comment}" maxlength="1000"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

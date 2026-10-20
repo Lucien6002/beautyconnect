@@ -1592,7 +1592,7 @@ html {
     position: relative;
     min-height: calc(100svh - 80px);
     padding: 52px 0;
-    background: linear-gradient(100deg, rgba(40,31,53,.82), rgba(40,31,53,.44)), url('../images/acceuil.jpg') center 60% / cover;
+    background: linear-gradient(100deg, rgba(40,31,53,.82), rgba(40,31,53,.44)), url('../images/connexion.webp') center 60% / cover;
 }
 .bc-login-layout { display: grid; grid-template-columns: 1fr 480px; gap: 64px; align-items: center; }
 .bc-login-welcome { color: var(--bc-surface); max-width: 520px; }
@@ -1716,3 +1716,10 @@ html {
     .bc-admin-priority > a { width: 100%; }
     .bc-admin-page .bc-workspace .list-group-item { padding: 18px; gap: 12px; flex-wrap: wrap; }
 }
+
+.bc-confirm-dialog { width: min(480px, calc(100vw - 32px)); padding: 28px; border: 1px solid var(--bc-border, #ddd); border-radius: 20px; color: var(--bc-ink); background: var(--bc-surface); box-shadow: 0 24px 80px #281f3533; }
+.bc-confirm-dialog::backdrop { background: #281f3577; }
+.bc-confirm-dialog h2 { font-size: 1.35rem; margin-bottom: 16px; }
+.bc-confirm-dialog p { margin-bottom: 24px; }
+.bc-appointment-review { min-width: 230px; max-width: 360px; margin-top: 12px; }
+.bc-appointment-review summary { color: var(--bc-primary); cursor: pointer; }

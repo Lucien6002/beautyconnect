@@ -143,7 +143,7 @@ Recette du 20 octobre 2026 : le refus initial a été corrigé côté Cloudinary
 - [ ] G2 — Sur 320 px et 768 px, ouvrir/fermer le menu principal ; vérifier que les rubriques de l'espace restent accessibles dans la navigation adaptée au mobile.
 - [ ] G3 — Parcourir au clavier : lien « Aller au contenu », champs, boutons, menu et modales ; focus visible, fermeture des modales et retour au déclencheur.
 - [ ] G4 — Activer « réduire les animations » dans le système/navigateur : transitions discrètes, diaporama initialement en pause.
-- [ ] G5 — Refuser la géolocalisation puis rechercher par ville : liste utilisable. Accepter ensuite sur localhost/HTTPS : position ponctuelle et mesures indiquées sans enregistrement dans le compte.
+- [ ] G5 — Refuser la géolocalisation puis rechercher par ville : liste utilisable. Accepter ensuite sur localhost/HTTPS : point bleu autour de la position reçue, coordonnées affichées, sans enregistrement dans le compte. Tester aussi un compte temporaire à Limoges : même avec un nom classé en dernier, il apparaît dans la première page depuis une position proche. La précision réelle dépend de l’appareil.
 - [ ] G6 — Sans clé ORS, vérifier l'explication du repli et les liens Google Maps/transports ; aucun itinéraire inventé.
 - [ ] G7 — Avec une vraie clé ORS, choisir un pro localisé : itinéraire à pied et durée affichés ; erreur réseau gérée. À noter « non testé » sans clé.
 - [ ] G8 — Se déconnecter, faire Retour navigateur et recharger une page privée : les actions et données privées ne sont plus accessibles.
@@ -159,3 +159,11 @@ Recette du 20 octobre 2026 : le refus initial a été corrigé côté Cloudinary
 **Cas non exécutés et raison :** …
 
 **Décision de l'équipe après recette :** …
+
+### Vérifications après les retours de recette
+
+- [ ] Depuis le compte professionnel temporaire, « Utiliser ma position » remplit les deux coordonnées, annonce la précision et permet de corriger le point avant enregistrement. Un refus indique comment autoriser la localisation ; le bouton redevient disponible.
+- [ ] Retirer une prestation puis supprimer définitivement une prestation de test : une fenêtre de l’application s’ouvre. Annuler conserve la prestation ; confirmer effectue l’action. La suppression reste refusée si un rendez-vous utilise cette prestation.
+- [ ] Réserver avec un message facultatif : le client le retrouve dans ses rendez-vous et le professionnel dans « Message du client ».
+- [ ] Terminer ce rendez-vous côté professionnel, puis ouvrir l’historique client et « Noter ce rendez-vous ». Choisir une note et publier un commentaire ; l’avis apparaît comme vérifié sur la fiche et dans la modération. Après masquage, il reste en base mais disparaît du public et de la moyenne.
+- [ ] Ouvrir la connexion : le fond est toujours celui de Joyce, chargé depuis `connexion.webp`.

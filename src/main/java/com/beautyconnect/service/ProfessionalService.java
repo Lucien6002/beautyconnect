@@ -81,6 +81,11 @@ public class ProfessionalService {
     }
 
     public org.springframework.data.domain.Page<ProfessionalProfile> searchPage(SearchCriteria criteria) {
+        if (com.beautyconnect.utils.LocationUtils.isValidPosition(criteria.getClientLatitude(), criteria.getClientLongitude())) {
+            return professionalProfileRepository.searchPageNear(clean(criteria.getCity()), criteria.getGender(),
+                    clean(criteria.getName()), criteria.getType(), Math.toRadians(criteria.getClientLatitude()),
+                    criteria.getClientLongitude(), org.springframework.data.domain.PageRequest.of(criteria.getPage(), 6));
+        }
         return professionalProfileRepository.searchPage(clean(criteria.getCity()), criteria.getGender(),
                 clean(criteria.getName()), criteria.getType(),
                 org.springframework.data.domain.PageRequest.of(criteria.getPage(), 6));
