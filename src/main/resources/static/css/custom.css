@@ -1723,3 +1723,9 @@ html {
 .bc-confirm-dialog p { margin-bottom: 24px; }
 .bc-appointment-review { min-width: 230px; max-width: 360px; margin-top: 12px; }
 .bc-appointment-review summary { color: var(--bc-primary); cursor: pointer; }
+
+.bc-password-field { position: relative; min-width: 0; }
+.bc-password-field > .form-control { padding-right: 3.25rem; }
+.bc-password-toggle { position: absolute; top: 0; right: 3px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; color: var(--bc-primary); background: transparent; cursor: pointer; }
+.bc-password-toggle:hover, .bc-password-toggle[aria-pressed="true"] { background: var(--bc-canvas); }
+.bc-password-field > .form-control.is-invalid { background-position: right 3.25rem center; padding-right: 5rem; }
