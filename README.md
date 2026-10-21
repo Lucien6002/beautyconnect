@@ -221,6 +221,27 @@ Le message facultatif saisi lors d’une réservation est affiché comme « Mess
 
 Les avis libres et les avis rattachés à un rendez-vous terminé coexistent actuellement. Un avis libre n'est pas une preuve de prestation réalisée. La règle finale doit être validée par l'équipe.
 
+## Mot de passe oublié
+
+Depuis `/connexion`, cliquer sur **« Mot de passe oublié ? »**, renseigner l’adresse du compte, puis ouvrir le mail dans Mailpit sur **http://localhost:8025**. Le lien mène au formulaire de choix et de confirmation du nouveau mot de passe. En dehors du développement, le message est envoyé par le SMTP configuré.
+
+Le lien expire après **15 minutes**, fonctionne une seule fois et est remplacé par une nouvelle demande acceptée. Attendre une minute entre deux demandes. La réponse ne révèle pas si l’adresse existe. Seuls les comptes actifs dont l’adresse est vérifiée peuvent recevoir un lien ; ce parcours ne réactive pas les comptes suspendus et ne remplace pas l’activation d’une inscription.
+
+Après validation, l’ancien mot de passe cesse de fonctionner et les sessions précédentes expirent à leur prochaine requête. Aucune connexion automatique n’est créée ; se reconnecter avec le nouveau mot de passe. Les réservations et les informations du compte sont conservées. Un changement de mot de passe depuis un compte connecté annule aussi les liens de réinitialisation en attente.
+
+La migration V12 ajoute `password_reset_tokens`, distincte de `verification_tokens` : elle stocke uniquement l’empreinte SHA-256 du jeton, sa date de création et son expiration. Le lien brut est transmis par mail et n’est pas conservé dans la table. La durée est configurable avec `PASSWORD_RESET_EXPIRATION_MINUTES` ; le réglage par défaut suffit pour l’évaluation. `APP_BASE_URL` doit correspondre à l’adresse réellement utilisée, notamment si le port change.
+
+### Recommencer les tests manuels
+
+Créer d’abord un compte client temporaire et l’activer avec Mailpit, pour conserver les mots de passe des comptes partagés.
+
+1. Depuis la connexion, demander un lien pour ce compte. Vérifier le mail, ouvrir son lien et essayer deux mots de passe différents : la modification doit être refusée.
+2. Saisir deux fois le même nouveau mot de passe d’au moins 8 caractères, dans la limite de 72 octets. Vérifier le retour à la connexion, le refus de l’ancien mot de passe et la réussite du nouveau.
+3. Réouvrir le lien utilisé : il doit être refusé. Si le compte était connecté dans un autre profil de navigateur, sa prochaine requête doit le déconnecter.
+4. Demander un lien pour une adresse inconnue : même message de confirmation, aucun mail pour cette adresse. Demander un lien pour un compte suspendu ne doit pas le réactiver.
+5. Pour tester le renouvellement, attendre une minute et demander un nouveau lien ; seul le dernier reste valable. Pour tester l’expiration, attendre plus de 15 minutes après une demande.
+6. Avec ce compte client, reprendre le parcours réservation, annulation, avis et modération du tableau ci-dessous. Utiliser un profil de navigateur distinct pour Sarah et pour l’administrateur.
+
 ## Parcours d’évaluation pour le professeur
 
 Utiliser trois profils de navigateur distincts ou se déconnecter entre chaque rôle. Les comptes du tableau ci-dessus sont prêts à l’emploi ; l’inscription d’un nouveau compte permet aussi de tester l’activation par email.

@@ -34,6 +34,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final ProfessionalProfileRepository professionalProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.beautyconnect.repository.PasswordResetTokenRepository passwordResetTokens;
     private final AuthTokenService authTokenService; // <-- AJOUTE CECI
 
     public User getById(Long userId) {
@@ -56,7 +57,8 @@ public class UserService {
     // Le mot de passe actuel doit etre correct, et le nouveau different de l'ancien.
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
-        User user = getById(userId);
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new com.beautyconnect.exception.ResourceNotFoundException("Compte introuvable"));
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new com.beautyconnect.exception.IllegalOperationException("Le mot de passe actuel est incorrect.");
         }
@@ -65,6 +67,7 @@ public class UserService {
                     "Le nouveau mot de passe doit etre different de l'actuel.");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
+        passwordResetTokens.deleteByUser(user);
         userRepository.save(user);
     }
 

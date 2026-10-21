@@ -34,10 +34,11 @@ public class AccountService {
     private final AppointmentService appointmentService;
     private final FavoriteRepository favoriteRepository;
     private final VerificationTokenRepository tokenRepository;
+    private final com.beautyconnect.repository.PasswordResetTokenRepository passwordResetTokens;
 
     @Transactional
     public void deleteClientAccount(Long userId, String password) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalOperationException("Compte introuvable."));
         if (user.getRole() != Role.CLIENT) {
             throw new IllegalOperationException("Seul un compte client peut etre supprime ici.");
@@ -58,6 +59,7 @@ public class AccountService {
 
         favoriteRepository.deleteByClient(user);
         tokenRepository.deleteByUser(user);
+        passwordResetTokens.deleteByUser(user);
 
         user.setEmail("compte-supprime-" + user.getId() + "-" + UUID.randomUUID() + "@deleted.invalid");
         user.setFirstName("Compte");

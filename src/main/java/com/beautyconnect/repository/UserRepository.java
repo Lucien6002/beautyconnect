@@ -25,6 +25,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT u FROM User u WHERE u.email = :email")
     Optional<User> findByEmailForUpdate(@org.springframework.data.repository.query.Param("email") String email);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u WHERE u.id = :id")
+    Optional<User> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
     // Equivaut a : SELECT * FROM users WHERE email = ?
     // Optional<User> : peut ne rien retourner (aucun utilisateur avec cet email)
     // sans avoir a manipuler une valeur "null" dangereuse a la main.

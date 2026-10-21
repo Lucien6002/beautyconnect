@@ -67,7 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/recherche", "/recherche/**", "/itineraire/**").permitAll()
                         .requestMatchers("/professionnels/**").permitAll()
                         // On autorise /activer-compte pour que le lien de l'email fonctionne sans être connecté
-                        .requestMatchers("/inscription/**", "/connexion", "/activer-compte", "/erreur/**", "/error").permitAll()
+                        .requestMatchers("/inscription/**", "/connexion", "/activer-compte", "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe", "/erreur/**", "/error").permitAll()
                         .requestMatchers("/client/**").hasRole("CLIENT")
                         .requestMatchers("/rendez-vous/**", "/avis/**", "/signalements/**").hasRole("CLIENT")
                         .requestMatchers("/pro/**").hasRole("PROFESSIONAL")

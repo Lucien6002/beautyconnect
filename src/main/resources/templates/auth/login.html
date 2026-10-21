@@ -67,8 +67,7 @@
                                 th:if="${param.desactive}"
                                 class="alert alert-warning"
                             >
-                                Votre compte a ete desactive par un
-                                administrateur.
+                                Votre session a expiré ou votre compte a été désactivé. Veuillez vous reconnecter.
                             </div>
                             <div
                                 th:if="${param.deconnecte}"
@@ -114,6 +113,8 @@
                                     Se connecter
                                 </button>
                             </form>
+
+                            <p class="mt-3 mb-0 text-end"><a th:href="@{/mot-de-passe-oublie}" class="small">Mot de passe oublié ?</a></p>
 
                             <details class="mt-3">
                                 <summary>Renvoyer le lien d’activation</summary>

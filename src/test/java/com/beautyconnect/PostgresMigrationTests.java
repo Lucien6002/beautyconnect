@@ -103,6 +103,7 @@ class PostgresMigrationTests {
                 flyway(fresh).migrate();
                 assertThat(flyway(fresh).validateWithResult().validationSuccessful).isTrue();
                 sql.executeQuery("SELECT catalog_key, target_id, imported_at FROM " + fresh + ".showcase_imports LIMIT 0").close();
+                sql.executeQuery("SELECT user_id, token_hash, expires_at, created_at FROM " + fresh + ".password_reset_tokens LIMIT 0").close();
                 sql.execute("CREATE SCHEMA " + legacy);
                 sql.execute("SET search_path TO " + legacy);
                 try (var resource = getClass().getResourceAsStream("/db/migration/V1__initial_schema.sql")) {

@@ -29,6 +29,9 @@ class UserServiceProfileTest {
     @Mock
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Mock
+    private com.beautyconnect.repository.PasswordResetTokenRepository passwordResetTokens;
+
     @InjectMocks
     private UserService userService;
 
@@ -68,7 +71,7 @@ class UserServiceProfileTest {
     @Test
     void changePassword_ShouldEncodeNewPassword_WhenCurrentIsCorrect() {
         User user = User.builder().id(1L).password("oldHash").build();
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("old12345", "oldHash")).thenReturn(true);
         when(passwordEncoder.matches("new12345", "oldHash")).thenReturn(false);
         when(passwordEncoder.encode("new12345")).thenReturn("newHash");
@@ -81,7 +84,7 @@ class UserServiceProfileTest {
     @Test
     void changePassword_ShouldReject_WhenCurrentIsWrong() {
         User user = User.builder().id(1L).password("oldHash").build();
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("bad", "oldHash")).thenReturn(false);
 
         assertThrows(IllegalOperationException.class, () -> userService.changePassword(1L, "bad", "new12345"));
@@ -91,7 +94,7 @@ class UserServiceProfileTest {
     @Test
     void changePassword_ShouldReject_WhenNewEqualsCurrent() {
         User user = User.builder().id(1L).password("oldHash").build();
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("same1234", "oldHash")).thenReturn(true);
 
         assertThrows(IllegalOperationException.class, () -> userService.changePassword(1L, "same1234", "same1234"));
