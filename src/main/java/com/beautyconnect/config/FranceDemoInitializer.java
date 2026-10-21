@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-/** Activation explicite en développement, jamais sous le profil prod. */
+/** Import automatique en développement, désactivable et toujours exclu du profil prod. */
 @Component
 @org.springframework.core.annotation.Order(0)
 @Profile("dev & !prod")
